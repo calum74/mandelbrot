@@ -1,44 +1,111 @@
-#include <cstddef>
+#pragma once
 
-/*
-Basic infrastructure for rendering fractals.
-*/
+#include <memory>
 
-namespace fractals
-{
-    struct pixel
-    {
-        std::uint32_t colour;
-    };
+#include "ViewCoords.hpp"
+#include "plane.hpp"
 
-    class point
-    {
-        std::int64_t mantissa, exponent;
-    };
+/* Basic infrastructure for rendering fractals. */
 
-    class renderer
-    {
-    };
+namespace fractals {
 
-    struct region
-    {
-        point origin, size;
-    };
+struct ViewCoords;
+class Viewport;
+class ColourMap;
+class Renderer;
 
-    class viewport
-    {
-        int width, height;
-    };
+// A list of available fractals
 
-    class viewer
-    {
-        virtual void on_update(int x0, int x0, int w, int h, const pixel * output);
-    };
+std::unique_ptr<Renderer> make_renderer();
 
-    class fractal
-    {
-    public:
-        virtual ~fractal() = default;
-        virtual void calculate(viewer);
-    };
+// Just a default colour map
+std::unique_ptr<ColourMap> make_colourmap();
+
+class PointwiseCalculation {
+public:
+  using ViewCoords = fractals::ViewCoords;
+  virtual ~PointwiseCalculation() = default;
+
+  virtual double calculate(int x, int y) const = 0;
 };
+
+class PointwiseFractal {
+public:
+  virtual const char *name() const = 0;
+  virtual std::unique_ptr<PointwiseCalculation>
+  create(const ViewCoords &c, int x, int y, std::atomic<bool> &stop) const = 0;
+  virtual ViewCoords initial_coords() const = 0;
+  virtual bool valid_for(const ViewCoords &c) const = 0;
+};
+
+namespace detail {
+
+template <typename... Ts> class MultiPrecisionFactory;
+
+template <typename T, typename... Ts>
+class MultiPrecisionFactory<T, Ts...> : public PointwiseFractal {
+public:
+  MultiPrecisionFactory(const char *name) : n{name}, tail{name} {}
+
+  ViewCoords initial_coords() const override { return T::initial_coords(); }
+  const char *name() const override { return n; }
+
+  std::unique_ptr<PointwiseCalculation>
+  create(const ViewCoords &c, int x, int y,
+         std::atomic<bool> &stop) const override {
+    return T::valid_for(c) ? std::make_unique<T>(c, x, y, stop)
+                           : tail.create(c, x, y, stop);
+  }
+
+  bool valid_for(const ViewCoords &c) const override {
+    return T::valid_for(c) || tail.valid_for(c);
+  }
+
+private:
+  MultiPrecisionFactory<Ts...> tail;
+
+  const char *n;
+};
+
+template <typename T> class MultiPrecisionFactory<T> : public PointwiseFractal {
+public:
+  MultiPrecisionFactory(const char *name) : n{name} {}
+
+  std::unique_ptr<PointwiseCalculation>
+  create(const ViewCoords &c, int x, int y,
+         std::atomic<bool> &stop) const override {
+    return std::make_unique<T>(c, x, y, stop);
+  }
+
+  ViewCoords initial_coords() const override { return T::initial_coords(); }
+
+  const char *name() const override { return n; }
+
+  bool valid_for(const ViewCoords &c) const override { return T::valid_for(c); }
+
+private:
+  const char *n;
+};
+} // namespace detail
+
+template <typename... Ts>
+detail::MultiPrecisionFactory<Ts...> make_fractal(const char *name) {
+  return {name};
+}
+
+class Registry {
+public:
+  virtual ~Registry() = default;
+  virtual void add(const PointwiseFractal &) = 0;
+  virtual std::vector<
+      std::pair<std::string, const fractals::PointwiseFractal &>>
+  listFractals() const = 0;
+};
+
+void register_fractals(Registry &r);
+void register_mandelbrot(Registry &r);
+
+std::unique_ptr<Registry> make_registry();
+
+}; // namespace fractals
+
