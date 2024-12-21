@@ -11,13 +11,12 @@
 #endif
 #include "convert.hpp"
 
-namespace fractals {
-
 #if _WIN32
-using uint128_t = std::uint128_t;
-#else
-using uint128_t = __uint128_t;
+#include <intrin.h>
+#pragma intrinsic(_mul128)
 #endif
+
+namespace fractals {
 
 /*
     A minimal high-precision float implementation for greater precision.
@@ -244,9 +243,14 @@ void raw_mul(const high_precision_real<N> &a, const high_precision_real<N> &b,
              high_precision_real<N> &result) {
   for (int i = N - 1; i >= 0; i--)
     for (int j = N - 1 - i; j >= 0; j--) {
-      auto m = (uint128_t)a.fraction[i] * (uint128_t)b.fraction[j];
+#if _WIN32
+      std::uint64_t m2;
+      std::uint64_t m1 = _mul128(a.fraction[i], b.fraction[j], &m2);
+#else
+      auto m = (__uint128_t)a.fraction[i] * (__uint128_t)b.fraction[j];
       std::uint64_t m1 = m;
       std::uint64_t m2 = m >> 64;
+#endif
       auto ij = i + j;
       result.fraction[ij] += m1;
       int carry = result.fraction[ij] < m1;
