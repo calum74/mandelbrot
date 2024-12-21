@@ -1,3 +1,23 @@
+To view these fractals, please visit [MandelbrotQt](https://https://github.com/calum74/mandelbrot-qt) for an application which renders these fractals.
+
+# About this repo
+
+This repository contains algorithms for computing the Mandelbrot set. Although the basic Mandelbrot set is quite easy to compute, more advanced algorithms are necessary for good performance at very deep zooms, such as using high-precision arithmetic, perturbation theory and Taylor series approximations.
+
+The algorithms have been organised as a template library, to make it easy to modify the algorithms to for example add different data types, or to have different data types for different levels of precision.
+
+In addition, Mandelbrot orbits have been implemented as C++ iterators.
+
+# Mandeldrop
+
+The Mandeldrop fractal is a variation of the Mandelbrot set, where each point is iterated according to `z -> z^2 + (1/c)`. This essentially inverts the image such that the black is on the outside instead of the image. However, this is a conformal mapping, so zooming in, the image looks the same as a regular Mandelbrot set.
+
+In order to rotate the image into a droplet, the image is transformed further by a multiplication of `-i` which merely rotates the image by π/2. So the final algorithm becomes `z -> z^2 + (-i/c)`. (Detail: the image is often rendered with the y-axis going downwards, hence the minus.)
+
+In order for this to work with perturbation theory, a little bit of mathing gives that we need to use the delta `id/(c*(c+d))`, where `c` is the reference orbit and `d` is the original delta. Then we can simply use the standard Mandelbrot algorithms to compute the image.
+
+I have seen some images of a Mandeldrop fractal before, so this idea is not original, but rotation through π/2 and use of perturbation theory might be new.
+
 # High precision perturbation
 
 Original work by Calum Grant.

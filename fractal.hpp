@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "ViewCoords.hpp"
 #include "plane.hpp"
