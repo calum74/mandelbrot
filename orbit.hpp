@@ -14,6 +14,8 @@
 
 #include "complex.hpp"
 #include <vector>
+#include <atomic>
+
 
 namespace mandelbrot {
 
