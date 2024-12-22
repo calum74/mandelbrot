@@ -182,11 +182,44 @@ template <int N> high_precision_real<N> operator-(high_precision_real<N> b) {
   return b;
 }
 
-template <int N>
-high_precision_real<N> inverse(const high_precision_real<N> &b) {
+template <int N> int count_leading_zeros(const high_precision_real<N> &n) {
+  int c = 0;
+  for (int i = 0; i < N; ++i, c += 64) {
+    if (n.fraction[i]) {
+      for (std::uint64_t b = (std::uint64_t)1 << 63; b; c++, b >>= 1) {
+        if (b & n.fraction[i]) {
+          return c;
+        }
+      }
+    }
+  }
+  return c;
+}
 
-  // TODO!!!
-  return b;
+template <int N>
+high_precision_real<N> inverse(const high_precision_real<N> &d) {
+
+  // See
+  // https://en.wikipedia.org/wiki/Division_algorithm#Newton%E2%80%93Raphson_division
+
+  // Step 1: Scale d such that it's beween 0.5 and less than 1
+  // 1a, find out the number of leading zeros of b
+  int m = count_leading_zeros(d) - 64;
+  auto D2 = d << m; // Shift d left or right
+
+  // Step 2: Compute X = 48/17 − 32/17 × D'
+  std::cout << "D'=" << D2 << ' ';
+  std::cout << "32/17=" << high_precision_real<N>{32.0 / 17.0} << ' ';
+  std::cout << "D'*32/17=" << (D2 * high_precision_real<N>{32.0 / 17.0}) << " ";
+  high_precision_real<N> X = high_precision_real<N>{48.0 / 17.0} -
+                             D2 * high_precision_real<N>{32.0 / 17.0};
+  int iterations = std::ceil(std::log2(64 * N / std::log2(17)));
+  high_precision_real<N> one = 1;
+  for (int i = 0; i < iterations; ++i) {
+    std::cout << "d2=" << D2 << " x=" << X << std::endl;
+    X = X + X * (one - D2 * X);
+  }
+  return X << m;
 }
 
 template <int N>
@@ -241,31 +274,36 @@ void raw_add(const high_precision_real<N> &a, const high_precision_real<N> &b,
 template <int N>
 void raw_mul(const high_precision_real<N> &a, const high_precision_real<N> &b,
              high_precision_real<N> &result) {
-  for (int i = N - 1; i >= 0; i--)
-    for (int j = N - 1 - i; j >= 0; j--) {
+  for (int i = N - 1; i >= 0; i--) {
+    for (int j = N - 1; j >= 0; j--) {
 #if _WIN32
       std::uint64_t m2;
       std::uint64_t m1 = (__int64)_mul128(
           (__int64)a.fraction[i], (__int64)b.fraction[j], (__int64 *)&m2);
 #else
-      auto m = (__uint128_t)a.fraction[i] * (__uint128_t)b.fraction[j];
+      __uint128_t m = (__uint128_t)a.fraction[i] * (__uint128_t)b.fraction[j];
       std::uint64_t m1 = m;
       std::uint64_t m2 = m >> 64;
 #endif
       auto ij = i + j;
-      result.fraction[ij] += m1;
-      int carry = result.fraction[ij] < m1;
-      m2 += carry;
-      if (ij > 0) {
+      int carry;
+      if (ij < N) {
+        result.fraction[ij] += m1;
+        carry = result.fraction[ij] < m1;
+        m2 += carry;
+      } else
+        carry = 0;
+      if (ij > 0 && ij <= N) {
         ij--;
         result.fraction[ij] += m2;
         carry = result.fraction[ij] < m2;
       }
-      while (carry && ij-- > 0) {
+      while (carry && ij < N && ij-- > 0) {
         result.fraction[ij] += carry;
         carry = result.fraction[ij] == 0;
       }
     }
+  }
 }
 
 template <int N>
@@ -441,9 +479,9 @@ std::istream &operator>>(std::istream &is, high_precision_real<N> &n) {
   return is;
 }
 
-template <int N> int count_zeros(const high_precision_real<N> &n) {
-  int c = 0;
-  for (int i = 1; i < N; ++i, c += 64) {
+template <int N> int count_fractional_zeros(const high_precision_real<N> &n) {
+  int c = 1;
+  for (int i = 0; i < N; ++i, c += 64) {
     if (n.fraction[i]) {
       for (std::uint64_t b = (std::uint64_t)1 << 63; b; c++, b >>= 1) {
         if (b & n.fraction[i]) {
@@ -453,6 +491,52 @@ template <int N> int count_zeros(const high_precision_real<N> &n) {
     }
   }
   return 0;
+}
+
+template <int N>
+void raw_shiftleft(const high_precision_real<N> &a, high_precision_real<N> &b,
+                   int n) {
+  std::uint64_t extra = 0;
+  int m = n / 64;
+  n = n % 64;
+  for (int i = N - 1; i >= 0; i--) {
+    if (i + m < N) {
+      b.fraction[i] = a.fraction[i + m] << n | extra;
+      extra = a.fraction[i + m] >> (64 - n);
+    } else
+      b.fraction[i] = 0;
+  }
+}
+
+template <int N>
+void raw_shiftright(const high_precision_real<N> &a, high_precision_real<N> &b,
+                    int n) {
+  std::uint64_t extra = 0;
+  int m = n / 64;
+  n = n % 64;
+  for (int i = 0; i < N; i++) {
+    if (i - m >= 0) {
+      b.fraction[i] = a.fraction[i - m] >> n | extra;
+      extra = a.fraction[i - m] << (64 - n);
+    } else
+      b.fraction[i] = 0;
+  }
+}
+
+template <int N>
+high_precision_real<N> operator<<(const high_precision_real<N> &n, int shift) {
+  high_precision_real<N> result;
+  result.negative = n.negative;
+  if (shift > 0)
+    raw_shiftleft(n, result, shift);
+  else
+    raw_shiftright(n, result, -shift);
+  return result;
+}
+
+template <int N>
+high_precision_real<N> operator>>(const high_precision_real<N> &n, int shift) {
+  return n << -shift;
 }
 
 } // namespace fractals
