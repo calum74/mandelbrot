@@ -4,6 +4,8 @@
 #include "fractal.hpp"
 #include "orbit.hpp"
 
+#include <cassert>
+
 template <int N>
 bool valid_precision(const fractals::high_precision_real<N> &n) {
   for (int i = 0; i < N - 2; ++i) {
@@ -218,7 +220,9 @@ public:
 
     // Hack: Just use doubles
     // TODO: Need an inverse
-    BigReal n = 1.0 / convert<double>(mandelbrot::norm(z));
+    auto n = inverse(mandelbrot::norm(z));
+    // assert(convert<double>(mandelbrot::norm(z)) < 100.0);
+    // BigReal n = 1.0 / convert<double>(mandelbrot::norm(z));
     return {-imag(z) * n, -real(z) * n};
   }
 
@@ -312,7 +316,7 @@ using MD = PerturbatedMandeldropCalculation<
     std::complex<double>, std::complex<fractals::high_precision_real<N>>>;
 
 const fractals::PointwiseFractal &md =
-    fractals::make_fractal<SimpleMandeldrop, MD<4>, MD<6>, MD<10>,
+    fractals::make_fractal<SimpleMandeldrop, /* MD<4>, */ MD<6>, MD<10>,
                            MD<16> /*, MB<20> */>("Mandeldrop");
 
 void mandelbrot::add_fractals(fractals::Registry &r) {

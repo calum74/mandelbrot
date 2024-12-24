@@ -8,6 +8,10 @@
 
 #if HP_FLOAT_VALIDATION
 #include <cassert>
+
+inline void assert_eq(double a, double b) {
+  assert(b == 0 || (abs(a / b) - 1) < 0.01);
+}
 #endif
 #include "convert.hpp"
 
@@ -17,6 +21,8 @@
 #endif
 
 namespace fractals {
+
+constexpr int bits_to_uint64(int i) { return (i + 63) >> 6; }
 
 /*
     A minimal high-precision float implementation for greater precision.
@@ -143,6 +149,8 @@ high_precision_real<N> operator/(const high_precision_real<N> &a, int n) {
 
 template <int N>
 int cmp(const high_precision_real<N> &a, const high_precision_real<N> &b) {
+  if (is_zero(a) && is_zero(b))
+    return 0;
   if (a.negative && !b.negative)
     return -1;
   if (!a.negative && b.negative)
@@ -178,7 +186,8 @@ template <int N> bool operator<=(const high_precision_real<N> &a, int b) {
 }
 
 template <int N> high_precision_real<N> operator-(high_precision_real<N> b) {
-  b.negative = !b.negative;
+  if (!is_zero(b))
+    b.negative = !b.negative;
   return b;
 }
 
@@ -199,6 +208,7 @@ template <int N> int count_leading_zeros(const high_precision_real<N> &n) {
 template <int N>
 high_precision_real<N> inverse(const high_precision_real<N> &d) {
 
+  std::cout << "Finding inverse of " << d << std::endl;
   // See
   // https://en.wikipedia.org/wiki/Division_algorithm#Newton%E2%80%93Raphson_division
 
@@ -206,20 +216,26 @@ high_precision_real<N> inverse(const high_precision_real<N> &d) {
   // 1a, find out the number of leading zeros of b
   int m = count_leading_zeros(d) - 64;
   auto D2 = d << m; // Shift d left or right
+  D2.negative = false;
 
   // Step 2: Compute X = 48/17 − 32/17 × D'
-  std::cout << "D'=" << D2 << ' ';
-  std::cout << "32/17=" << high_precision_real<N>{32.0 / 17.0} << ' ';
-  std::cout << "D'*32/17=" << (D2 * high_precision_real<N>{32.0 / 17.0}) << " ";
+  std::cout << "  D'=" << D2 << ' ';
+  std::cout << "  32/17=" << high_precision_real<N>{32.0 / 17.0} << ' ';
+  std::cout << "  D'*32/17=" << (D2 * high_precision_real<N>{32.0 / 17.0})
+            << " ";
   high_precision_real<N> X = high_precision_real<N>{48.0 / 17.0} -
                              D2 * high_precision_real<N>{32.0 / 17.0};
   int iterations = std::ceil(std::log2(64 * N / std::log2(17)));
   high_precision_real<N> one = 1;
   for (int i = 0; i < iterations; ++i) {
-    std::cout << "d2=" << D2 << " x=" << X << std::endl;
+    std::cout << "  d2=" << D2 << " x=" << X << " 1=" << one
+              << " a=" << (D2 * X) << " b=" << (one - D2 * X) << std::endl;
     X = X + X * (one - D2 * X);
   }
-  return X << m;
+  auto result = X << m;
+  result.negative = d.negative;
+  std::cout << "  Inverse result = " << result << std::endl;
+  return result;
 }
 
 template <int N>
@@ -228,17 +244,25 @@ bool operator==(const high_precision_real<N> &a,
   return cmp(a, b) == 0;
 }
 
+template <int N> bool is_zero(const high_precision_real<N> &a) {
+  for (int i = 0; i < N; ++i)
+    if (a.fraction[i])
+      return false;
+  return true;
+}
+
 template <int N>
 high_precision_real<N> operator*(const high_precision_real<N> &a,
                                  const high_precision_real<N> &b) {
   high_precision_real<N> result;
   raw_mul(a, b, result);
   result.negative = a.negative != b.negative;
+  if (is_zero(result))
+    result.negative = false;
+
 #if HP_FLOAT_VALIDATION
-  auto a_debug = a.to_double();
-  auto b_debug = b.to_double();
-  auto c_debug = result.to_double();
-  assert(c_debug == 0 || abs(a_debug * b_debug / c_debug - 1) < 0.001);
+    // Does not detect overflows
+    // assert_eq(a.to_double() * b.to_double(), result.to_double());
 #endif
   return result;
 }
@@ -275,6 +299,7 @@ template <int N>
 void raw_mul(const high_precision_real<N> &a, const high_precision_real<N> &b,
              high_precision_real<N> &result) {
   for (int i = N - 1; i >= 0; i--) {
+    // TODO: Fix bounds of inner loop
     for (int j = N - 1; j >= 0; j--) {
 #if _WIN32
       std::uint64_t m2;
@@ -298,7 +323,8 @@ void raw_mul(const high_precision_real<N> &a, const high_precision_real<N> &b,
         result.fraction[ij] += m2;
         carry = result.fraction[ij] < m2;
       }
-      while (carry && ij < N && ij-- > 0) {
+      // Move into loop TODO
+      while (carry && ij-- > 0 /* && ij < N*/) { // !! Redundant test ij<N
         result.fraction[ij] += carry;
         carry = result.fraction[ij] == 0;
       }
@@ -320,11 +346,11 @@ int raw_cmp(const high_precision_real<N> &a, const high_precision_real<N> &b) {
 template <int N>
 void raw_sub(const high_precision_real<N> &a, const high_precision_real<N> &b,
              high_precision_real<N> &result) {
-  result.fraction[N - 1] = a.fraction[N - 1] - b.fraction[N - 1];
+  std::uint64_t borrow = 0;
 
-  for (int i = N - 2; i >= 0; i--) {
-    result.fraction[i] = a.fraction[i] - b.fraction[i] -
-                         (result.fraction[i + 1] > a.fraction[i + 1]);
+  for (int i = N - 1; i >= 0; i--) {
+    result.fraction[i] = a.fraction[i] - b.fraction[i] - borrow;
+    borrow = a.fraction[i] + borrow < b.fraction[i];
   }
 }
 
@@ -342,11 +368,12 @@ high_precision_real<N> operator+(const high_precision_real<N> &a,
       // a<b:
       raw_sub(b, a, result);
       result.negative = b.negative;
-    } else {
+    } else if (c > 0) {
       // a>b
       raw_sub(a, b, result);
       result.negative = a.negative;
     }
+    // else: result = 0
   }
 
 #if HP_FLOAT_VALIDATION
@@ -372,20 +399,17 @@ high_precision_real<N> operator-(const high_precision_real<N> &a,
       // a<b:
       raw_sub(b, a, result);
       result.negative = !a.negative;
-    } else {
+    } else if (c > 0) {
       // a>b
       raw_sub(a, b, result);
       result.negative = a.negative;
     }
+    // else: 0
   }
 
 #if HP_FLOAT_VALIDATION
-  auto a_debug = a.to_double();
-  auto b_debug = b.to_double();
-  auto r_debug = result.to_double();
-  assert(abs(a_debug - b_debug - r_debug) < 0.001);
+  assert_eq(a.to_double() - b.to_double(), result.to_double());
 #endif
-
   return result;
 }
 

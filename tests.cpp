@@ -12,6 +12,20 @@
 
 using namespace fractals;
 
+template <int N>
+void assert_eq(const high_precision_real<N> &a, const high_precision_real<N> &b,
+               std::uint64_t tolerance = 0xffff) {
+  assert(a.negative == b.negative);
+
+  for (int i = 0; i < N - 1; i++) {
+    assert(a.fraction[i] == b.fraction[i]);
+  }
+  auto d = a.fraction[N - 1] - b.fraction[N - 1];
+  if (d < 0)
+    d = -d;
+  assert(d <= tolerance);
+}
+
 int main() {
   using namespace mandelbrot;
   using C = std::complex<double>;
@@ -102,6 +116,23 @@ int main() {
     H2 x{1.5};
     std::cout << (x << 1) << " " << (x >> 1) << " ";
     std::cout << inverse(H2{1 / 1.97254});
+  }
+
+  using H3 = high_precision_real<3>;
+  using H4 = high_precision_real<4>;
+
+  {
+    std::cout << inverse(H2{0.506960}) << ' ';
+
+    std::cout << inverse(H4{0.506960}) << ' ';
+    H3 tmp;
+    tmp.fraction[1] = (std::uint64_t)(-1);
+    tmp.fraction[2] = (std::uint64_t)(-1);
+    auto failure = H3{1} - tmp;
+
+    assert_eq(failure, H3{0});
+    std::cout << failure << ' ';
+    // assert(std::tostring(failure) == 0.000000);
   }
   return 0;
 }
