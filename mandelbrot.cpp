@@ -181,7 +181,7 @@ private:
   const fractals::plane<Real> coords;
 };
 
-const fractals::PointwiseFractal &inverseMb =
+const fractals::PointwiseFractal &naiveMandeldrop =
     fractals::make_fractal<SimpleMandeldrop>("Mandeldrop (low precision)");
 
 template <typename LowPrecisionComplex, typename HighPrecisionComplex>
@@ -316,12 +316,12 @@ using MD = PerturbatedMandeldropCalculation<
     std::complex<double>, std::complex<fractals::high_precision_real<N>>>;
 
 const fractals::PointwiseFractal &md =
-    fractals::make_fractal<SimpleMandeldrop, /* MD<4>, */ MD<6>, MD<10>,
+    fractals::make_fractal<SimpleMandeldrop, MD<4>, MD<6>, MD<10>,
                            MD<16> /*, MB<20> */>("Mandeldrop");
 
 void mandelbrot::add_fractals(fractals::Registry &r) {
   r.add(mb);
-  r.add(cubicMb);
-  r.add(inverseMb);
   r.add(md);
+  r.add(naiveMandeldrop);
+  r.add(cubicMb);
 }

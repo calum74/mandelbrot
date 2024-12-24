@@ -4,15 +4,6 @@
 #include <cstdint>
 #include <iostream>
 
-#define HP_FLOAT_VALIDATION 0
-
-#if HP_FLOAT_VALIDATION
-#include <cassert>
-
-inline void assert_eq(double a, double b) {
-  assert(b == 0 || (abs(a / b) - 1) < 0.01);
-}
-#endif
 #include "convert.hpp"
 
 #if _WIN32
@@ -208,7 +199,6 @@ template <int N> int count_leading_zeros(const high_precision_real<N> &n) {
 template <int N>
 high_precision_real<N> inverse(const high_precision_real<N> &d) {
 
-  std::cout << "Finding inverse of " << d << std::endl;
   // See
   // https://en.wikipedia.org/wiki/Division_algorithm#Newton%E2%80%93Raphson_division
 
@@ -219,22 +209,15 @@ high_precision_real<N> inverse(const high_precision_real<N> &d) {
   D2.negative = false;
 
   // Step 2: Compute X = 48/17 − 32/17 × D'
-  std::cout << "  D'=" << D2 << ' ';
-  std::cout << "  32/17=" << high_precision_real<N>{32.0 / 17.0} << ' ';
-  std::cout << "  D'*32/17=" << (D2 * high_precision_real<N>{32.0 / 17.0})
-            << " ";
   high_precision_real<N> X = high_precision_real<N>{48.0 / 17.0} -
                              D2 * high_precision_real<N>{32.0 / 17.0};
   int iterations = std::ceil(std::log2(64 * N / std::log2(17)));
   high_precision_real<N> one = 1;
   for (int i = 0; i < iterations; ++i) {
-    std::cout << "  d2=" << D2 << " x=" << X << " 1=" << one
-              << " a=" << (D2 * X) << " b=" << (one - D2 * X) << std::endl;
     X = X + X * (one - D2 * X);
   }
   auto result = X << m;
   result.negative = d.negative;
-  std::cout << "  Inverse result = " << result << std::endl;
   return result;
 }
 
