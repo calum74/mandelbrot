@@ -282,8 +282,8 @@ private:
     stored_taylor_series_orbit(ReferenceOrbit r, int max_iterations,
                                std::atomic<bool> &stop)
         : reference(r) {
-      for (int i = 0; !stop && i <= max_iterations; ++i)
-        (*this)[i]; // Force evaluation
+      for (int i = 0; !stop && i <= max_iterations && !escaped((*this)[i]); ++i)
+        ; // Force evaluation of the reference orbit
     }
 
     // Gets the corresponding epsilon (dz) for a given delta (dc)
@@ -362,7 +362,7 @@ private:
         perturbation_orbit<value_type, stored_taylor_series_orbit>;
 
     relative_orbit make_relative_orbit(Complex delta, int limit) const {
-      auto s = find_iterations_to_skip(delta, limit);
+      auto s = find_iterations_to_skip(delta, entries.size());
       return {*this, delta, s.first, s.second};
     }
   };
