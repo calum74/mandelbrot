@@ -41,10 +41,6 @@ template <int N> void test_arithmetic(const hp<N> &a, const hp<N> &b) {
   assert(a - a == zero);
   assert(((a + a) >> 1) == a);
   assert(a - b == -(b - a));
-  if (a + b - b != a) {
-    auto dbg1 = a + b;
-    auto dbg2 = dbg1 - b;
-  }
   assert(a + b - b == a);
 
   assert(a == -(-a));
@@ -99,10 +95,11 @@ int main() {
   // Initializers
   assert(hp<2>{}.to_double() == 0);
 
-  test<2>(100);
-  test<3>(100);
-  test<4>(100);
-  test<10>(100);
+  int n = 1000;
+  test<2>(n);
+  test<3>(n);
+  test<4>(n);
+  test<10>(n);
 
   // To string
   assert(to_string(hp<2>{}) == "0.000000");

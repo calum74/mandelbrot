@@ -487,8 +487,8 @@ std::istream &operator>>(std::istream &is, high_precision_real<N> &n) {
 }
 
 template <int N> int count_fractional_zeros(const high_precision_real<N> &n) {
-  int c = 1;
-  for (int i = 0; i < N; ++i, c += 64) {
+  int c = 0; // ?? Why 1
+  for (int i = 1; i < N; ++i, c += 64) {
     if (n.fraction[i]) {
       for (std::uint64_t b = (std::uint64_t)1 << 63; b; c++, b >>= 1) {
         if (b & n.fraction[i]) {
