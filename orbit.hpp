@@ -55,6 +55,14 @@ template <int N, int M> struct choose_impl {
       choose_impl<N - 1, M - 1>::value + choose_impl<N - 1, M>::value;
 };
 
+template <int M> struct choose_impl<0, M> {
+  static const int value = 0;
+};
+
+template <> struct choose_impl<0, 1> {
+  static const int value = 0;
+};
+
 template <int N> struct choose_impl<N, N> {
   static const int value = 1;
 };
@@ -74,6 +82,7 @@ template <int N, int M> constexpr int choose() {
 // The complex arithmetic required to calculate a Mandelbrot set
 // We consider the generalized Mandelbrot set, including higher orders
 // such as the cubic, but exclude non-integer orders.
+// TODO: Specialise this for N=2 for speed
 template <int N> struct mandelbrot_calculation {
 
   // The general form of the calculation z -> z^N + c
@@ -121,9 +130,8 @@ template <int N> struct mandelbrot_calculation {
   static Complex C(const Complex &z, const Complex &A_prev,
                    const Complex &B_prev, const Complex &C_prev) {
     return choose<N, 1>() * pow<N - 1>(z) * C_prev +
-           choose<N, 2>() * pow<N - 2>(z) * 2 * A_prev * B_prev +
-           choose<N, 3>() * pow<N - 3>(z) *
-               pow<3>(A_prev); // Note, for N=2, this term should evaluate to 0
+           choose<N, 2>() * pow<N - 2>(z) * Complex{2} * A_prev * B_prev +
+           (N > 2 ? choose<N, 3>() * pow<N - 3>(z) * pow<3>(A_prev) : 0);
   }
 
   // TODO: Can generalize this further to calculate the Nth Taylor series term
@@ -262,7 +270,7 @@ private:
 
     z = z_0 + A.delta + B.delta^2 + C.delta^3
   */
-  template <typename Complex, typename ReferenceOrbit>
+  template <typename Complex, typename ReferenceOrbit, typename Calculation>
   class taylor_series_orbit {
   public:
     using value_type = Complex;
@@ -283,13 +291,14 @@ private:
 
       // See
       // https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set
-      auto z_2 = 2 * **this;
-      auto A_next = z_2 * A + Complex{1.0, 0.0};
-      auto B_next = z_2 * B + A * A;
-      auto C_next = z_2 * C + 2 * A * B;
+      auto A_next = Calculation::A(**this, A);
+      auto B_next = Calculation::B(**this, A, B);
+      auto C_next = Calculation::C(**this, A, B, C);
+
       A = A_next;
       B = B_next;
       C = C_next;
+
       ++orbit;
       return *this;
     }
@@ -430,7 +439,7 @@ private:
       }
     };
 
-    taylor_series_orbit<Complex, ReferenceOrbit> reference;
+    taylor_series_orbit<Complex, ReferenceOrbit, Calculation> reference;
     std::vector<Entry> entries;
 
     void get_next() {
