@@ -24,7 +24,7 @@ template <int Order, typename C, bool is_even = (Order % 2 == 0)>
 struct pow_impl;
 
 template <typename C> struct pow_impl<2, C, true> {
-  static C eval(const C &c) { return c * c; }
+  static C eval(const C &c) { return square(c); }
 };
 
 template <typename C> struct pow_impl<1, C, false> {
@@ -78,15 +78,27 @@ template <int N> struct mandelbrot_calculation {
     return pow<N>(z) + c;
   }
 
+  template <int J> struct calculate_epsilon {
+    template <typename Complex>
+    static Complex eval(const Complex &z, const Complex &e) {
+      return choose<N, J>() * pow<J>(z) * pow<N - J>(e) +
+             calculate_epsilon<J + 1>(z, e);
+    }
+  };
+
+  template <> struct calculate_epsilon<N> {
+    template <typename Complex>
+    static Complex eval(const Complex &z, const Complex &e) {
+      return {0, 0};
+    }
+  };
+
   // When performing perturbations (for higher precision), here is the general
   // formula for evaluating the epsilon (dz)
   template <typename Complex>
   static Complex step_epsilon(const Complex &z, const Complex &d,
                               const Complex &e) {
-    Complex n = d;
-    for (int j = 0; j < N; j++)
-      n += choose<N, j>() * pow<j>(z, j) * pow(e, N - j);
-    return n;
+    return d + calculate_epsilon<0>::eval(z, e);
   }
 
   template <typename Complex>
@@ -105,30 +117,18 @@ template <int N> struct mandelbrot_calculation {
   static Complex C(const Complex &z, const Complex &A_prev,
                    const Complex &B_prev, const Complex &C_prev) {
     return choose<N, 1>() * pow<N - 1>(z) * C_prev +
-           choose<N, 2>() * pow<N - 2>(z) * A_prev * B_prev + // ?? Factor of 2
+           choose<N, 2>() * pow<N - 2>(z) * 2 * A_prev * B_prev +
            choose<N, 3>() * pow<N - 3>(z) *
-               pow<2>(A_prev); // Note, for N=2, this term should evaluate to 0
+               pow<3>(A_prev); // Note, for N=2, this term should evaluate to 0
   }
 
-  // Need an algorithm to enumerate all terms for j, k
-  // Then we need to pick out the term for a given k, and enumerate all other
-  // options
-
-  /*
-    Taylor series generation
-    We need to generalize the computation of the Taylor series in 2 ways:
-    1) Compute an arbitrary number of terms
-    2) Handle arbitrary integer powers.
-
-    Observe the implementation of step_epsilon().
-
-  */
+  // TODO: Can generalize this further to calculate the Nth Taylor series term
 };
 
 /*
   A basic_orbit iterates the escape sequence manually.
 */
-template <typename Complex> class basic_orbit {
+template <typename Complex, typename Calculation> class basic_orbit {
 public:
   using value_type = Complex;
 
@@ -137,7 +137,7 @@ public:
   const value_type &operator*() const { return z; }
 
   basic_orbit &operator++() {
-    z = step(z, c);
+    z = Calculation::step(z, c);
     return *this;
   }
 
@@ -145,7 +145,8 @@ private:
   value_type c, z;
 };
 
-template <typename C> basic_orbit<C> make_basic_orbit(const C &c) {
+template <typename Calculation, typename Complex>
+basic_orbit<Complex, Calculation> make_basic_orbit(const Complex &c) {
   return {c};
 }
 
@@ -183,9 +184,11 @@ private:
   low-precision sequence. This is because most algorithms don't need the
   high-precision number.
  */
-template <typename LowPrecisionComplex, typename HighPrecisionComplex>
+template <typename LowPrecisionComplex, typename HighPrecisionComplex,
+          typename Calculation>
 using high_precision_orbit =
-    converted_orbit<LowPrecisionComplex, basic_orbit<HighPrecisionComplex>>;
+    converted_orbit<LowPrecisionComplex,
+                    basic_orbit<HighPrecisionComplex, Calculation>>;
 
 template <typename C, typename Ref> class relative_orbit {
 public:

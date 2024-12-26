@@ -22,7 +22,8 @@ bool valid_precision(const fractals::high_precision_real<N> &n) {
 // Taylor series to skip iterations. The algorithms are implemented in
 // orbit.hpp. The class is templated so that we can configure the data types
 // for higher resolution rendering if required.
-template <typename LowPrecisionComplex, typename HighPrecisionComplex>
+template <typename LowPrecisionComplex, typename HighPrecisionComplex,
+          typename Calculation>
 class PerturbatedMandelbrotCalculation : public fractals::PointwiseCalculation {
 public:
   using SmallReal = typename LowPrecisionComplex::value_type;
@@ -37,7 +38,7 @@ public:
       : max_iterations(c.max_iterations), coords(c, w, h), ref_x(w / 2),
         ref_y(h / 2),
         reference_orbit{
-            mandelbrot::make_basic_orbit(HighPrecisionComplex{
+            mandelbrot::make_basic_orbit<Calculation>(HighPrecisionComplex{
                 coords.x0 + fractals::convert<BigReal>(coords.dx * ref_x),
                 coords.y0 + fractals::convert<BigReal>(coords.dy * ref_y)}),
             max_iterations, stop} {}
@@ -94,13 +95,15 @@ private:
   // The calculated reference orbit, together with Taylor series terms for the
   // epsilon/dz for each iteration.
   mandelbrot::stored_taylor_series_orbit<
-      LowPrecisionComplex, mandelbrot::basic_orbit<HighPrecisionComplex>>
+      LowPrecisionComplex,
+      mandelbrot::basic_orbit<HighPrecisionComplex, Calculation>>
       reference_orbit;
 };
 
 template <int N>
 using MB = PerturbatedMandelbrotCalculation<
-    std::complex<double>, std::complex<fractals::high_precision_real<N>>>;
+    std::complex<double>, std::complex<fractals::high_precision_real<N>>,
+    mandelbrot::mandelbrot_calculation<2>>;
 
 // Supply a list of fractals to `make_fractal`, which will create a factory
 // that selects the best fractal at each resolution. We need different
@@ -185,7 +188,8 @@ private:
 const fractals::PointwiseFractal &naiveMandeldrop =
     fractals::make_fractal<SimpleMandeldrop>("Mandeldrop (low precision)");
 
-template <typename LowPrecisionComplex, typename HighPrecisionComplex>
+template <typename LowPrecisionComplex, typename HighPrecisionComplex,
+          typename Calculation>
 class PerturbatedMandeldropCalculation : public fractals::PointwiseCalculation {
 public:
   /*
@@ -237,7 +241,7 @@ public:
         ref_y(h / 2), c0{convert<SmallReal>(coords.x0) + (coords.dx * ref_x),
                          convert<SmallReal>(coords.y0) + (coords.dy * ref_y)},
         reference_orbit{
-            mandelbrot::make_basic_orbit(map(HighPrecisionComplex{
+            mandelbrot::make_basic_orbit<Calculation>(map(HighPrecisionComplex{
                 coords.x0 + fractals::convert<BigReal>(coords.dx * ref_x),
                 coords.y0 + fractals::convert<BigReal>(coords.dy * ref_y)})),
             max_iterations, stop} {}
@@ -297,13 +301,15 @@ private:
   // The calculated reference orbit, together with Taylor series terms for the
   // epsilon/dz for each iteration.
   mandelbrot::stored_taylor_series_orbit<
-      LowPrecisionComplex, mandelbrot::basic_orbit<HighPrecisionComplex>>
+      LowPrecisionComplex,
+      mandelbrot::basic_orbit<HighPrecisionComplex, Calculation>>
       reference_orbit;
 };
 
 template <int N>
 using MD = PerturbatedMandeldropCalculation<
-    std::complex<double>, std::complex<fractals::high_precision_real<N>>>;
+    std::complex<double>, std::complex<fractals::high_precision_real<N>>,
+    mandelbrot::mandelbrot_calculation<2>>;
 
 const fractals::PointwiseFractal &mandeldrop_fractal =
     fractals::make_fractal<SimpleMandeldrop, MD<4>, MD<6>, MD<10>,
