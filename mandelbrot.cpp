@@ -113,9 +113,25 @@ const fractals::PointwiseFractal &mandelbrot_fractal =
     fractals::make_fractal<MB<2, 4>, MB<2, 6>, MB<2, 10>, MB<2, 16>>(
         "Mandelbrot");
 
-const fractals::PointwiseFractal &cubic_mandelbrot_fractal =
+const fractals::PointwiseFractal &mandelbrot3_fractal =
     fractals::make_fractal<MB<3, 4>, MB<3, 6>, MB<3, 10>, MB<3, 16>>(
         "Cubic Mandelbrot");
+
+const fractals::PointwiseFractal &mandelbrot4_fractal =
+    fractals::make_fractal<MB<4, 4>, MB<4, 6>, MB<4, 10>, MB<4, 16>>(
+        "Mandelbrot (power 4)");
+
+const fractals::PointwiseFractal &mandelbrot5_fractal =
+    fractals::make_fractal<MB<5, 4>, MB<5, 6>, MB<5, 10>, MB<5, 16>>(
+        "Mandelbrot (power 5)");
+
+const fractals::PointwiseFractal &mandelbrot6_fractal =
+    fractals::make_fractal<MB<6, 4>, MB<6, 6>, MB<6, 10>, MB<6, 16>>(
+        "Mandelbrot (power 6)");
+
+const fractals::PointwiseFractal &mandelbrot7_fractal =
+    fractals::make_fractal<MB<7, 4>, MB<7, 6>, MB<7, 10>, MB<7, 16>>(
+        "Mandelbrot (power 7)");
 
 class SimpleCubicMandelbrot : public fractals::PointwiseCalculation {
 public:

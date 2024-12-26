@@ -4,4 +4,8 @@
 
 extern const fractals::PointwiseFractal &mandelbrot_fractal;
 extern const fractals::PointwiseFractal &mandeldrop_fractal;
-extern const fractals::PointwiseFractal &cubic_mandelbrot_fractal;
+extern const fractals::PointwiseFractal &mandelbrot3_fractal;
+extern const fractals::PointwiseFractal &mandelbrot4_fractal;
+extern const fractals::PointwiseFractal &mandelbrot5_fractal;
+extern const fractals::PointwiseFractal &mandelbrot6_fractal;
+extern const fractals::PointwiseFractal &mandelbrot7_fractal;
