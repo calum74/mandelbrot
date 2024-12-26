@@ -31,8 +31,6 @@ public:
   }
 };
 
-const fractals::PointwiseFractal &circle =
+const fractals::PointwiseFractal &circle_fractal =
     fractals::make_fractal<Circle<double>,
                            Circle<fractals::high_precision_real<6>>>("Circle");
-
-void fractals::register_fractals(fractals::Registry &r) { r.add(circle); }

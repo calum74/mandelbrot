@@ -1,10 +1,7 @@
 #pragma once
 
-#include "complex.hpp"
 #include "fractal.hpp"
 
-extern const fractals::PointwiseFractal &mb;
-
-namespace mandelbrot {
-void add_fractals(fractals::Registry &);
-}
+extern const fractals::PointwiseFractal &mandelbrot_fractal;
+extern const fractals::PointwiseFractal &mandeldrop_fractal;
+extern const fractals::PointwiseFractal &cubic_mandelbrot_fractal;

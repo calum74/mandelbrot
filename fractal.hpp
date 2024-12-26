@@ -103,9 +103,7 @@ public:
   listFractals() const = 0;
 };
 
-void register_fractals(Registry &r);
-void register_mandelbrot(Registry &r);
-
+// Perhaps this isn't useful
 std::unique_ptr<Registry> make_registry();
 
 }; // namespace fractals

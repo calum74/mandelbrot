@@ -106,7 +106,7 @@ using MB = PerturbatedMandelbrotCalculation<
 // that selects the best fractal at each resolution. We need different
 // implementations at different resolutions so that we don't lose precision or
 // use a slower algorithm than necessary.
-const fractals::PointwiseFractal &mb =
+const fractals::PointwiseFractal &mandelbrot_fractal =
     fractals::make_fractal<MB<4>, MB<6>, MB<10>, MB<16> /*, MB<20> */>(
         "Mandelbrot");
 
@@ -142,7 +142,7 @@ private:
   const fractals::plane<Real> coords;
 };
 
-const fractals::PointwiseFractal &cubicMb =
+const fractals::PointwiseFractal &cubic_mandelbrot_fractal =
     fractals::make_fractal<SimpleCubicMandelbrot>("Cubic Mandelbrot");
 
 class SimpleMandeldrop : public fractals::PointwiseCalculation {
@@ -305,13 +305,6 @@ template <int N>
 using MD = PerturbatedMandeldropCalculation<
     std::complex<double>, std::complex<fractals::high_precision_real<N>>>;
 
-const fractals::PointwiseFractal &md =
+const fractals::PointwiseFractal &mandeldrop_fractal =
     fractals::make_fractal<SimpleMandeldrop, MD<4>, MD<6>, MD<10>,
                            MD<16> /*, MB<20> */>("Mandeldrop");
-
-void mandelbrot::add_fractals(fractals::Registry &r) {
-  r.add(mb);
-  r.add(md);
-  r.add(naiveMandeldrop);
-  r.add(cubicMb);
-}
