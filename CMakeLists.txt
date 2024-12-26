@@ -3,7 +3,7 @@ project(mandelbrot)
 set(CMAKE_CXX_STANDARD 23)
 enable_testing()
 
-add_library(mandelbrot center_finder.cpp mandelbrot.cpp registry.cpp)
+add_library(mandelbrot mandelbrot.cpp)
 add_library(extra_fractals circle.cpp)
 link_libraries(mandelbrot)
 
