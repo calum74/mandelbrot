@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <vector>
 
 #include "ViewCoords.hpp"
 #include "plane.hpp"
@@ -93,18 +92,6 @@ template <typename... Ts>
 detail::MultiPrecisionFactory<Ts...> make_fractal(const char *name) {
   return {name};
 }
-
-class Registry {
-public:
-  virtual ~Registry() = default;
-  virtual void add(const PointwiseFractal &) = 0;
-  virtual std::vector<
-      std::pair<std::string, const fractals::PointwiseFractal &>>
-  listFractals() const = 0;
-};
-
-// Perhaps this isn't useful
-std::unique_ptr<Registry> make_registry();
 
 }; // namespace fractals
 
