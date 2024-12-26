@@ -1,5 +1,6 @@
 #pragma once
 
+#include "complex.hpp"
 #include "fractal.hpp"
 
 extern const fractals::PointwiseFractal &mb;

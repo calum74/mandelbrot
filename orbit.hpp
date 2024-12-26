@@ -19,6 +19,7 @@
 
 namespace mandelbrot {
 
+// !! Move these into complex.hpp
 template <int Order, typename C, bool is_even = (Order % 2 == 0)>
 struct pow_impl;
 
@@ -45,10 +46,83 @@ template <int Order, typename C> C pow(const C &c) {
   return pow_impl<Order, C>::eval(c);
 }
 
-template <typename C, int Order> struct algorithm {
-  static C step(const C &z, const C &c) { return pow<Order>(z) + c; }
+template <int N, int M> struct choose_impl {
+  static const int value =
+      choose_impl<N - 1, M - 1>::value + choose_impl<N - 1, M>::value;
+};
 
-  static C epsilon_step(const C &z, const C &e) { return {}; }
+template <int N> struct choose_impl<N, N> {
+  static const int value = 1;
+};
+
+template <int N> struct choose_impl<N, 0> {
+  static const int value = 1;
+};
+
+template <int N> struct choose_impl<N, 1> {
+  static const int value = N;
+};
+
+template <int N, int M> constexpr int choose() {
+  return choose_impl<N, M>::value;
+}
+
+// The complex arithmetic required to calculate a Mandelbrot set
+// We consider the generalized Mandelbrot set, including higher orders
+// such as the cubic, but exclude non-integer orders.
+template <int N> struct mandelbrot_calculation {
+
+  // The general form of the calculation z -> z^N + c
+  template <typename Complex>
+  static Complex step(const Complex &z, const Complex &c) {
+    return pow<N>(z) + c;
+  }
+
+  // When performing perturbations (for higher precision), here is the general
+  // formula for evaluating the epsilon (dz)
+  template <typename Complex>
+  static Complex step_epsilon(const Complex &z, const Complex &d,
+                              const Complex &e) {
+    Complex n = d;
+    for (int j = 0; j < N; j++)
+      n += choose<N, j>() * pow<j>(z, j) * pow(e, N - j);
+    return n;
+  }
+
+  template <typename Complex>
+  static Complex A(const Complex &z, const Complex &A_prev) {
+    return choose<N, 1>() * pow<N - 1>(z) * A_prev + Complex{1, 0};
+  }
+
+  template <typename Complex>
+  static Complex B(const Complex &z, const Complex &A_prev,
+                   const Complex &B_prev) {
+    return choose<N, 1>() * pow<N - 1>(z) * B_prev +
+           choose<N, 2>() * pow<N - 2>(z) * pow<2>(A_prev);
+  }
+
+  template <typename Complex>
+  static Complex C(const Complex &z, const Complex &A_prev,
+                   const Complex &B_prev, const Complex &C_prev) {
+    return choose<N, 1>() * pow<N - 1>(z) * C_prev +
+           choose<N, 2>() * pow<N - 2>(z) * A_prev * B_prev + // ?? Factor of 2
+           choose<N, 3>() * pow<N - 3>(z) *
+               pow<2>(A_prev); // Note, for N=2, this term should evaluate to 0
+  }
+
+  // Need an algorithm to enumerate all terms for j, k
+  // Then we need to pick out the term for a given k, and enumerate all other
+  // options
+
+  /*
+    Taylor series generation
+    We need to generalize the computation of the Taylor series in 2 ways:
+    1) Compute an arbitrary number of terms
+    2) Handle arbitrary integer powers.
+
+    Observe the implementation of step_epsilon().
+
+  */
 };
 
 /*
