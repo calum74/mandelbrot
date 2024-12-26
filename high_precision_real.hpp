@@ -286,8 +286,8 @@ void raw_mul(const high_precision_real<N> &a, const high_precision_real<N> &b,
     for (int j = N - 1; j >= 0; j--) {
 #if _WIN32
       std::uint64_t m2;
-      std::uint64_t m1 = (__int64)_mul128(
-          (__int64)a.fraction[i], (__int64)b.fraction[j], (__int64 *)&m2);
+      std::uint64_t m1 = _umul128(
+          a.fraction[i], b.fraction[j], &m2);
 #else
       __uint128_t m = (__uint128_t)a.fraction[i] * (__uint128_t)b.fraction[j];
       std::uint64_t m1 = m;
