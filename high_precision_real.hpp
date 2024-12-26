@@ -547,3 +547,16 @@ high_precision_real<N> operator>>(const high_precision_real<N> &n, int shift) {
 }
 
 } // namespace fractals
+
+namespace std {
+template <int N>
+constexpr bool isinf(const fractals::high_precision_real<N> &) {
+  return false;
+}
+
+template <int N>
+constexpr bool isnan(const fractals::high_precision_real<N> &) {
+  return false;
+}
+
+} // namespace std

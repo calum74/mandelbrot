@@ -100,18 +100,22 @@ private:
       reference_orbit;
 };
 
-template <int N>
+template <int N, int P>
 using MB = PerturbatedMandelbrotCalculation<
-    std::complex<double>, std::complex<fractals::high_precision_real<N>>,
-    mandelbrot::mandelbrot_calculation<2>>;
+    std::complex<double>, std::complex<fractals::high_precision_real<P>>,
+    mandelbrot::mandelbrot_calculation<N>>;
 
 // Supply a list of fractals to `make_fractal`, which will create a factory
 // that selects the best fractal at each resolution. We need different
 // implementations at different resolutions so that we don't lose precision or
 // use a slower algorithm than necessary.
 const fractals::PointwiseFractal &mandelbrot_fractal =
-    fractals::make_fractal<MB<4>, MB<6>, MB<10>, MB<16> /*, MB<20> */>(
+    fractals::make_fractal<MB<2, 4>, MB<2, 6>, MB<2, 10>, MB<2, 16>>(
         "Mandelbrot");
+
+const fractals::PointwiseFractal &cubic_mandelbrot_fractal =
+    fractals::make_fractal<MB<3, 4>, MB<3, 6>, MB<3, 10>, MB<3, 16>>(
+        "Cubic Mandelbrot");
 
 class SimpleCubicMandelbrot : public fractals::PointwiseCalculation {
 public:
@@ -145,8 +149,9 @@ private:
   const fractals::plane<Real> coords;
 };
 
-const fractals::PointwiseFractal &cubic_mandelbrot_fractal =
-    fractals::make_fractal<SimpleCubicMandelbrot>("Cubic Mandelbrot");
+const fractals::PointwiseFractal &simple_cubic_mandelbrot_fractal =
+    fractals::make_fractal<SimpleCubicMandelbrot>(
+        "Cubic Mandelbrot (low precision)");
 
 class SimpleMandeldrop : public fractals::PointwiseCalculation {
 public:

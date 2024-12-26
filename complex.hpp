@@ -23,6 +23,12 @@ std::complex<T> operator*(int k, const std::complex<T> &c) {
   return {k * real_part(c), k * imag_part(c)};
 }
 
+template <typename T>
+std::complex<T> mul(const std::complex<T> &a, const std::complex<T> &b) {
+  return {real_part(a) * real_part(b) - imag_part(a) * imag_part(b),
+          imag_part(a) * real_part(b) + real_part(a) * imag_part(b)};
+}
+
 inline double to_double(double d) { return d; }
 inline double to_double(float f) { return f; }
 

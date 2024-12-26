@@ -34,7 +34,7 @@ template <typename C> struct pow_impl<1, C, false> {
 template <int Order, typename C> struct pow_impl<Order, C, true> {
   static C eval(const C &c) {
     auto r = pow_impl<Order / 2, C>::eval(c);
-    return r * r;
+    return square(r);
   }
 };
 
@@ -43,7 +43,7 @@ template <typename C> struct pow_impl<0, C, true> {
 };
 
 template <int Order, typename C> struct pow_impl<Order, C, false> {
-  static C eval(const C &c) { return c * pow_impl<Order - 1, C>::eval(c); }
+  static C eval(const C &c) { return mul(c, pow_impl<Order - 1, C>::eval(c)); }
 };
 
 template <int Order, typename C> C pow(const C &c) {
