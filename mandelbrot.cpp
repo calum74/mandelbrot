@@ -33,7 +33,7 @@ public:
   // at the center of the view. Because this calculation can be time-consuming,
   // we provide a "stop" flag which is used to exit the calculation early if the
   // view changes, to keep the UI responsive.
-  PerturbatedMandelbrotCalculation(const ViewCoords &c, int w, int h,
+  PerturbatedMandelbrotCalculation(const view_coords &c, int w, int h,
                                    std::atomic<bool> &stop)
       : max_iterations(c.max_iterations), coords(c, w, h), ref_x(w / 2),
         ref_y(h / 2),
@@ -47,13 +47,13 @@ public:
   // or to select a different implementation for different resolutions.
   // The call to `valid_precision` checks the size of the radius relative to
   // the size of a BigReal to make sure we have sufficient accuracy.
-  static bool valid_for(const ViewCoords &c) {
+  static bool valid_for(const view_coords &c) {
     return c.r < 2 && valid_precision(BigReal{c.r});
   }
 
   // The initial coordinates to view the Mandelbrot set.
   // Also specify the number of iterations (500).
-  static ViewCoords initial_coords() {
+  static view_coords initial_coords() {
     return {Calculation::order > 2 ? 0.0 : -0.5, 0, 2, 500};
   }
 
@@ -140,11 +140,11 @@ public:
   using Real = double;
   using Complex = std::complex<Real>;
 
-  static bool valid_for(const ViewCoords &c) { return c.r < 2; }
+  static bool valid_for(const view_coords &c) { return c.r < 2; }
 
-  static ViewCoords initial_coords() { return {0, 0, 2, 500}; }
+  static view_coords initial_coords() { return {0, 0, 2, 500}; }
 
-  SimpleCubicMandelbrot(const ViewCoords &c, int w, int h,
+  SimpleCubicMandelbrot(const view_coords &c, int w, int h,
                         std::atomic<bool> &stop)
       : max_iterations(c.max_iterations), coords(c, w, h) {}
 
@@ -176,13 +176,13 @@ public:
   using Real = double;
   using Complex = std::complex<Real>;
 
-  static bool valid_for(const ViewCoords &c) {
+  static bool valid_for(const view_coords &c) {
     return c.r <= 3 && convert<double>(c.r) > 1e-2; // 10;
   }
 
-  static ViewCoords initial_coords() { return {0, -1, 3, 500}; }
+  static view_coords initial_coords() { return {0, -1, 3, 500}; }
 
-  SimpleMandeldrop(const ViewCoords &c, int w, int h, std::atomic<bool> &stop)
+  SimpleMandeldrop(const view_coords &c, int w, int h, std::atomic<bool> &stop)
       : max_iterations(c.max_iterations), coords(c, w, h) {}
 
   double calculate(int x, int y) const override {
@@ -258,7 +258,7 @@ public:
   // at the center of the view. Because this calculation can be time-consuming,
   // we provide a "stop" flag which is used to exit the calculation early if the
   // view changes, to keep the UI responsive.
-  PerturbatedMandeldropCalculation(const ViewCoords &c, int w, int h,
+  PerturbatedMandeldropCalculation(const view_coords &c, int w, int h,
                                    std::atomic<bool> &stop)
       : max_iterations(c.max_iterations), coords(c, w, h), ref_x(w / 2),
         ref_y(h / 2), c0{convert<SmallReal>(coords.x0) + (coords.dx * ref_x),
@@ -273,13 +273,13 @@ public:
   // or to select a different implementation for different resolutions.
   // The call to `valid_precision` checks the size of the radius relative to
   // the size of a BigReal to make sure we have sufficient accuracy.
-  static bool valid_for(const ViewCoords &c) {
+  static bool valid_for(const view_coords &c) {
     return c.r < 2 && valid_precision(BigReal{c.r});
   }
 
   // The initial coordinates to view the Mandelbrot set.
   // Also specify the number of iterations (500).
-  static ViewCoords initial_coords() { return {0, -1, 3, 500}; }
+  static view_coords initial_coords() { return {0, -1, 3, 500}; }
 
   // Calculates a single point of the fractal, at position (x,y).
   // Look up the actual coordinates (or in this case, the delta from the center

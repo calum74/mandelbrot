@@ -2,7 +2,7 @@
 #include "high_precision_real.hpp"
 
 namespace fractals {
-struct ViewCoords {
+struct view_coords {
   using value_type = high_precision_real<20>;
   value_type x, y, r;
   int max_iterations;

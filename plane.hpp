@@ -1,6 +1,8 @@
 #pragma once
+#include "view_coords.hpp"
 
 namespace fractals {
+
 template <typename T, typename Tag = void> struct point {
   T x, y;
 };
@@ -10,7 +12,7 @@ template <typename C1, typename C2 = C1> struct plane {
   C1 x0, y0;
   C2 w, h, dx, dy;
 
-  plane(const ViewCoords &c, int pw, int ph) {
+  plane(const view_coords &c, int pw, int ph) {
     if (pw > ph) {
       y0 = convert<C1>(c.y) - convert<C1>(c.r);
       h = convert<C2>(c.r) * 2;
