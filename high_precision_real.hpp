@@ -546,17 +546,17 @@ high_precision_real<N> operator>>(const high_precision_real<N> &n, int shift) {
   return n << -shift;
 }
 
+template <int N>
+bool valid_precision(const fractals::high_precision_real<N> &n) {
+  for (int i = 0; i < N - 2; ++i) {
+    if (n.fraction[i])
+      return true;
+  }
+  // Ensure we have at least 64+32 = 96 bits
+  // We must have something in the top 32-bits of the last
+  return n.fraction[N - 2] & 0xffffffff00000000ull;
+}
+
+
 } // namespace fractals
 
-namespace std {
-template <int N>
-constexpr bool isinf(const fractals::high_precision_real<N> &) {
-  return false;
-}
-
-template <int N>
-constexpr bool isnan(const fractals::high_precision_real<N> &) {
-  return false;
-}
-
-} // namespace std

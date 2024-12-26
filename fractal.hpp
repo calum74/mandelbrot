@@ -15,6 +15,9 @@ public:
   virtual ~PointwiseCalculation() = default;
 
   virtual double calculate(int x, int y) const = 0;
+
+  virtual double average_iterations() const;
+  virtual double average_skipped() const;
 };
 
 class PointwiseFractal {
