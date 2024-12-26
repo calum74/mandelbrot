@@ -38,6 +38,10 @@ template <int Order, typename C> struct pow_impl<Order, C, true> {
   }
 };
 
+template <typename C> struct pow_impl<0, C, true> {
+  static C eval(const C &c) { return C{1, 0}; }
+};
+
 template <int Order, typename C> struct pow_impl<Order, C, false> {
   static C eval(const C &c) { return c * pow_impl<Order - 1, C>::eval(c); }
 };
@@ -82,7 +86,7 @@ template <int N> struct mandelbrot_calculation {
     template <typename Complex>
     static Complex eval(const Complex &z, const Complex &e) {
       return choose<N, J>() * pow<J>(z) * pow<N - J>(e) +
-             calculate_epsilon<J + 1>(z, e);
+             calculate_epsilon<J + 1>::eval(z, e);
     }
   };
 
@@ -96,8 +100,8 @@ template <int N> struct mandelbrot_calculation {
   // When performing perturbations (for higher precision), here is the general
   // formula for evaluating the epsilon (dz)
   template <typename Complex>
-  static Complex step_epsilon(const Complex &z, const Complex &d,
-                              const Complex &e) {
+  static Complex step_epsilon(const Complex &z, const Complex &e,
+                              const Complex &d) {
     return d + calculate_epsilon<0>::eval(z, e);
   }
 
@@ -190,7 +194,7 @@ using high_precision_orbit =
     converted_orbit<LowPrecisionComplex,
                     basic_orbit<HighPrecisionComplex, Calculation>>;
 
-template <typename C, typename Ref> class relative_orbit {
+template <typename C, typename Ref, typename Calculation> class relative_orbit {
 public:
   using value_type = C;
   relative_orbit(Ref ref, value_type delta)
@@ -201,7 +205,7 @@ public:
   value_type reference_z() const { return *reference_orbit; }
 
   relative_orbit &operator++() {
-    epsilon = 2 * *reference_orbit * epsilon + epsilon * epsilon + delta;
+    epsilon = Calculation::step_epsilon(*reference_orbit, epsilon, delta);
     ++reference_orbit;
     return *this;
   }
@@ -211,7 +215,7 @@ public:
 private:
   Ref reference_orbit;
   value_type delta, epsilon;
-  };
+};
 
   template <typename C, typename Ref> class stored_orbit {
   public:
@@ -246,8 +250,8 @@ private:
     int current;
   };
 
-  template <typename Rel>
-  relative_orbit<typename Rel::value_type, Rel>
+  template <typename Calculation, typename Rel>
+  relative_orbit<typename Rel::value_type, Rel, Calculation>
   make_relative_orbit(Rel rel, auto delta) {
     return {rel, delta};
   }
@@ -297,7 +301,7 @@ private:
   // An orbit that's relative to another reference orbit, so can be computed
   // using a low-precision complex number. ReferenceOrbit must be a
   // random-access orbit (supporting [])
-  template <typename Complex, typename ReferenceOrbit>
+  template <typename Complex, typename ReferenceOrbit, typename Calculation>
   class perturbation_orbit {
   public:
     using value_type = Complex;
@@ -314,7 +318,7 @@ private:
 
     perturbation_orbit &operator++() {
 
-      epsilon = 2 * reference[j] * epsilon + epsilon * epsilon + delta;
+      epsilon = Calculation::step_epsilon(reference[j], epsilon, delta);
       j++;
 
       auto z = reference[j] + epsilon;
@@ -349,7 +353,7 @@ private:
     (random-access) test. Complex is a lower-precision representation, e.g.
     std::complex<double> ReferenceOrbit is a high-precision orbit.
   */
-  template <typename Complex, typename ReferenceOrbit>
+  template <typename Complex, typename ReferenceOrbit, typename Calculation>
   class stored_taylor_series_orbit {
   public:
     using value_type = Complex;
@@ -436,7 +440,7 @@ private:
 
   public:
     using relative_orbit =
-        perturbation_orbit<value_type, stored_taylor_series_orbit>;
+        perturbation_orbit<value_type, stored_taylor_series_orbit, Calculation>;
 
     relative_orbit make_relative_orbit(Complex delta, int limit) const {
       auto s = find_iterations_to_skip(delta, entries.size());
