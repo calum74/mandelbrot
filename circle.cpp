@@ -1,3 +1,7 @@
+/*
+  Sample showing how to add new fractals.
+*/
+
 #include "fractal.hpp"
 
 // Define a new fractal by inheriting from fractals::PointwiseCalculation

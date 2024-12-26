@@ -1,3 +1,7 @@
+/*
+  Additional utilities and algorithms for dealing with complex numbers.
+*/
+
 #pragma once
 #include <complex>
 

@@ -7,9 +7,6 @@
     The current value of the orbit is given by operator*()
     The orbit is advanced using operator++().
     For random-access orbits, the value of an element is given by operator[].
-
-    I did not invent any of these algorithms, I've just wrapped them in C++
-    iterators.
 */
 
 #include "mandelbrot_calculation.hpp"
@@ -20,6 +17,10 @@ namespace mandelbrot {
 
 /*
   A basic_orbit iterates the escape sequence manually.
+  Often this is used as a "reference orbit" for more advanced algorithms.
+
+  Complex - the type of the complex number
+  Calculation - how to calculate the sequence
 */
 template <typename Complex, typename Calculation> class basic_orbit {
 public:
@@ -74,7 +75,7 @@ private:
 
 /*
   An orbit which is calculated internally to a high precision, but yields a
-  low-precision sequence. This is because most algorithms don't need the
+  low-precision sequence. Most algorithms don't need the
   high-precision number.
  */
 template <typename LowPrecisionComplex, typename HighPrecisionComplex,
@@ -106,44 +107,44 @@ private:
   value_type delta, epsilon;
 };
 
-  template <typename C, typename Ref> class stored_orbit {
-  public:
-    stored_orbit() : current{0} { push_next(); }
-    stored_orbit(Ref o) : orbit(o), current{0} { push_next(); }
+template <typename C, typename Ref> class stored_orbit {
+public:
+  stored_orbit() : current{0} { push_next(); }
+  stored_orbit(Ref o) : orbit(o), current{0} { push_next(); }
 
-    using value_type = C;
+  using value_type = C;
 
-    void push_next() {
-      values.push_back(convert_complex<C>(*orbit));
-      ++orbit;
-    }
-
-    value_type operator*() const { return values[current]; }
-
-    const value_type &operator[](int n) {
-      while (values.size() < n)
-        push_next();
-      return values[n];
-    }
-
-    stored_orbit &operator++() {
-      ++current;
-      if (current >= values.size())
-        push_next();
-      return *this;
-    }
-
-  private:
-    Ref orbit;
-    std::vector<value_type> values;
-    int current;
-  };
-
-  template <typename Calculation, typename Rel>
-  relative_orbit<typename Rel::value_type, Rel, Calculation>
-  make_relative_orbit(Rel rel, auto delta) {
-    return {rel, delta};
+  void push_next() {
+    values.push_back(convert_complex<C>(*orbit));
+    ++orbit;
   }
+
+  value_type operator*() const { return values[current]; }
+
+  const value_type &operator[](int n) {
+    while (values.size() < n)
+      push_next();
+    return values[n];
+  }
+
+  stored_orbit &operator++() {
+    ++current;
+    if (current >= values.size())
+      push_next();
+    return *this;
+  }
+
+private:
+  Ref orbit;
+  std::vector<value_type> values;
+  int current;
+};
+
+template <typename Calculation, typename Rel>
+relative_orbit<typename Rel::value_type, Rel, Calculation>
+make_relative_orbit(Rel rel, auto delta) {
+  return {rel, delta};
+}
 
   /*
     An orbit that also computes terms of a Taylor series approximation for

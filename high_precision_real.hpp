@@ -1,3 +1,13 @@
+/*
+  Naive implementation of some high-precision arithmetic in C++.
+
+  These algorithms are not particularly efficient, for example multiplication is
+  quadratic.
+
+  It's also not very well tested, so don't use this for anything other than
+  displaying pretty pictures.
+*/
+
 #pragma once
 
 #include <cmath>

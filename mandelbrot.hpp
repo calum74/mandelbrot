@@ -1,3 +1,5 @@
+// Lists the Mandelbrot fractals for embedding in an application
+
 #pragma once
 
 #include "fractal.hpp"

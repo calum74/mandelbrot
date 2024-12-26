@@ -168,3 +168,40 @@ using MD = PerturbatedMandeldropCalculation<
 const fractals::PointwiseFractal &mandeldrop_fractal =
     fractals::make_fractal<SimpleMandeldrop, MD<4>, MD<6>, MD<10>,
                            MD<16> /*, MB<20> */>("Mandeldrop");
+
+// Not used
+class SimpleCubicMandelbrot : public fractals::PointwiseCalculation {
+public:
+  using Real = double;
+  using Complex = std::complex<Real>;
+
+  static bool valid_for(const view_coords &c) { return c.r < 2; }
+
+  static view_coords initial_coords() { return {0, 0, 2, 500}; }
+
+  SimpleCubicMandelbrot(const view_coords &c, int w, int h,
+                        std::atomic<bool> &stop)
+      : max_iterations(c.max_iterations), coords(c, w, h) {}
+
+  double calculate(int x, int y) const override {
+    auto p = coords(x, y);
+    Complex c{p.x, p.y};
+    Complex z = 0;
+    int i = 0;
+    while (!mandelbrot::escaped(z)) {
+      if (i++ >= max_iterations)
+        return 0;
+      z = z * z * z + c;
+    }
+
+    return i;
+  }
+
+private:
+  const int max_iterations;
+  const fractals::plane<Real> coords;
+};
+
+const fractals::PointwiseFractal &simple_cubic_mandelbrot_fractal =
+    fractals::make_fractal<SimpleCubicMandelbrot>(
+        "Cubic Mandelbrot (low precision)");
