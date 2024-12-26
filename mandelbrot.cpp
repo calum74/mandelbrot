@@ -53,7 +53,9 @@ public:
 
   // The initial coordinates to view the Mandelbrot set.
   // Also specify the number of iterations (500).
-  static ViewCoords initial_coords() { return {-0.5, 0, 2, 500}; }
+  static ViewCoords initial_coords() {
+    return {Calculation::order > 2 ? 0.0 : -0.5, 0, 2, 500};
+  }
 
   // Calculates a single point of the fractal, at position (x,y).
   // Look up the actual coordinates (or in this case, the delta from the center

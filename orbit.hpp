@@ -85,6 +85,8 @@ template <int N, int M> constexpr int choose() {
 // TODO: Specialise this for N=2 for speed
 template <int N> struct mandelbrot_calculation {
 
+  static constexpr int order = N;
+
   // The general form of the calculation z -> z^N + c
   template <typename Complex>
   static Complex step(const Complex &z, const Complex &c) {
