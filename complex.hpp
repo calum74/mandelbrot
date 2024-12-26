@@ -12,12 +12,6 @@ template <typename Complex> Complex square(const Complex &c) {
           2 * real_part(c) * imag_part(c)};
 }
 
-template <typename T> struct complex_traits;
-
-template <typename T> struct complex_traits<std::complex<T>> {
-  using value_type = T;
-};
-
 template <typename T>
 std::complex<T> operator*(int k, const std::complex<T> &c) {
   return {k * real_part(c), k * imag_part(c)};
@@ -52,5 +46,64 @@ template <typename C> auto norm(const C &c) {
 }
 
 template <typename C> bool escaped(const C &c) { return norm(c) >= 4; }
+
+template <int Order, typename C, bool is_even = (Order % 2 == 0)>
+struct pow_impl;
+
+template <typename C> struct pow_impl<2, C, true> {
+  static C eval(const C &c) { return square(c); }
+};
+
+template <typename C> struct pow_impl<1, C, false> {
+  static C eval(const C &c) { return c; }
+};
+
+template <int Order, typename C> struct pow_impl<Order, C, true> {
+  static C eval(const C &c) {
+    auto r = pow_impl<Order / 2, C>::eval(c);
+    return square(r);
+  }
+};
+
+template <typename C> struct pow_impl<0, C, true> {
+  static C eval(const C &c) { return C{1, 0}; }
+};
+
+template <int Order, typename C> struct pow_impl<Order, C, false> {
+  static C eval(const C &c) { return mul(c, pow_impl<Order - 1, C>::eval(c)); }
+};
+
+template <int Order, typename C> C pow(const C &c) {
+  return pow_impl<Order, C>::eval(c);
+}
+
+template <int N, int M> struct choose_impl {
+  static const int value =
+      choose_impl<N - 1, M - 1>::value + choose_impl<N - 1, M>::value;
+};
+
+template <int M> struct choose_impl<0, M> {
+  static const int value = 0;
+};
+
+template <> struct choose_impl<0, 1> {
+  static const int value = 0;
+};
+
+template <int N> struct choose_impl<N, N> {
+  static const int value = 1;
+};
+
+template <int N> struct choose_impl<N, 0> {
+  static const int value = 1;
+};
+
+template <int N> struct choose_impl<N, 1> {
+  static const int value = N;
+};
+
+template <int N, int M> constexpr int choose() {
+  return choose_impl<N, M>::value;
+}
 
 } // namespace mandelbrot

@@ -12,132 +12,11 @@
     iterators.
 */
 
-#include "complex.hpp"
-#include <vector>
+#include "mandelbrot_calculation.hpp"
 #include <atomic>
-
+#include <vector>
 
 namespace mandelbrot {
-
-// !! Move these into complex.hpp
-template <int Order, typename C, bool is_even = (Order % 2 == 0)>
-struct pow_impl;
-
-template <typename C> struct pow_impl<2, C, true> {
-  static C eval(const C &c) { return square(c); }
-};
-
-template <typename C> struct pow_impl<1, C, false> {
-  static C eval(const C &c) { return c; }
-};
-
-template <int Order, typename C> struct pow_impl<Order, C, true> {
-  static C eval(const C &c) {
-    auto r = pow_impl<Order / 2, C>::eval(c);
-    return square(r);
-  }
-};
-
-template <typename C> struct pow_impl<0, C, true> {
-  static C eval(const C &c) { return C{1, 0}; }
-};
-
-template <int Order, typename C> struct pow_impl<Order, C, false> {
-  static C eval(const C &c) { return mul(c, pow_impl<Order - 1, C>::eval(c)); }
-};
-
-template <int Order, typename C> C pow(const C &c) {
-  return pow_impl<Order, C>::eval(c);
-}
-
-template <int N, int M> struct choose_impl {
-  static const int value =
-      choose_impl<N - 1, M - 1>::value + choose_impl<N - 1, M>::value;
-};
-
-template <int M> struct choose_impl<0, M> {
-  static const int value = 0;
-};
-
-template <> struct choose_impl<0, 1> {
-  static const int value = 0;
-};
-
-template <int N> struct choose_impl<N, N> {
-  static const int value = 1;
-};
-
-template <int N> struct choose_impl<N, 0> {
-  static const int value = 1;
-};
-
-template <int N> struct choose_impl<N, 1> {
-  static const int value = N;
-};
-
-template <int N, int M> constexpr int choose() {
-  return choose_impl<N, M>::value;
-}
-
-// The complex arithmetic required to calculate a Mandelbrot set
-// We consider the generalized Mandelbrot set, including higher orders
-// such as the cubic, but exclude non-integer orders.
-// TODO: Specialise this for N=2 for speed
-template <int N> struct mandelbrot_calculation {
-
-  static constexpr int order = N;
-
-  // The general form of the calculation z -> z^N + c
-  template <typename Complex>
-  static Complex step(const Complex &z, const Complex &c) {
-    return pow<N>(z) + c;
-  }
-
-  template <int J> struct calculate_epsilon {
-    template <typename Complex>
-    static Complex eval(const Complex &z, const Complex &e) {
-      return choose<N, J>() * pow<J>(z) * pow<N - J>(e) +
-             calculate_epsilon<J + 1>::eval(z, e);
-    }
-  };
-
-  template <> struct calculate_epsilon<N> {
-    template <typename Complex>
-    static Complex eval(const Complex &z, const Complex &e) {
-      return {0, 0};
-    }
-  };
-
-  // When performing perturbations (for higher precision), here is the general
-  // formula for evaluating the epsilon (dz)
-  template <typename Complex>
-  static Complex step_epsilon(const Complex &z, const Complex &e,
-                              const Complex &d) {
-    return d + calculate_epsilon<0>::eval(z, e);
-  }
-
-  template <typename Complex>
-  static Complex A(const Complex &z, const Complex &A_prev) {
-    return choose<N, 1>() * pow<N - 1>(z) * A_prev + Complex{1, 0};
-  }
-
-  template <typename Complex>
-  static Complex B(const Complex &z, const Complex &A_prev,
-                   const Complex &B_prev) {
-    return choose<N, 1>() * pow<N - 1>(z) * B_prev +
-           choose<N, 2>() * pow<N - 2>(z) * pow<2>(A_prev);
-  }
-
-  template <typename Complex>
-  static Complex C(const Complex &z, const Complex &A_prev,
-                   const Complex &B_prev, const Complex &C_prev) {
-    return choose<N, 1>() * pow<N - 1>(z) * C_prev +
-           choose<N, 2>() * pow<N - 2>(z) * Complex{2} * A_prev * B_prev +
-           (N > 2 ? choose<N, 3>() * pow<N - 3>(z) * pow<3>(A_prev) : 0);
-  }
-
-  // TODO: Can generalize this further to calculate the Nth Taylor series term
-};
 
 /*
   A basic_orbit iterates the escape sequence manually.
@@ -321,7 +200,7 @@ private:
                        int starting_iteration = 0,
                        Complex starting_epsilon = {})
         : n{starting_iteration}, j{n}, delta(delta), epsilon{starting_epsilon},
-          reference{ref}, skipped{starting_iteration} {}
+          reference{ref} {}
 
     int iteration() const { return n; }
 
@@ -348,14 +227,10 @@ private:
       return *this;
     }
 
-    // For information purposes only
-    int skipped_iterations() const { return skipped; }
-
   private:
     int n, j;
     Complex delta, epsilon;
     const ReferenceOrbit &reference;
-    int skipped;
   };
 
   /*

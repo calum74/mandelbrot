@@ -3,7 +3,8 @@ project(mandelbrot)
 set(CMAKE_CXX_STANDARD 23)
 enable_testing()
 
-add_library(mandelbrot mandelbrot.cpp)
+add_library(mandelbrot complex.hpp convert.hpp fractal.hpp high_precision_real.hpp mandelbrot_calculation.hpp 
+    mandelbrot.hpp plane.hpp orbit.hpp mandelbrot.cpp ViewCoords.hpp)
 add_library(extra_fractals circle.cpp)
 link_libraries(mandelbrot)
 
