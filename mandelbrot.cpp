@@ -115,11 +115,11 @@ using MB = PerturbatedMandelbrotCalculation<
 // use a slower algorithm than necessary.
 const fractals::PointwiseFractal &mandelbrot_fractal =
     fractals::make_fractal<MB<2, 4>, MB<2, 6>, MB<2, 10>, MB<2, 16>>(
-        "Mandelbrot");
+        "Mandelbrot (power 2)");
 
 const fractals::PointwiseFractal &mandelbrot3_fractal =
     fractals::make_fractal<MB<3, 4>, MB<3, 6>, MB<3, 10>, MB<3, 16>>(
-        "Cubic Mandelbrot");
+        "Cubic Mandelbrot (power 3)");
 
 const fractals::PointwiseFractal &mandelbrot4_fractal =
     fractals::make_fractal<MB<4, 4>, MB<4, 6>, MB<4, 10>, MB<4, 16>>(
@@ -135,4 +135,4 @@ const fractals::PointwiseFractal &mandelbrot6_fractal =
 
 const fractals::PointwiseFractal &mandelbrot7_fractal =
     fractals::make_fractal<MB<7, 4>, MB<7, 6>, MB<7, 10>, MB<7, 16>>(
-        "Mandelbrot (power 7)");
+        "Mandelflake (power 7)");

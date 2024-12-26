@@ -79,7 +79,7 @@ template <int N> struct mandelbrot_calculation {
   static Complex C(const Complex &z, const Complex &A_prev,
                    const Complex &B_prev, const Complex &C_prev) {
     return choose<N, 1>() * pow<N - 1>(z) * C_prev +
-           choose<N, 2>() * pow<N - 2>(z) * Complex{2} * A_prev * B_prev +
+           2 * choose<N, 2>() * pow<N - 2>(z) * A_prev * B_prev +
            (N > 2 ? choose<N, 3>() * pow<N - 3>(z) * pow<3>(A_prev) : 0);
   }
 
