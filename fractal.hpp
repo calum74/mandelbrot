@@ -9,18 +9,6 @@
 
 namespace fractals {
 
-struct ViewCoords;
-class Viewport;
-class ColourMap;
-class Renderer;
-
-// A list of available fractals
-
-std::unique_ptr<Renderer> make_renderer();
-
-// Just a default colour map
-std::unique_ptr<ColourMap> make_colourmap();
-
 class PointwiseCalculation {
 public:
   using ViewCoords = fractals::ViewCoords;
