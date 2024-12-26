@@ -4,6 +4,21 @@
 
 namespace mandelbrot {
 
+template <int N, int J> struct calculate_epsilon {
+  template <typename Complex>
+  static Complex eval(const Complex &z, const Complex &e) {
+    return choose<N, J>() * pow<J>(z) * pow<N - J>(e) +
+           calculate_epsilon<N, J + 1>::eval(z, e);
+  }
+};
+
+template <int N> struct calculate_epsilon<N, N> {
+  template <typename Complex>
+  static Complex eval(const Complex &z, const Complex &e) {
+    return {0, 0};
+  }
+};
+
 // The complex arithmetic required to calculate a Mandelbrot set
 // We consider the generalized Mandelbrot set, including higher orders
 // such as the cubic, but exclude non-integer orders.
@@ -18,27 +33,12 @@ template <int N> struct mandelbrot_calculation {
     return pow<N>(z) + c;
   }
 
-  template <int J> struct calculate_epsilon {
-    template <typename Complex>
-    static Complex eval(const Complex &z, const Complex &e) {
-      return choose<N, J>() * pow<J>(z) * pow<N - J>(e) +
-             calculate_epsilon<J + 1>::eval(z, e);
-    }
-  };
-
-  template <> struct calculate_epsilon<N> {
-    template <typename Complex>
-    static Complex eval(const Complex &z, const Complex &e) {
-      return {0, 0};
-    }
-  };
-
   // When performing perturbations (for higher precision), here is the general
   // formula for evaluating the epsilon (dz)
   template <typename Complex>
   static Complex step_epsilon(const Complex &z, const Complex &e,
                               const Complex &d) {
-    return d + calculate_epsilon<0>::eval(z, e);
+    return d + calculate_epsilon<N, 0>::eval(z, e);
   }
 
   template <typename Complex>
