@@ -8,7 +8,7 @@
 
 #if _WIN32
 #include <intrin.h>
-#pragma intrinsic(_mul128)
+#pragma intrinsic(_umul128)
 #endif
 
 namespace fractals {
