@@ -156,7 +156,7 @@ private:
   // epsilon/dz for each iteration.
   mandelbrot::stored_taylor_series_orbit<
       LowPrecisionComplex,
-      mandelbrot::basic_orbit<HighPrecisionComplex, Calculation>, Calculation>
+      mandelbrot::basic_orbit<HighPrecisionComplex, Calculation>>
       reference_orbit;
 };
 
