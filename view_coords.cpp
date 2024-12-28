@@ -20,8 +20,6 @@ fractals::view_coords fractals::view_coords::zoom(double ratio, int w, int h,
 
   auto pixel_width = w > h ? r * (2.0 / ph) : r * (2.0 / pw);
 
-  auto point_size = w > h ? r * (2.0 / ph) : r * (2.0 / pw);
-
   view_coords::value_type ratio2{ratio};
 
   auto CX = x + pixel_width * (cx - pw / 2);
@@ -34,4 +32,24 @@ fractals::view_coords fractals::view_coords::zoom(double ratio, int w, int h,
   new_coords.r = r * ratio2;
 
   return new_coords;
+}
+
+double fractals::view_coords::point_size(int w, int h) const {
+  double pw = w;
+  double ph = h;
+  double pr = r.to_double();
+
+  return pr * (w > h ? (2.0 / ph) : (2.0 / pw));
+}
+
+fractals::view_coords::value_type fractals::view_coords::top(int w,
+                                                             int h) const {
+
+  return w > h ? y - r : y - r * (double(h) / double(w));
+}
+
+fractals::view_coords::value_type fractals::view_coords::left(int w,
+                                                              int h) const {
+
+  return w > h ? x - r * (double(w) / double(h)) : x - r;
 }
