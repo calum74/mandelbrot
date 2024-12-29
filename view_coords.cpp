@@ -53,3 +53,8 @@ fractals::view_coords::value_type fractals::view_coords::left(int w,
 
   return w > h ? x - r * (double(w) / double(h)) : x - r;
 }
+
+std::ostream &fractals::operator<<(std::ostream &os,
+                                   const view_coords &coords) {
+  return os << '(' << coords.x << ',' << coords.y << ',' << coords.r << ')';
+}

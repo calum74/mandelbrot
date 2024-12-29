@@ -22,4 +22,7 @@ struct view_coords {
   value_type top(int w, int h) const;
   value_type left(int w, int h) const;
 };
+
+std::ostream &operator<<(std::ostream &os, const view_coords &coords);
+
 } // namespace fractals
