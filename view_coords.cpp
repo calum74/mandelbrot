@@ -15,16 +15,28 @@ fractals::view_coords fractals::view_coords::scroll(int w, int h, int dx,
 
 fractals::view_coords fractals::view_coords::zoom(double ratio, int w, int h,
                                                   int cx, int cy) const {
+  auto C = map_point(w, h, cx, cy);
+  return zoom(ratio, w, h, cx, cy, C.first, C.second);
+}
+
+std::pair<fractals::view_coords::value_type, fractals::view_coords::value_type>
+fractals::view_coords::map_point(int w, int h, int cx, int cy) const {
   double pw = w;
   double ph = h;
 
   auto pixel_width = w > h ? r * (2.0 / ph) : r * (2.0 / pw);
 
-  view_coords::value_type ratio2{ratio};
-
   auto CX = x + pixel_width * (cx - pw / 2);
   auto CY = y + pixel_width * (cy - ph / 2);
+  return {CX, CY};
+}
 
+fractals::view_coords fractals::view_coords::zoom(double ratio, int w, int h,
+                                                  int cx, int cy,
+                                                  const value_type &CX,
+                                                  const value_type &CY) const {
+
+  view_coords::value_type ratio2{ratio};
   view_coords new_coords;
   new_coords.max_iterations = max_iterations;
   new_coords.x = CX - (CX - x) * ratio2;
@@ -40,6 +52,13 @@ double fractals::view_coords::point_size(int w, int h) const {
   double pr = r.to_double();
 
   return pr * (w > h ? (2.0 / ph) : (2.0 / pw));
+}
+
+fractals::view_coords::value_type
+fractals::view_coords::point_size_full(int w, int h) const {
+  double pw = w;
+  double ph = h;
+  return r * (w > h ? (2.0 / ph) : (2.0 / pw));
 }
 
 fractals::view_coords::value_type fractals::view_coords::top(int w,

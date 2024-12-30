@@ -21,6 +21,7 @@
 #pragma once
 
 #include "complex.hpp"
+#include <array>
 
 namespace mandelbrot {
 
@@ -39,6 +40,7 @@ template <int N> struct calculate_epsilon<N, N> {
     return {0, 0};
   }
 };
+
 } // namespace detail
 
 // The complex arithmetic required to calculate a Mandelbrot set
@@ -83,7 +85,23 @@ template <int N> struct mandelbrot_calculation {
            (N > 2 ? choose<N, 3>() * pow<N - 3>(z) * pow<3>(A_prev) : 0);
   }
 
-  // TODO: Can generalize this further to calculate the Nth Taylor series term
+  // For a Taylor series expansion of the form
+  //
+  //    epsilon = A∂ + B∂^2 + C∂^3 ...
+  //
+  // compute the terms
+  //
+  //    epsilon' = A'∂ + B'∂^2 + C'∂^3 ...
+  //
+  // for the next iteration.
+  template <typename Complex, int T>
+  static std::array<Complex, T>
+  delta_terms(const Complex &z, const std::array<Complex, T> &previous) {
+    std::array<Complex, T> result;
+    result[0] = 1;
+
+    return result;
+  }
 };
 
 } // namespace mandelbrot
