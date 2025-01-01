@@ -34,13 +34,18 @@ private:
 */
 class async_rendering_sequence {
 public:
-  // Blocking call
-  void calculate_in_threads(int threads);
+  async_rendering_sequence(int w, int h, int stride);
 
-  virtual double calculate(int x, int y) = 0;
-  virtual void layer_completed(int stride) = 0;
+  // Blocking call
+  void calculate(int threads);
 
 protected:
-  std::vector<std::atomic<double>> outputs;
+  virtual double calculate_point(int x, int y) = 0;
+  virtual void layer_complete(int stride) = 0;
+
+  std::vector<std::atomic<double>> output;
+
+private:
+  int width, height, stride;
 };
 } // namespace fractals

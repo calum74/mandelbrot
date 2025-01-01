@@ -1,4 +1,6 @@
 #include "rendering_sequence.hpp"
+#include <future>
+#include <mutex>
 
 fractals::rendering_sequence::rendering_sequence(int w, int h, int stride)
     : width(w), height(h), initial_stride(stride), stride(0), x(0), y(0) {}
@@ -56,4 +58,49 @@ bool fractals::rendering_sequence::already_done_in_previous_layer() const {
   // Look at the least significant bits
   int mask = (stride * 2) - 1;
   return !(x & mask) && !(y & mask);
+}
+
+fractals::async_rendering_sequence::async_rendering_sequence(int w, int h,
+                                                             int initial_stride)
+    : width(w), height(h), stride(initial_stride), output(w * h) {}
+
+void fractals::async_rendering_sequence::calculate(int threads) {
+
+  if (threads == 0)
+    threads = std::thread::hardware_concurrency();
+
+  rendering_sequence seq(width, height, stride);
+  std::mutex m;
+
+  std::vector<std::future<void>> workers;
+
+  std::vector<int> points_at_stride(stride + 1);
+
+  {
+    rendering_sequence tmp_seq(width, height, stride);
+    int x, y, s;
+    bool c;
+    while (tmp_seq.next(x, y, s, c))
+      ++points_at_stride[s];
+  }
+
+  for (int i = 0; i < threads; ++i) {
+    workers.push_back(std::async([&] {
+      int x, y, stride;
+      bool stride_changed;
+      m.lock();
+      while (seq.next(x, y, stride, stride_changed)) {
+        m.unlock();
+        output[x + y * width] = calculate_point(x, y);
+        m.lock();
+        if (--points_at_stride[stride] == 0) {
+          layer_complete(stride);
+        }
+      }
+      m.unlock();
+    }));
+  }
+
+  for (auto &w : workers)
+    w.get();
 }
