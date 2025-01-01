@@ -40,12 +40,23 @@ public:
   void calculate(int threads);
 
 protected:
-  virtual double calculate_point(int x, int y) = 0;
+  virtual void calculate_point(int x, int y) = 0;
   virtual void layer_complete(int stride) = 0;
 
-  std::vector<std::atomic<double>> output;
-
-private:
   int width, height, stride;
 };
+
+class buffered_rendering_sequence : public async_rendering_sequence {
+public:
+  buffered_rendering_sequence(int w, int h, int stride);
+
+protected:
+  std::vector<std::atomic<double>> output;
+
+  virtual double get_point(int x, int y) = 0;
+
+private:
+  void calculate_point(int x, int y) override;
+};
+
 } // namespace fractals

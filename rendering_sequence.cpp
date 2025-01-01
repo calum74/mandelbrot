@@ -62,11 +62,15 @@ bool fractals::rendering_sequence::already_done_in_previous_layer() const {
 
 fractals::async_rendering_sequence::async_rendering_sequence(int w, int h,
                                                              int initial_stride)
-    : width(w), height(h), stride(initial_stride), output(w * h) {}
+    : width(w), height(h), stride(initial_stride) {}
+
+fractals::buffered_rendering_sequence::buffered_rendering_sequence(int w, int h,
+                                                                   int stride)
+    : async_rendering_sequence(w, h, stride), output(w * h) {}
 
 void fractals::async_rendering_sequence::calculate(int threads) {
 
-  if (threads == 0)
+  if (threads <= 0)
     threads = std::thread::hardware_concurrency();
 
   rendering_sequence seq(width, height, stride);
@@ -91,7 +95,7 @@ void fractals::async_rendering_sequence::calculate(int threads) {
       m.lock();
       while (seq.next(x, y, stride, stride_changed)) {
         m.unlock();
-        output[x + y * width] = calculate_point(x, y);
+        calculate_point(x, y);
         m.lock();
         if (--points_at_stride[stride] == 0) {
           layer_complete(stride);
@@ -103,4 +107,8 @@ void fractals::async_rendering_sequence::calculate(int threads) {
 
   for (auto &w : workers)
     w.get();
+}
+
+void fractals::buffered_rendering_sequence::calculate_point(int x, int y) {
+  output[x + y * height] = get_point(x, y);
 }
