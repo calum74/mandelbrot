@@ -123,11 +123,11 @@ const fractals::PointwiseFractal &mandelbrot3_fractal =
 
 const fractals::PointwiseFractal &mandelbrot4_fractal =
     fractals::make_fractal<MB<4, 4>, MB<4, 6>, MB<4, 10>, MB<4, 16>>(
-        "Mandelbox (power 4)");
+        "Mandelbrot (power 4)");
 
 const fractals::PointwiseFractal &mandelbrot5_fractal =
     fractals::make_fractal<MB<5, 4>, MB<5, 6>, MB<5, 10>, MB<5, 16>>(
-        "Mandelbrot (power 5)");
+        "Mandelbox (power 5)");
 
 const fractals::PointwiseFractal &mandelbrot6_fractal =
     fractals::make_fractal<MB<6, 4>, MB<6, 6>, MB<6, 10>, MB<6, 16>>(
