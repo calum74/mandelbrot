@@ -46,17 +46,21 @@ protected:
   int width, height, stride;
 };
 
+template <typename T>
 class buffered_rendering_sequence : public async_rendering_sequence {
 public:
-  buffered_rendering_sequence(int w, int h, int stride);
+  buffered_rendering_sequence(int w, int h, int stride)
+      : async_rendering_sequence(w, h, stride), output(w * h) {}
 
 protected:
-  std::vector<std::atomic<double>> output;
+  std::vector<std::atomic<T>> output;
 
   virtual double get_point(int x, int y) = 0;
 
 private:
-  void calculate_point(int x, int y) override;
+  void calculate_point(int x, int y) override {
+    output[x + y * width] = get_point(x, y);
+  }
 };
 
 } // namespace fractals

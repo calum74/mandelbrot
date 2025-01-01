@@ -22,10 +22,11 @@ void compare_orbits(Orbit1 o1, Orbit2 o2, int n) {
   }
 }
 
-class test_rendering_sequence : public fractals::buffered_rendering_sequence {
+class test_rendering_sequence
+    : public fractals::buffered_rendering_sequence<double> {
 public:
   test_rendering_sequence()
-      : fractals::buffered_rendering_sequence(500, 500, 16) {}
+      : fractals::buffered_rendering_sequence<double>(500, 500, 16) {}
 
   std::atomic<int> points = 0;
   int layers = 0;
