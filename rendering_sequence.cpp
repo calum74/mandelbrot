@@ -1,4 +1,5 @@
 #include "rendering_sequence.hpp"
+#include <cassert>
 #include <future>
 #include <mutex>
 
@@ -14,6 +15,8 @@ void fractals::rendering_sequence::reset() {
 bool fractals::rendering_sequence::next(int &out_x, int &out_y, int &out_stride,
                                         bool &out_stride_changed) {
   out_stride_changed = false;
+  if (stride == -1)
+    return false;
   if (stride == 0) {
     stride = initial_stride;
     out_x = x = 0;
@@ -38,8 +41,10 @@ bool fractals::rendering_sequence::next0(bool &out_stride_changed) {
     x = 0;
     y += stride;
     if (y >= height) {
-      if (stride == 1)
+      if (stride == 1) {
+        stride = -1;
         return false;
+      }
       out_stride_changed = true;
       stride = stride / 2;
       x = 0;
@@ -98,6 +103,10 @@ void fractals::async_rendering_sequence::calculate(int threads,
       m.lock();
       while (seq.next(x, y, stride, stride_changed) && !stop) {
         m.unlock();
+        assert(x >= 0);
+        assert(x < width);
+        assert(y >= 0);
+        assert(y < height);
         calculate_point(x, y);
         m.lock();
         if (--points_at_stride[stride] == 0) {
