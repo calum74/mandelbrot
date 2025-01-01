@@ -1,4 +1,4 @@
-#include "RenderingSequence.hpp"
+#include "rendering_sequence.hpp"
 
 fractals::RenderingSequence::RenderingSequence(int w, int h, int stride)
     : width(w), height(h), initial_stride(stride), stride(0), x(0), y(0) {}
