@@ -5,10 +5,10 @@
 
 namespace fractals {
 // Visits all points (x,y) in the region of size w*h
-class RenderingSequence {
+class rendering_sequence {
 public:
-  RenderingSequence() = default; // Invalid state do not use
-  RenderingSequence(int w, int h, int stride);
+  rendering_sequence() = default; // Invalid state do not use
+  rendering_sequence(int w, int h, int stride);
 
   void reset();
 

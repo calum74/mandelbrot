@@ -1,16 +1,16 @@
 #include "rendering_sequence.hpp"
 
-fractals::RenderingSequence::RenderingSequence(int w, int h, int stride)
+fractals::rendering_sequence::rendering_sequence(int w, int h, int stride)
     : width(w), height(h), initial_stride(stride), stride(0), x(0), y(0) {}
 
-void fractals::RenderingSequence::reset() {
+void fractals::rendering_sequence::reset() {
   stride = 0;
   x = 0;
   y = 0;
 }
 
-bool fractals::RenderingSequence::next(int &out_x, int &out_y, int &out_stride,
-                                       bool &out_stride_changed) {
+bool fractals::rendering_sequence::next(int &out_x, int &out_y, int &out_stride,
+                                        bool &out_stride_changed) {
   out_stride_changed = false;
   if (stride == 0) {
     stride = initial_stride;
@@ -30,7 +30,7 @@ bool fractals::RenderingSequence::next(int &out_x, int &out_y, int &out_stride,
   return false;
 }
 
-bool fractals::RenderingSequence::next0(bool &out_stride_changed) {
+bool fractals::rendering_sequence::next0(bool &out_stride_changed) {
   x += stride;
   if (x >= width) {
     x = 0;
@@ -48,7 +48,7 @@ bool fractals::RenderingSequence::next0(bool &out_stride_changed) {
   return true;
 }
 
-bool fractals::RenderingSequence::already_done_in_previous_layer() const {
+bool fractals::rendering_sequence::already_done_in_previous_layer() const {
   if (stride == initial_stride)
     return false;
 
