@@ -55,6 +55,7 @@ public:
       : async_rendering_sequence(w, h, stride), output(w * h) {}
 
 protected:
+  // !! Unclear whether we need the members to be atomic
   std::vector<std::atomic<T>> output;
 
   virtual T get_point(int x, int y) = 0;
