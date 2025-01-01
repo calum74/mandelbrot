@@ -10,6 +10,8 @@ public:
   rendering_sequence() = default; // Invalid state do not use
   rendering_sequence(int w, int h, int stride);
 
+  void start_at_stride(int s);
+
   void reset();
 
   // Gets the next pixel in the sequence
@@ -37,7 +39,7 @@ public:
   async_rendering_sequence(int w, int h, int stride);
 
   // Blocking call
-  void calculate(int threads);
+  void calculate(int threads, std::atomic<bool> &stop);
 
 protected:
   virtual void calculate_point(int x, int y) = 0;
@@ -55,7 +57,7 @@ public:
 protected:
   std::vector<std::atomic<T>> output;
 
-  virtual double get_point(int x, int y) = 0;
+  virtual T get_point(int x, int y) = 0;
 
 private:
   void calculate_point(int x, int y) override {

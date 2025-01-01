@@ -60,11 +60,18 @@ bool fractals::rendering_sequence::already_done_in_previous_layer() const {
   return !(x & mask) && !(y & mask);
 }
 
+void fractals::rendering_sequence::start_at_stride(int s) {
+  stride = s;
+  x = 0;
+  y = 0;
+}
+
 fractals::async_rendering_sequence::async_rendering_sequence(int w, int h,
                                                              int initial_stride)
     : width(w), height(h), stride(initial_stride) {}
 
-void fractals::async_rendering_sequence::calculate(int threads) {
+void fractals::async_rendering_sequence::calculate(int threads,
+                                                   std::atomic<bool> &stop) {
 
   if (threads <= 0)
     threads = std::thread::hardware_concurrency();
@@ -89,7 +96,7 @@ void fractals::async_rendering_sequence::calculate(int threads) {
       int x, y, stride;
       bool stride_changed;
       m.lock();
-      while (seq.next(x, y, stride, stride_changed)) {
+      while (seq.next(x, y, stride, stride_changed) && !stop) {
         m.unlock();
         calculate_point(x, y);
         m.lock();

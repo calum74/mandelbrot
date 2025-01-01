@@ -57,7 +57,8 @@ int main() {
 
   {
     test_rendering_sequence s1;
-    s1.calculate(1);
+    std::atomic<bool> stop;
+    s1.calculate(1, stop);
     assert(s1.points == 500 * 500);
     assert(s1.layers == 5);
   }
