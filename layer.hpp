@@ -1,6 +1,7 @@
 #pragma once
 
 #include "view_coords.hpp"
+#include <atomic>
 #include <vector>
 
 namespace fractals {
