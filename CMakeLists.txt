@@ -6,6 +6,3 @@ enable_testing()
 add_subdirectory(src)
 add_subdirectory(test)
 
-include_directories(include)
-link_libraries(mandelbrot)
-
