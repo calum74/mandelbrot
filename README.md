@@ -1,4 +1,4 @@
-To view these fractals, please visit [MandelbrotQt](https://https://github.com/calum74/mandelbrot-qt) for an application which renders these fractals.
+To view these fractals, please visit [Mandelbrot-Qt](https://https://github.com/calum74/mandelbrot-qt) for an application which renders these fractals.
 
 # About this repo
 
