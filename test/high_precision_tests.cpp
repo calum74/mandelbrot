@@ -213,7 +213,8 @@ void random_bits() {
     auto j2 = i * n;
     assert(j1 == j2);
     fractals::high_precision_real<4> one{1};
-    assert_eq(n, one);
+    std::cout << std::setprecision(80) << "j1 = " << j1 << std::endl;
+    assert_eq(j1, one, 0xffff);
   }
 }
 

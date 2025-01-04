@@ -563,10 +563,20 @@ bool valid_precision(const fractals::high_precision_real<N> &n) {
       return true;
   }
   // Ensure we have at least 64+32 = 96 bits
-  // We must have something in the top 32-bits of the last
+  // We must have something in the top 32-bits
   return n.fraction[N - 2] & 0xffffffff00000000ull;
 }
 
+template <int N>
+bool valid_precision_for_inverse(const fractals::high_precision_real<N> &n) {
+  for (int i = 0; i < N - 2; ++i) {
+    if (n.fraction[i])
+      return true;
+  }
+  // Ensure we have at least 64+48 = 112 bits
+  // We must have something in the top 48-bits
+  return n.fraction[N - 2] & 0xffffffffff000000ull;
+}
 
 } // namespace fractals
 
