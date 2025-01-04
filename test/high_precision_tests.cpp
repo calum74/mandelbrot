@@ -199,6 +199,22 @@ void random_bits() {
 
   // To string
   assert(to_string(hp<2>{}) == "0.000000");
+
+  // Inverse regression test case
+  {
+    fractals::high_precision_real<4> n;
+    n.fraction[0] = 3;
+    n.fraction[1] = 1895646463175238861ull;
+    n.fraction[2] = 18205977988746887042ull;
+    n.fraction[3] = 6985711868819929312ull;
+
+    auto i = inverse(n);
+    auto j1 = n * i;
+    auto j2 = i * n;
+    assert(j1 == j2);
+    fractals::high_precision_real<4> one{1};
+    assert_eq(n, one);
+  }
 }
 
 int main() {
