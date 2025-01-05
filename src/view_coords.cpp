@@ -1,4 +1,5 @@
 #include "view_coords.hpp"
+#include <iomanip>
 
 fractals::view_coords fractals::view_coords::scroll(int w, int h, int dx,
                                                     int dy) const {
@@ -75,5 +76,16 @@ fractals::view_coords::value_type fractals::view_coords::left(int w,
 
 std::ostream &fractals::operator<<(std::ostream &os,
                                    const view_coords &coords) {
-  return os << '(' << coords.x << ',' << coords.y << ',' << coords.r << ')';
+  int zeros = fractals::count_fractional_zeros(coords.r);
+  int width = 4 + zeros * 0.30103;
+
+  return os << '(' << std::setprecision(width) << coords.x << ',' << coords.y
+            << ',' << coords.r << ',' << coords.max_iterations << ')';
+}
+
+std::istream &fractals::operator>>(std::istream &is, view_coords &coords) {
+  // !! This has no error detection and recovery whatsoever
+  char ch1, ch2, ch3, ch4, ch5;
+  return is >> ch1 >> coords.x >> ch2 >> coords.y >> ch3 >> coords.r >> ch4 >>
+         coords.max_iterations >> ch5;
 }

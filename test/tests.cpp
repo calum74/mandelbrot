@@ -62,5 +62,18 @@ int main() {
     assert(s1.points == 500 * 500);
     assert(s1.layers == 5);
   }
+
+  {
+    fractals::view_coords c1, c2;
+    c1.x = 1.5;
+    c1.y = -0.5;
+    c1.r = 0.25;
+    c1.max_iterations = 500;
+    std::stringstream ss1, ss2;
+    ss1 << c1;
+    ss1 >> c2;
+    ss2 << c2;
+    assert(ss2.str() == "(1.4999,-0.4999,0.2499,500)");
+  }
   return 0;
 }
