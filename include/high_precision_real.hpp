@@ -284,7 +284,7 @@ void raw_add(const high_precision_real<N> &a, const high_precision_real<N> &b,
 
   for (int i = N - 2; i >= 0; i--) {
     result.fraction[i] = a.fraction[i] + b.fraction[i] +
-                         (result.fraction[i + 1] < b.fraction[i + 1]);
+                         (result.fraction[i + 1] < a.fraction[i + 1]);
   }
 }
 
@@ -309,11 +309,12 @@ void raw_mul(const high_precision_real<N> &a, const high_precision_real<N> &b,
         result.fraction[ij] += m1;
         carry = result.fraction[ij] < m1;
         m2 += carry;
+        carry = m2 < carry;
       } else
         carry = 0;
       if (ij > 0 && ij <= N) {
         ij--;
-        result.fraction[ij] += m2;
+        result.fraction[ij] += m2; //  + carry;
         carry = result.fraction[ij] < m2;
       }
       // Move into loop TODO
@@ -440,6 +441,16 @@ std::ostream &operator<<(std::ostream &os, high_precision_real<N> n) {
   return os;
 }
 
+template <int N> void make_tenth(high_precision_real<N> &tenth) {
+  tenth.negative = 0;
+  tenth.fraction[0] = 0;
+  tenth.fraction[1] = 0x1999999999999999ull;
+  for (int i = 2; i < N - 1; ++i) {
+    tenth.fraction[i] = 0x9999999999999999ull;
+  }
+  tenth.fraction[N - 1] = 0x999999999999999aull;
+}
+
 template <int N>
 std::istream &operator>>(std::istream &is, high_precision_real<N> &n) {
 
@@ -475,10 +486,7 @@ std::istream &operator>>(std::istream &is, high_precision_real<N> &n) {
 
   // Construct 0.1 in binary
   high_precision_real<N> tenth, mult;
-  tenth.fraction[1] = 0x1999999999999999ull;
-  for (int i = 2; i < N; ++i) {
-    tenth.fraction[i] = 0x9999999999999999ull;
-  }
+  make_tenth(tenth);
   mult = tenth;
 
   do {

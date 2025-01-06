@@ -163,7 +163,6 @@ void random_bits() {
       std::stringstream ss1;
       ss1 << std::setprecision(100) << x;
       ss1 >> x;
-      std::cout << std::dec << x << std::endl;
     }
   }
 
@@ -215,6 +214,24 @@ void random_bits() {
     fractals::high_precision_real<4> one{1};
     std::cout << std::setprecision(80) << "j1 = " << j1 << std::endl;
     assert_eq(j1, one, 0xffff);
+  }
+
+  {
+    hp<4> tenth, ten{10}, one{1};
+    make_tenth(tenth);
+    std::cout << std::dec << std::setprecision(1000) << tenth << std::endl;
+    std::cout << (ten * tenth) << std::endl;
+    assert_eq(ten * tenth, one);
+
+    // Check string precision
+    auto s1 = "1.2589232485349380378421";
+    std::stringstream ss1(s1), ss2;
+    hp<4> n1, n2;
+    ss1 >> n1;
+    ss2 << std::setprecision(10000) << n1;
+    ss2 >> n2;
+    auto debug = n1 - n2;
+    assert_eq(n1, n2);
   }
 }
 
