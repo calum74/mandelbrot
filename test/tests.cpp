@@ -4,6 +4,7 @@
 #include "mandelbrot.hpp"
 #include "orbit.hpp"
 #include "rendering_sequence.hpp"
+#include "view_parameters.hpp"
 
 #undef NDEBUG
 #include <cassert>
@@ -73,7 +74,23 @@ int main() {
     ss1 << c1;
     ss1 >> c2;
     ss2 << c2;
-    assert(ss2.str() == "(1.4999,-0.4999,0.2499,500)");
+    assert(ss2.str() == "(1.5000,-0.5000,0.2499,500)");
   }
+
+  {
+    fractals::view_parameters p1{.coords = {1.5, -0.5, 0.5, 500},
+                                 .fractal_name = "abc def",
+                                 .colour_seed = 99,
+                                 .colour_gradient = 0.001},
+        p2;
+    std::stringstream ss1, ss2;
+    ss1 << p1;
+    ss1 >> p2;
+    ss2 << p2;
+    assert(ss1.str() == ss2.str());
+    assert(p1.fractal_name == p2.fractal_name);
+    assert(p1.colour_seed == p2.colour_seed);
+  }
+
   return 0;
 }

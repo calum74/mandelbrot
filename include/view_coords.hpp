@@ -28,6 +28,9 @@ struct view_coords {
 
   std::pair<value_type, value_type> map_point(int w, int h, int cx,
                                               int cy) const;
+
+  // Gets the desired precision
+  int get_precision(int dps = 4) const;
 };
 
 std::ostream &operator<<(std::ostream &os, const view_coords &coords);
