@@ -73,6 +73,10 @@ template <typename C> struct pow_impl<0, C, true> {
   static C eval(const C &c) { return C{1, 0}; }
 };
 
+template <typename C> struct pow_impl<-1, C, true> {
+  static C eval(const C &c) { return C{0, 0}; } // Not implemented
+};
+
 template <int Order, typename C> struct pow_impl<Order, C, false> {
   static C eval(const C &c) { return mul(c, pow_impl<Order - 1, C>::eval(c)); }
 };

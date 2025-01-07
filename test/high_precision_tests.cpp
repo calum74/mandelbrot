@@ -146,7 +146,7 @@ void random_bits() {
     auto t = H2{1} / 10;
     std::cout << std::hex << t.fraction[1] << std::endl;
 
-    auto x = H2{0};
+    auto x = H220{0};
     x.fraction[1] = 0x1999999999999999ull;
     for (int i = 2; i < 10; ++i) {
       x.fraction[i] = 0x9999999999999999ull;
