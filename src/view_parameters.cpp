@@ -1,6 +1,7 @@
 #include "view_parameters.hpp"
 
 #include <iomanip>
+#include <string>
 
 std::ostream &fractals::operator<<(std::ostream &os,
                                    const fractals::view_parameters &vp) {
