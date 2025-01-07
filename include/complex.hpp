@@ -73,7 +73,7 @@ template <typename C> struct pow_impl<0, C, true> {
   static C eval(const C &c) { return C{1, 0}; }
 };
 
-template <typename C> struct pow_impl<-1, C, true> {
+template <typename C> struct pow_impl<-1, C, false> {
   static C eval(const C &c) { return C{0, 0}; } // Not implemented
 };
 
