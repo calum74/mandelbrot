@@ -34,7 +34,7 @@ public:
   // The call to `valid_precision` checks the size of the radius relative to
   // the size of a BigReal to make sure we have sufficient accuracy.
   static bool valid_for(const view_coords &c) {
-    return c.r < 2 && valid_precision(BigReal{c.r});
+    return c.r <= 2 && valid_precision(BigReal{c.r});
   }
 
   // The initial coordinates to view the Mandelbrot set.
@@ -115,12 +115,12 @@ using MB = PerturbatedMandelbrotCalculation<
 // implementations at different resolutions so that we don't lose precision or
 // use a slower algorithm than necessary.
 const fractals::PointwiseFractal &mandelbrot_fractal =
-    fractals::make_fractal<MB<2, 4, 4, 500>, MB<2, 6>, MB<2, 10>, MB<2, 16>>(
+    fractals::make_fractal<MB<2, 3, 4, 1000>, MB<2, 6>, MB<2, 10>, MB<2, 16>>(
         "Mandelbrot (power 2)");
 
 const fractals::PointwiseFractal &mandelbrot3_fractal =
-    fractals::make_fractal<MB<3, 4, 4, 10000>, MB<3, 6, 4, 10000>,
-                           MB<3, 10, 4, 10000>, MB<3, 16, 4, 10000>>(
+    fractals::make_fractal<MB<3, 4, 4, 5000>, MB<3, 6, 4, 5000>,
+                           MB<3, 10, 4, 5000>, MB<3, 16, 4, 5000>>(
         "Cubic Mandelbrot (power 3)");
 
 const fractals::PointwiseFractal &mandelbrot4_fractal =

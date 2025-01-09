@@ -322,15 +322,15 @@ private:
     // Returns the epsilon, and whether the epsilon is "accurate"
     std::pair<Complex, bool> epsilon(Complex delta) const {
       auto d = delta;
-      Complex s = 0, lt = 0, old_lt = 0;
+      Complex s = 0, lt = 0, prev_lt = 0;
       bool ok = true;
       for (int t = 0; t < Terms; t++) {
-        old_lt = lt;
+        prev_lt = lt;
         lt = terms[t] * d;
         s += lt;
         d = d * delta;
       }
-      if (norm(old_lt) < Precision * norm(lt))
+      if (norm(prev_lt) < Precision * norm(lt))
         ok = false;
       return std::make_pair(s, ok);
     }
