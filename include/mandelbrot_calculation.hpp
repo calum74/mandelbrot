@@ -80,27 +80,61 @@ template <int N> struct mandelbrot_calculation {
   template <typename Complex>
   static Complex C(const Complex &z, const Complex &A_prev,
                    const Complex &B_prev, const Complex &C_prev) {
-    return choose<N, 1>() * pow<N - 1>(z) * C_prev +
-           2 * choose<N, 2>() * pow<N - 2>(z) * A_prev * B_prev +
-           (N > 2 ? choose<N, 3>() * pow<N - 3>(z) * pow<3>(A_prev) : 0);
+    if constexpr (N > 2) {
+      return choose<N, 1>() * pow<N - 1>(z) * C_prev +
+             2 * choose<N, 2>() * pow<N - 2>(z) * A_prev * B_prev +
+             choose<N, 3>() * pow<N - 3>(z) * pow<3>(A_prev);
+    } else {
+      return choose<N, 1>() * pow<N - 1>(z) * C_prev +
+             2 * choose<N, 2>() * pow<N - 2>(z) * A_prev * B_prev;
+    }
+  }
+
+  static int fac(int n) {
+    int m = 1;
+    while (n > 1)
+      m *= n--;
+    return m;
   }
 
   // For a Taylor series expansion of the form
   //
   //    epsilon = A∂ + B∂^2 + C∂^3 ...
   //
-  // compute the terms
+  // compute the terms of
   //
   //    epsilon' = A'∂ + B'∂^2 + C'∂^3 ...
+  //             = ∂ + sum(j=0..n-1)( C(n,j).z^j.(A∂ + B∂^2 + C∂^3 ...)^(n-j) )
   //
-  // for the next iteration.
-  template <typename Complex, int T>
+  // for the next iteration. We equate terms in ∂^n.
+  template <typename Complex, unsigned long T>
   static std::array<Complex, T>
   delta_terms(const Complex &z, const std::array<Complex, T> &previous) {
     std::array<Complex, T> result;
     result[0] = 1;
+    Complex zJ = 1; // z^j
+
+    for (int j = 0; j < N; j++, zJ = zJ * z) {
+      int nCj = fac(N) / (fac(j) * fac(N - j));
+      distribute_terms(0, N - j, zJ * Complex(nCj), previous, result);
+    }
 
     return result;
+  }
+
+  template <typename Complex, unsigned long T>
+  static void distribute_terms(int delta_pow, int seq_remaining, Complex f,
+                               const std::array<Complex, T> &previous,
+                               std::array<Complex, T> &next) {
+    if (seq_remaining == 0) {
+      next[delta_pow - 1] += f;
+    } else {
+      for (int p = 1; p + delta_pow + seq_remaining <= T + 1; p++) {
+        // Distribute one term
+        distribute_terms(delta_pow + p, seq_remaining - 1, f * previous[p - 1],
+                         previous, next);
+      }
+    }
   }
 };
 

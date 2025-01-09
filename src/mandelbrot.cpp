@@ -9,7 +9,7 @@
 // orbit.hpp. The class is templated so that we can configure the data types
 // for higher resolution rendering if required.
 template <typename LowPrecisionComplex, typename HighPrecisionComplex,
-          typename Calculation>
+          typename Calculation, int Terms, int Precision>
 class PerturbatedMandelbrotCalculation : public fractals::PointwiseCalculation {
 public:
   using SmallReal = typename LowPrecisionComplex::value_type;
@@ -40,7 +40,7 @@ public:
   // The initial coordinates to view the Mandelbrot set.
   // Also specify the number of iterations (500).
   static view_coords initial_coords() {
-    return {Calculation::order > 2 ? 0.0 : -0.5, 0, 2, 500};
+    return {Calculation::order > 2 ? 0.0 : -0.5, 0.0, 2, 500};
   }
 
   mutable long skipped_iterations = 0;
@@ -96,7 +96,8 @@ private:
   // epsilon/dz for each iteration.
   mandelbrot::stored_taylor_series_orbit<
       LowPrecisionComplex,
-      mandelbrot::basic_orbit<HighPrecisionComplex, Calculation>>
+      mandelbrot::basic_orbit<HighPrecisionComplex, Calculation>, Terms,
+      Precision>
       reference_orbit;
 };
 
@@ -104,21 +105,22 @@ double fractals::PointwiseCalculation::average_iterations() const { return 0; }
 
 double fractals::PointwiseCalculation::average_skipped() const { return 0; }
 
-template <int N, int P>
+template <int N, int P, int T = 4, int Tolerance = 100>
 using MB = PerturbatedMandelbrotCalculation<
     std::complex<double>, std::complex<fractals::high_precision_real<P>>,
-    mandelbrot::mandelbrot_calculation<N>>;
+    mandelbrot::mandelbrot_calculation<N>, T, Tolerance>;
 
 // Supply a list of fractals to `make_fractal`, which will create a factory
 // that selects the best fractal at each resolution. We need different
 // implementations at different resolutions so that we don't lose precision or
 // use a slower algorithm than necessary.
 const fractals::PointwiseFractal &mandelbrot_fractal =
-    fractals::make_fractal<MB<2, 4>, MB<2, 6>, MB<2, 10>, MB<2, 16>>(
+    fractals::make_fractal<MB<2, 4, 4, 500>, MB<2, 6>, MB<2, 10>, MB<2, 16>>(
         "Mandelbrot (power 2)");
 
 const fractals::PointwiseFractal &mandelbrot3_fractal =
-    fractals::make_fractal<MB<3, 4>, MB<3, 6>, MB<3, 10>, MB<3, 16>>(
+    fractals::make_fractal<MB<3, 4, 4, 10000>, MB<3, 6, 4, 10000>,
+                           MB<3, 10, 4, 10000>, MB<3, 16, 4, 10000>>(
         "Cubic Mandelbrot (power 3)");
 
 const fractals::PointwiseFractal &mandelbrot4_fractal =

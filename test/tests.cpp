@@ -92,5 +92,41 @@ int main() {
     assert(p1.colour_seed == p2.colour_seed);
   }
 
+  // Test Mandelbrot deltas
+
+  {
+    using Calc = mandelbrot::mandelbrot_calculation<2>;
+    std::complex<double> c = {-0.53235, -0.60034}, A = 0, B = 0, C = 0, z = 0;
+
+    c = {-0.2238286049999855391525793, -1.1167864957492792902234038};
+    constexpr int N = 10;
+    std::array<std::complex<double>, N> V, zero;
+
+    for (int i = 0; i < 500 && !escaped(z); i++) {
+      auto A2 = Calc::A(z, A);
+      auto B2 = Calc::B(z, A, B);
+      auto C2 = Calc::C(z, A, B, C);
+      A = A2;
+      B = B2;
+      C = C2;
+      V = Calc::delta_terms(z, V);
+      z = Calc::step(z, c);
+
+      /*
+      std::cout << z << "   " << A << B << C << "   ";
+      for (int j = 0; j < N; ++j)
+        std::cout << V[j];
+      std::cout << std::endl;
+      */
+
+      auto approx_eq = [](std::complex<double> a, std::complex<double> b) {
+        return norm(a) == 0 && norm(b) == 0 || norm(a / b - 1.0) < 0.0001;
+      };
+      assert(approx_eq(A, V[0]));
+      assert(approx_eq(B, V[1]));
+      assert(approx_eq(C, V[2]));
+    }
+  }
+
   return 0;
 }

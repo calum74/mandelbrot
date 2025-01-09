@@ -172,20 +172,17 @@ relative_orbit<typename Rel::value_type, Rel> make_relative_orbit(Rel rel,
 
   z = z_0 + A.delta + B.delta^2 + C.delta^3
 */
-template <typename Complex, typename ReferenceOrbit> class taylor_series_orbit {
+template <typename Complex, typename ReferenceOrbit, int Terms>
+class taylor_series_orbit {
 public:
   using value_type = Complex;
   using calculation = typename ReferenceOrbit::calculation;
 
-  value_type A, B, C;
+  std::array<Complex, Terms> terms;
 
   taylor_series_orbit() = default;
 
-  taylor_series_orbit(ReferenceOrbit o) : orbit(o) {
-    A = {0.0, 0.0};
-    B = {0.0, 0.0};
-    C = {0.0, 0.0};
-  }
+  taylor_series_orbit(ReferenceOrbit o) : orbit(o) {}
 
   // Convert the high-precision value into a low-precision value
   value_type operator*() const { return convert_complex<value_type>(*orbit); }
@@ -194,14 +191,7 @@ public:
 
     // See
     // https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set
-    auto A_next = calculation::A(**this, A);
-    auto B_next = calculation::B(**this, A, B);
-    auto C_next = calculation::C(**this, A, B, C);
-
-    A = A_next;
-    B = B_next;
-    C = C_next;
-
+    terms = calculation::delta_terms(**this, terms);
     ++orbit;
     return *this;
   }
@@ -260,7 +250,7 @@ private:
   (random-access) test. Complex is a lower-precision representation, e.g.
   std::complex<double> ReferenceOrbit is a high-precision orbit.
 */
-template <typename Complex, typename ReferenceOrbit>
+template <typename Complex, typename ReferenceOrbit, int Terms, int Precision>
 class stored_taylor_series_orbit {
 public:
   using value_type = Complex;
@@ -311,7 +301,7 @@ private:
     // then we transition to iteration.
 
     Complex epsilon = {};
-    while (max - min > 8) {
+    while (max - min > 4) {
       int mid = (max + min) / 2;
       auto e = this->epsilon(mid, delta);
       if (e.second && !escaped((*this)[mid])) {
@@ -326,23 +316,31 @@ private:
 
 private:
   struct Entry {
-    Complex z, A, B, C;
+    Complex z;
+    std::array<Complex, Terms> terms;
 
     // Returns the epsilon, and whether the epsilon is "accurate"
     std::pair<Complex, bool> epsilon(Complex delta) const {
-      auto delta_2 = delta * delta;
-      auto t2 = B * delta_2;
-      auto t3 = C * delta * delta_2;
-      // TODO: Can we precalculate if this entry is accurate?
-      return std::make_pair(A * delta + t2 + t3, norm(t2) > 10000 * norm(t3));
+      auto d = delta;
+      Complex s = 0, lt = 0, old_lt = 0;
+      bool ok = true;
+      for (int t = 0; t < Terms; t++) {
+        old_lt = lt;
+        lt = terms[t] * d;
+        s += lt;
+        d = d * delta;
+      }
+      if (norm(old_lt) < Precision * norm(lt))
+        ok = false;
+      return std::make_pair(s, ok);
     }
   };
 
-  taylor_series_orbit<Complex, ReferenceOrbit> reference;
+  taylor_series_orbit<Complex, ReferenceOrbit, Terms> reference;
   std::vector<Entry> entries;
 
   void get_next() {
-    entries.push_back({*reference, reference.A, reference.B, reference.C});
+    entries.push_back({*reference, reference.terms});
     ++reference;
   }
 

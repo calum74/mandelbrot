@@ -116,7 +116,8 @@ int main() {
   mandelbrot::stored_taylor_series_orbit<
       std::complex<double>,
       mandelbrot::basic_orbit<std::complex<R>,
-                              mandelbrot::mandelbrot_calculation<2>>>
+                              mandelbrot::mandelbrot_calculation<2>>,
+      3, 100>
       taylor_series{reference_orbit, 100, stop};
 
   // Construct a relative orbit to the reference orbit.
