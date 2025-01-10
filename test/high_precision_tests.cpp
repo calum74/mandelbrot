@@ -1,3 +1,4 @@
+#include "exponented_real.hpp"
 #include "high_precision_real.hpp"
 #undef NDEBUG
 #include <cassert>
@@ -35,13 +36,15 @@ template <int N> hp<N> make_random(std::default_random_engine &g) {
   return result;
 }
 
-template <int N> void test_arithmetic(const hp<N> &a, const hp<N> &b) {
-  const hp<N> zero, one{1};
+template <typename T> void test_arithmetic(const T &a, const T &b) {
+  const T zero, one{1};
 
   assert(a + b == b + a);
   assert(a - a == zero);
   assert(((a + a) >> 1) == a);
   assert(a - b == -(b - a));
+  auto dbg1 = a + b;
+  auto dbg = dbg1 - b;
   assert(a + b - b == a);
 
   assert(a == -(-a));
@@ -235,6 +238,74 @@ void random_bits() {
   }
 }
 
+template <typename T> void test_comparison(T a, T b) {
+  assert(a == a);
+  assert(b == b);
+  assert(a != b);
+  assert(a < b);
+  assert(a <= b);
+  assert(b > a);
+  assert(b >= a);
+}
+
+void test_conversion(double x) {
+  using R = fractals::exponented_real<double, int>;
+  using HP3 = fractals::high_precision_real<3>;
+
+  auto a = R(x);
+  auto b = fractals::convert<HP3>(a);
+  auto c = fractals::convert<R>(b);
+  auto d = fractals::convert<HP3>(a);
+  assert(b == d);
+  assert(a == c);
+  auto e = fractals::convert<double>(a);
+  auto f = fractals::convert<double>(b);
+  assert(e == x);
+  assert(f == x);
+}
+
+void exponented_real_tests() {
+  using R = fractals::exponented_real<double, int>;
+  using HP3 = fractals::high_precision_real<3>;
+
+  R r1, r2;
+
+  r1 = 10;
+  r2 = 0.0001;
+  auto r3 = r1 * r2;
+  std::cout << r3.to_double() << " ";
+
+  r1 = 0;
+  assert(r1 == R(0));
+  assert(R(1) < R(2));
+  assert(R(2) * R(2) == R(4));
+
+  // Conversion
+
+  auto c = fractals::convert<HP3>(R{2.5});
+  std::cout << fractals::convert<R>(fractals::convert<HP3>(R{2.5})).to_double()
+            << std::endl;
+  r2 = 2.5;
+  assert(r2 == R(2.5));
+  test_arithmetic(R{1}, R{0.1});
+  test_arithmetic(R{-5}, R{0.1});
+  test_arithmetic(R{0}, R{0.1});
+  test_arithmetic(R{120}, R{0});
+  test_arithmetic(R{-5}, R{5});
+  test_arithmetic(R{-5, 20}, R{5});
+
+  test_comparison(R{1}, R{2});
+  test_comparison(R{0.1}, R{200});
+  test_comparison(-R{5}, R{2});
+  test_comparison(R{1.2}, R{1.3});
+  test_comparison(-R{1.3}, -R{1.2});
+
+  test_conversion(0.0000001);
+  test_conversion(0);
+  test_conversion(100012);
+  test_conversion(0.123e-10);
+}
+
 int main() {
 
   // Initializers
@@ -247,4 +318,6 @@ int main() {
   test<10>(n);
 
   random_bits();
+
+  exponented_real_tests();
 }

@@ -77,7 +77,7 @@ template <int N> struct high_precision_real {
   double to_double() const {
     double value = fraction[0];
     for (int i = 1; i < N; ++i)
-      value += fraction[i] * pow(0.5, 64 * i);
+      value += fraction[i] * std::pow(0.5, 64 * i);
     return negative ? -value : value;
   }
 
@@ -126,6 +126,10 @@ struct convert_to<high_precision_real<N>, high_precision_real<N>> {
 
 template <int M> struct convert_to<double, high_precision_real<M>> {
   static double get(const high_precision_real<M> &x) { return x.to_double(); }
+};
+
+template <int N> struct convert_to<high_precision_real<N>, int> {
+  static high_precision_real<N> get(int x) { return {x}; }
 };
 
 template <int M> struct convert_to<high_precision_real<M>, double> {

@@ -3,9 +3,10 @@
 */
 
 #pragma once
+#include "convert.hpp"
 #include <complex>
 
-namespace mandelbrot {
+namespace fractals {
 
 template <typename T> T real_part(const std::complex<T> &c) { return c.real(); }
 
@@ -13,12 +14,12 @@ template <typename T> T imag_part(const std::complex<T> &c) { return c.imag(); }
 
 template <typename Complex> Complex square(const Complex &c) {
   return {real_part(c) * real_part(c) - imag_part(c) * imag_part(c),
-          2 * real_part(c) * imag_part(c)};
+          typename Complex::value_type(2) * real_part(c) * imag_part(c)};
 }
 
 template <typename T>
 std::complex<T> operator*(int k, const std::complex<T> &c) {
-  return {k * real_part(c), k * imag_part(c)};
+  return {T(k) * real_part(c), T(k) * imag_part(c)};
 }
 
 template <typename T>
@@ -30,15 +31,9 @@ std::complex<T> mul(const std::complex<T> &a, const std::complex<T> &b) {
 inline double to_double(double d) { return d; }
 inline double to_double(float f) { return f; }
 
-template <typename T1> struct convert_to;
-
-template <> struct convert_to<double> {
-  template <typename T> static double get(const T &v) { return to_double(v); }
-};
-
 template <typename T1, typename T2> T1 convert_complex(const T2 &c) {
-  return {convert_to<typename T1::value_type>::get(real_part(c)),
-          convert_to<typename T1::value_type>::get(imag_part(c))};
+  return {fractals::convert<typename T1::value_type>(real_part(c)),
+          fractals::convert<typename T1::value_type>(imag_part(c))};
 }
 
 template <typename C> C step(const C &z, const C &c) { return square(z) + c; }
@@ -48,8 +43,6 @@ template <typename C> auto norm(const C &c) {
   auto i = imag_part(c);
   return r * r + i * i;
 }
-
-template <typename C> bool escaped(const C &c) { return norm(c) >= 4; }
 
 template <int Order, typename C, bool is_even = (Order % 2 == 0)>
 struct pow_impl;
@@ -114,4 +107,6 @@ template <int N, int M> constexpr int choose() {
   return choose_impl<N, M>::value;
 }
 
-} // namespace mandelbrot
+inline bool isfinite(double d) { return std::isfinite(d); }
+
+} // namespace fractals

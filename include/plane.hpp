@@ -15,17 +15,17 @@ template <typename C1, typename C2 = C1> struct plane {
   plane(const view_coords &c, int pw, int ph) {
     if (pw > ph) {
       y0 = convert<C1>(c.y) - convert<C1>(c.r);
-      h = convert<C2>(c.r) * 2;
-      w = convert<C2>(c.r) * ((2.0 * pw) / ph);
-      x0 = convert<C1>(c.x) - convert<C1>(w / 2);
+      h = convert<C2>(c.r) * C2(2);
+      w = convert<C2>(c.r) * C2((2.0 * pw) / ph);
+      x0 = convert<C1>(c.x) - convert<C1>(w * C2(0.5));
     } else {
       x0 = convert<C1>(c.x) - convert<C1>(c.r);
-      w = convert<C2>(c.r) * 2;
-      h = convert<C2>(c.r) * ((2.0 * ph) / pw);
-      y0 = convert<C1>(c.y) - convert<C1>(h / 2);
+      w = convert<C2>(c.r) * C2(2);
+      h = convert<C2>(c.r) * C2((2.0 * ph) / pw);
+      y0 = convert<C1>(c.y) - convert<C1>(h * C2(0.5));
     }
-    dx = w / pw;
-    dy = h / ph;
+    dx = w * C2(1.0 / pw);
+    dy = h * C2(1.0 / ph);
   }
 
   C1 get_x(int x) const { return x0 + x * dx; }

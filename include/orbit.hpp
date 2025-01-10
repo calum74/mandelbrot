@@ -224,7 +224,7 @@ public:
 
     auto z = reference[j] + epsilon;
 
-    if (escaped(reference[j]) || norm(z) < norm(epsilon)) {
+    if (escaped(reference[j]) || fractals::norm(z) < fractals::norm(epsilon)) {
       // We have exceeded the bounds of the current orbit
       // We need to reset the current orbit.
       // Thanks to
@@ -273,8 +273,9 @@ public:
       //
       bool failed = false;
       for (int t = 0; t < Terms; ++t) {
-        if (!max_term[t] && (!std::isfinite(real_part(entries[i].terms[t])) ||
-                             !std::isfinite(imag_part(entries[i].terms[t])))) {
+        if (!max_term[t] &&
+            (!isfinite(fractals::real_part(entries[i].terms[t])) ||
+             !isfinite(fractals::imag_part(entries[i].terms[t])))) {
           max_term[t] = i;
         }
       }
@@ -346,18 +347,19 @@ private:
     // Returns the epsilon, and whether the epsilon is "accurate"
     std::pair<Complex, bool> epsilon(Complex delta) const {
       auto d = delta;
-      Complex s = 0;
+      Complex s(0);
       typename Complex::value_type prev_norm = 0, term_norm = 0;
       for (int t = 0; t < Terms; t++) {
         auto term = terms[t] * d;
         prev_norm = term_norm;
-        term_norm = norm(term);
+        term_norm = fractals::norm(term);
         s += term;
         d = d * delta;
         // if (t > 0 && norm(s) < Precision * norm(lt))
         //   ok = false;
       }
-      return std::make_pair(s, prev_norm > Precision * term_norm);
+      return std::make_pair(
+          s, prev_norm > typename Complex::value_type(Precision) * term_norm);
     }
   };
 

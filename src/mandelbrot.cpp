@@ -1,6 +1,7 @@
 // This is an implementation of the classic Mandelbrot set fractal.
 
 #include "mandelbrot.hpp"
+#include "exponented_real.hpp"
 #include "fractal.hpp"
 #include "orbit.hpp"
 
@@ -25,8 +26,10 @@ public:
         ref_y(h / 2),
         reference_orbit{
             mandelbrot::make_basic_orbit<Calculation>(HighPrecisionComplex{
-                coords.x0 + fractals::convert<BigReal>(coords.dx * ref_x),
-                coords.y0 + fractals::convert<BigReal>(coords.dy * ref_y)}),
+                coords.x0 + fractals::convert<BigReal>(coords.dx) *
+                                fractals::convert<BigReal>(ref_x),
+                coords.y0 + fractals::convert<BigReal>(coords.dy) *
+                                fractals::convert<BigReal>(ref_y)}),
             max_iterations, stop} {}
 
   // Are the given coordinates valid. Use this to prevent zooming out too far
@@ -55,8 +58,8 @@ public:
   // Look up the actual coordinates (or in this case, the delta from the center
   // (ref_x, ref_y)) from the plane.
   double calculate(int x, int y) const override {
-    LowPrecisionComplex delta = {coords.dx * (x - ref_x),
-                                 coords.dy * (y - ref_y)};
+    LowPrecisionComplex delta = {coords.dx * SmallReal(x - ref_x),
+                                 coords.dy * SmallReal(y - ref_y)};
 
     // The function `make_relative_orbit` will skip some iterations,
     // use `z.iteration()` to find out which iteration we are on.
@@ -64,7 +67,7 @@ public:
 
     points_calculated++;
     skipped_iterations += z.iteration();
-    while (norm(*z) <= (1 << 16)) {
+    while (fractals::norm(*z) <= SmallReal(1 << 16)) {
       if (z.iteration() >= this->max_iterations)
         return 0;
       ++z;
@@ -74,7 +77,7 @@ public:
 
     // This calculation creates a "fractional" iteration
     // used for smoother rendering.
-    auto zn = log(norm(*z)) / 2;
+    auto zn = log(fractals::norm(*z)) / 2;
     auto nu = log(log(zn) / log(2)) / log(2);
     return z.iteration() + 1 - nu;
   }
@@ -107,7 +110,9 @@ double fractals::PointwiseCalculation::average_skipped() const { return 0; }
 
 template <int N, int P, int T = 4, int Tolerance = 100>
 using MB = PerturbatedMandelbrotCalculation<
-    std::complex<double>, std::complex<fractals::high_precision_real<P>>,
+    // std::complex<double>,
+    std::complex<fractals::exponented_real<double>>,
+    std::complex<fractals::high_precision_real<P>>,
     mandelbrot::mandelbrot_calculation<N>, T, Tolerance>;
 
 // Supply a list of fractals to `make_fractal`, which will create a factory

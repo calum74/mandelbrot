@@ -74,7 +74,7 @@ public:
   using BigReal = typename HighPrecisionComplex::value_type;
 
   static HighPrecisionComplex map(const HighPrecisionComplex &z) {
-    auto n = inverse(mandelbrot::norm(z));
+    auto n = inverse(fractals::norm(z));
     return {-imag(z) * n, -real(z) * n};
   }
 

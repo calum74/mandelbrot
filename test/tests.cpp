@@ -1,4 +1,5 @@
 #include "complex.hpp"
+#include "exponented_real.hpp"
 #include "fractal.hpp"
 #include "high_precision_real.hpp"
 #include "mandelbrot.hpp"
@@ -126,6 +127,89 @@ int main() {
       assert(approx_eq(B, V[1]));
       assert(approx_eq(C, V[2]));
     }
+  }
+
+  {
+    mandelbrot::basic_orbit<std::complex<double>,
+                            mandelbrot::mandelbrot_calculation<2>>
+        orbit1({0.5, 0.5});
+
+    int iterations = 0;
+    while (!mandelbrot::escaped(*orbit1)) {
+      ++iterations;
+      ++orbit1;
+    }
+
+    assert(iterations == 5);
+  }
+
+  {
+    using R1 = fractals::exponented_real<double, int>;
+    using R2 = double;
+    using R3 = fractals::high_precision_real<3>;
+
+    mandelbrot::basic_orbit<std::complex<R1>,
+                            mandelbrot::mandelbrot_calculation<2>>
+        orbit1({0.5, 0.5});
+    mandelbrot::basic_orbit<std::complex<R2>,
+                            mandelbrot::mandelbrot_calculation<2>>
+        orbit2({0.5, 0.5});
+    mandelbrot::basic_orbit<std::complex<R3>,
+                            mandelbrot::mandelbrot_calculation<2>>
+        orbit3({0.5, 0.5});
+
+    int iterations = 0;
+    while (!mandelbrot::escaped(*orbit1)) {
+      ++iterations;
+      ++orbit1;
+      ++orbit2;
+      ++orbit3;
+    }
+
+    std::cout << *orbit1 << *orbit2 << *orbit3;
+
+    assert(iterations == 5);
+
+    auto reference_orbit =
+        mandelbrot::make_basic_orbit<mandelbrot::mandelbrot_calculation<2>>(
+            std::complex<R1>{0.49, 0.49});
+
+    auto stored_orbit =
+        mandelbrot::make_stored_orbit<std::complex<R1>>(reference_orbit);
+
+    // Reset the reference orbit
+    auto relative_orbit = mandelbrot::make_relative_orbit(
+        stored_orbit.make_reference(), std::complex<R1>{0.01, 0.01});
+
+    iterations = 0;
+    while (!mandelbrot::escaped(*relative_orbit)) {
+      ++iterations;
+      ++relative_orbit;
+    }
+
+    assert(iterations == 5);
+
+    std::atomic<bool> stop;
+    mandelbrot::stored_taylor_series_orbit<
+        std::complex<R1>,
+        mandelbrot::basic_orbit<std::complex<R1>,
+                                mandelbrot::mandelbrot_calculation<2>>,
+        3, 100>
+        taylor_series{reference_orbit, 100, stop};
+
+    auto relative = taylor_series.make_relative_orbit({0.01, 0.01}, 100);
+    iterations = relative.iteration();
+
+    // Probably this will change
+    assert(iterations == 3);
+
+    // Iterate the relative orbit as before, using perturbation.
+    while (!mandelbrot::escaped(*relative) && iterations < 100) {
+      ++iterations;
+      ++relative;
+    }
+
+    assert(iterations == 5);
   }
 
   return 0;

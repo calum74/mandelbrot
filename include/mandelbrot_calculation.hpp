@@ -24,6 +24,11 @@
 #include <array>
 
 namespace mandelbrot {
+using namespace fractals;
+
+template <typename C> bool escaped(const C &c) {
+  return fractals::norm(c) >= typename C::value_type(4);
+}
 
 namespace detail {
 template <int N, int J> struct calculate_epsilon {
@@ -112,7 +117,7 @@ template <int N> struct mandelbrot_calculation {
   delta_terms(const Complex &z, const std::array<Complex, T> &previous) {
     std::array<Complex, T> result;
     result[0] = 1;
-    Complex zJ = 1; // z^j
+    Complex zJ(1, 0); // z^j
 
     for (int j = 0; j < N; j++, zJ = zJ * z) {
       int nCj = fac(N) / (fac(j) * fac(N - j));

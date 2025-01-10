@@ -1,4 +1,22 @@
-To view these fractals, please visit [Mandelbrot-Qt](https://https://github.com/calum74/mandelbrot-qt) for an application which renders these fractals.
+To view these fractals, please visit [Mandelbrot-Qt](https://https://github.com/calum74/mandelbrot-qt) for an application which renders these fractals. This contains the internal data structures which may be of interest.
+
+# Classes
+
+## exponented_real<Value, Exponent>
+
+Extends a `double` with an additional `Exponent` field, for situations where the 
+
+## high_precision_real<N>
+
+Arbitrary-precision fixed-point arithmetic. `N` refers (quite awkwardly) to the number of 64-bit integers used to store the number.
+
+## mandelbrot_calculation<N>
+
+Represents the 
+
+
+
+
 
 # About this repo
 
