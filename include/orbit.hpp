@@ -263,6 +263,30 @@ public:
       : reference(r) {
     for (int i = 0; !stop && i <= max_iterations && !escaped((*this)[i]); ++i)
       ; // Force evaluation of the reference orbit
+    debug_terms();
+  }
+
+  void debug_terms() const {
+    // Debug - look at the terms
+    int max_term[Terms] = {};
+    for (int i = 0; i < entries.size(); ++i) {
+      //
+      bool failed = false;
+      for (int t = 0; t < Terms; ++t) {
+        if (!max_term[t] && (!std::isfinite(real_part(entries[i].terms[t])) ||
+                             !std::isfinite(imag_part(entries[i].terms[t])))) {
+          max_term[t] = i;
+        }
+      }
+    }
+    for (int t = 0; t < Terms; ++t) {
+      if (max_term[t]) {
+        std::cout << "Maximum term for " << t << " = " << max_term[t];
+        for (int u = 0; u < Terms; ++u)
+          std::cout << " " << entries[max_term[t]].terms[u];
+        std::cout << std::endl;
+      }
+    }
   }
 
   // Gets the corresponding epsilon (dz) for a given delta (dc)
