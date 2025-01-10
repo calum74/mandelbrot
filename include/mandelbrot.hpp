@@ -11,3 +11,4 @@ extern const fractals::PointwiseFractal &mandelbrot4_fractal;
 extern const fractals::PointwiseFractal &mandelbrot5_fractal;
 extern const fractals::PointwiseFractal &mandelbrot6_fractal;
 extern const fractals::PointwiseFractal &mandelbrot7_fractal;
+extern const fractals::PointwiseFractal &experimental_fractal;

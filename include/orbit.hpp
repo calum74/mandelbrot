@@ -349,17 +349,19 @@ private:
       auto d = delta;
       Complex s(0);
       typename Complex::value_type prev_norm = 0, term_norm = 0;
+      bool ok = true;
       for (int t = 0; t < Terms; t++) {
         auto term = terms[t] * d;
         prev_norm = term_norm;
         term_norm = fractals::norm(term);
         s += term;
         d = d * delta;
-        // if (t > 0 && norm(s) < Precision * norm(lt))
+        // if (t > 0 && fractals::norm(s) <
+        //                  typename Complex::value_type(Precision) * prev_norm)
         //   ok = false;
       }
-      return std::make_pair(
-          s, prev_norm > typename Complex::value_type(Precision) * term_norm);
+      ok = prev_norm > typename Complex::value_type(Precision) * term_norm;
+      return std::make_pair(s, ok);
     }
   };
 

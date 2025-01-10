@@ -110,9 +110,7 @@ double fractals::PointwiseCalculation::average_skipped() const { return 0; }
 
 template <int N, int P, int T = 4, int Tolerance = 100>
 using MB = PerturbatedMandelbrotCalculation<
-    // std::complex<double>,
-    std::complex<fractals::exponented_real<double>>,
-    std::complex<fractals::high_precision_real<P>>,
+    std::complex<double>, std::complex<fractals::high_precision_real<P>>,
     mandelbrot::mandelbrot_calculation<N>, T, Tolerance>;
 
 // Supply a list of fractals to `make_fractal`, which will create a factory
@@ -122,6 +120,16 @@ using MB = PerturbatedMandelbrotCalculation<
 const fractals::PointwiseFractal &mandelbrot_fractal =
     fractals::make_fractal<MB<2, 3, 4, 1000>, MB<2, 6>, MB<2, 10>,
                            MB<2, 18, 5, 10>>("Mandelbrot (power 2)");
+
+template <int N, int P, int T = 4, int Tolerance = 10000>
+using MBX = PerturbatedMandelbrotCalculation<
+    std::complex<fractals::exponented_real<double>>,
+    std::complex<fractals::high_precision_real<P>>,
+    mandelbrot::mandelbrot_calculation<N>, T, Tolerance>;
+
+const fractals::PointwiseFractal &experimental_fractal =
+    fractals::make_fractal<MBX<2, 3, 4, 1000>, MBX<2, 6>, MBX<2, 10>,
+                           MBX<2, 18, 5, 10>>("Experimental");
 
 // Cubic Mandelbrot has no glitches with 3 Taylor series terms, but
 // glitches quite badly with 4 terms. On the other hand, Square mandelbrot works
