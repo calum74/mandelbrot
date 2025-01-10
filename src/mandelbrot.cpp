@@ -9,8 +9,9 @@
 // Taylor series to skip iterations. The algorithms are implemented in
 // orbit.hpp. The class is templated so that we can configure the data types
 // for higher resolution rendering if required.
-template <typename LowPrecisionComplex, typename HighPrecisionComplex,
-          typename Calculation, int Terms, int Precision>
+template <typename LowPrecisionComplex, typename MediumPrecisionComplex,
+          typename HighPrecisionComplex, typename Calculation, int Terms,
+          int Precision>
 class PerturbatedMandelbrotCalculation : public fractals::PointwiseCalculation {
 public:
   using SmallReal = typename LowPrecisionComplex::value_type;
@@ -98,7 +99,7 @@ private:
   // The calculated reference orbit, together with Taylor series terms for the
   // epsilon/dz for each iteration.
   mandelbrot::stored_taylor_series_orbit<
-      LowPrecisionComplex,
+      LowPrecisionComplex, MediumPrecisionComplex,
       mandelbrot::basic_orbit<HighPrecisionComplex, Calculation>, Terms,
       Precision>
       reference_orbit;
@@ -110,7 +111,8 @@ double fractals::PointwiseCalculation::average_skipped() const { return 0; }
 
 template <int N, int P, int T = 4, int Tolerance = 100>
 using MB = PerturbatedMandelbrotCalculation<
-    std::complex<double>, std::complex<fractals::high_precision_real<P>>,
+    std::complex<double>, std::complex<double>,
+    std::complex<fractals::high_precision_real<P>>,
     mandelbrot::mandelbrot_calculation<N>, T, Tolerance>;
 
 // Supply a list of fractals to `make_fractal`, which will create a factory
@@ -123,7 +125,7 @@ const fractals::PointwiseFractal &mandelbrot_fractal =
 
 template <int N, int P, int T = 4, int Tolerance = 10000>
 using MBX = PerturbatedMandelbrotCalculation<
-    std::complex<fractals::exponented_real<double>>,
+    std::complex<double>, std::complex<fractals::exponented_real<double>>,
     std::complex<fractals::high_precision_real<P>>,
     mandelbrot::mandelbrot_calculation<N>, T, Tolerance>;
 

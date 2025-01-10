@@ -250,7 +250,8 @@ private:
   (random-access) test. Complex is a lower-precision representation, e.g.
   std::complex<double> ReferenceOrbit is a high-precision orbit.
 */
-template <typename Complex, typename ReferenceOrbit, int Terms, int Precision>
+template <typename Complex, typename MediumPrecisionComplex,
+          typename ReferenceOrbit, int Terms, int Precision>
 class stored_taylor_series_orbit {
 public:
   using value_type = Complex;
@@ -292,13 +293,13 @@ public:
 
   // Gets the corresponding epsilon (dz) for a given delta (dc)
   // at iteration i.
-  auto epsilon(int i, Complex delta) {
+  auto epsilon(int i, MediumPrecisionComplex delta) {
     while (i >= entries.size())
       get_next();
     return entries[i].epsilon(delta);
   }
 
-  auto epsilon(int i, Complex delta) const {
+  auto epsilon(int i, MediumPrecisionComplex delta) const {
     return entries.at(i).epsilon(delta);
   }
 
@@ -314,8 +315,8 @@ public:
 private:
   // Finds the number of iterations it's safe to skip
   // because we judge that we are sufficiently close to the reference orbit
-  std::pair<int, Complex> find_iterations_to_skip(Complex delta,
-                                                  int max) const {
+  std::pair<int, MediumPrecisionComplex>
+  find_iterations_to_skip(MediumPrecisionComplex delta, int max) const {
     int min = 0;
 
     // Quoting Superfractalthing Maths by K.I. Martin,
@@ -325,7 +326,7 @@ private:
     // This means that we'll use the approximation until the terms run out,
     // then we transition to iteration.
 
-    Complex epsilon = {};
+    MediumPrecisionComplex epsilon = {};
     while (max - min > 4) {
       int mid = (max + min) / 2;
       auto e = this->epsilon(mid, delta);
@@ -342,13 +343,14 @@ private:
 private:
   struct Entry {
     Complex z;
-    std::array<Complex, Terms> terms;
+    std::array<MediumPrecisionComplex, Terms> terms;
 
     // Returns the epsilon, and whether the epsilon is "accurate"
-    std::pair<Complex, bool> epsilon(Complex delta) const {
+    std::pair<MediumPrecisionComplex, bool>
+    epsilon(MediumPrecisionComplex delta) const {
       auto d = delta;
-      Complex s(0);
-      typename Complex::value_type prev_norm = 0, term_norm = 0;
+      MediumPrecisionComplex s(0);
+      typename MediumPrecisionComplex::value_type prev_norm = 0, term_norm = 0;
       bool ok = true;
       for (int t = 0; t < Terms; t++) {
         auto term = terms[t] * d;
@@ -360,16 +362,17 @@ private:
         //                  typename Complex::value_type(Precision) * prev_norm)
         //   ok = false;
       }
-      ok = prev_norm > typename Complex::value_type(Precision) * term_norm;
+      ok = prev_norm >
+           typename MediumPrecisionComplex::value_type(Precision) * term_norm;
       return std::make_pair(s, ok);
     }
   };
 
-  taylor_series_orbit<Complex, ReferenceOrbit, Terms> reference;
+  taylor_series_orbit<MediumPrecisionComplex, ReferenceOrbit, Terms> reference;
   std::vector<Entry> entries;
 
   void get_next() {
-    entries.push_back({*reference, reference.terms});
+    entries.push_back({convert_complex<Complex>(*reference), reference.terms});
     ++reference;
   }
 
@@ -379,7 +382,7 @@ public:
 
   relative_orbit make_relative_orbit(Complex delta, int limit) const {
     auto s = find_iterations_to_skip(delta, entries.size());
-    return {*this, delta, s.first, s.second};
+    return {*this, delta, s.first, convert_complex<Complex>(s.second)};
   }
 };
 

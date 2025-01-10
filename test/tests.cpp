@@ -191,7 +191,7 @@ int main() {
 
     std::atomic<bool> stop;
     mandelbrot::stored_taylor_series_orbit<
-        std::complex<R1>,
+        std::complex<R1>, std::complex<R1>,
         mandelbrot::basic_orbit<std::complex<R1>,
                                 mandelbrot::mandelbrot_calculation<2>>,
         3, 100>

@@ -114,7 +114,7 @@ int main() {
 
   // Compute the Taylor series coefficients for the given reference orbit.
   mandelbrot::stored_taylor_series_orbit<
-      std::complex<double>,
+      std::complex<double>, std::complex<double>,
       mandelbrot::basic_orbit<std::complex<R>,
                               mandelbrot::mandelbrot_calculation<2>>,
       3, 100>

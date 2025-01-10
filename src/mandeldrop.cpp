@@ -42,8 +42,9 @@ private:
 const fractals::PointwiseFractal &naiveMandeldrop =
     fractals::make_fractal<SimpleMandeldrop>("Mandeldrop (low precision)");
 
-template <typename LowPrecisionComplex, typename HighPrecisionComplex,
-          typename Calculation, int Terms, int Precision>
+template <typename LowPrecisionComplex, typename MediumPrecisionComplex,
+          typename HighPrecisionComplex, typename Calculation, int Terms,
+          int Precision>
 class PerturbatedMandeldropCalculation : public fractals::PointwiseCalculation {
 public:
   /*
@@ -155,7 +156,7 @@ private:
   // The calculated reference orbit, together with Taylor series terms for the
   // epsilon/dz for each iteration.
   mandelbrot::stored_taylor_series_orbit<
-      LowPrecisionComplex,
+      LowPrecisionComplex, MediumPrecisionComplex,
       mandelbrot::basic_orbit<HighPrecisionComplex, Calculation>, Terms,
       Precision>
       reference_orbit;
@@ -163,7 +164,8 @@ private:
 
 template <int N>
 using MD = PerturbatedMandeldropCalculation<
-    std::complex<double>, std::complex<fractals::high_precision_real<N>>,
+    std::complex<double>, std::complex<double>,
+    std::complex<fractals::high_precision_real<N>>,
     mandelbrot::mandelbrot_calculation<2>, 4, 100>;
 
 const fractals::PointwiseFractal &mandeldrop_fractal =
