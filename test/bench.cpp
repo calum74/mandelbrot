@@ -28,6 +28,7 @@ void benchmark(const char *x, const char *y, const char *r, int iterations,
 
 int main(int argc, char **argv) {
   benchmark("-0.5", "0.0", "2.0", 500, 500, 500, mandelbrot_fractal);
+
   benchmark("-1.40116060900525796", "-0.00000000000113124",
             "0.00000000000000897", 1062122, 100, 100, mandelbrot_fractal);
 }

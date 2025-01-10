@@ -115,26 +115,29 @@ using MB = PerturbatedMandelbrotCalculation<
 // implementations at different resolutions so that we don't lose precision or
 // use a slower algorithm than necessary.
 const fractals::PointwiseFractal &mandelbrot_fractal =
-    fractals::make_fractal<MB<2, 3, 4, 1000>, MB<2, 6>, MB<2, 10>, MB<2, 16>>(
+    fractals::make_fractal<MB<2, 3, 4, 1000>, MB<2, 6>, MB<2, 10>, MB<2, 18>>(
         "Mandelbrot (power 2)");
 
+// Cubic Mandelbrot has no glitches with 3 Taylor series terms, but
+// glitches quite badly with 4 terms. On the other hand, Square mandelbrot works
+// better with 4 terms.
 const fractals::PointwiseFractal &mandelbrot3_fractal =
     fractals::make_fractal<MB<3, 4, 3, 10000>, MB<3, 6, 3, 10000>,
-                           MB<3, 10, 3, 10000>, MB<3, 16, 3, 10000>>(
+                           MB<3, 10, 3, 10000>, MB<3, 18, 3, 10000>>(
         "Cubic Mandelbrot (power 3)");
 
 const fractals::PointwiseFractal &mandelbrot4_fractal =
-    fractals::make_fractal<MB<4, 4>, MB<4, 6>, MB<4, 10>, MB<4, 16>>(
+    fractals::make_fractal<MB<4, 4>, MB<4, 6>, MB<4, 10>, MB<4, 18>>(
         "Mandelbrot (power 4)");
 
 const fractals::PointwiseFractal &mandelbrot5_fractal =
-    fractals::make_fractal<MB<5, 4>, MB<5, 6>, MB<5, 10>, MB<5, 16>>(
+    fractals::make_fractal<MB<5, 4>, MB<5, 6>, MB<5, 10>, MB<5, 18>>(
         "Mandelbox (power 5)");
 
 const fractals::PointwiseFractal &mandelbrot6_fractal =
-    fractals::make_fractal<MB<6, 4>, MB<6, 6>, MB<6, 10>, MB<6, 16>>(
+    fractals::make_fractal<MB<6, 4>, MB<6, 6>, MB<6, 10>, MB<6, 18>>(
         "Mandelbrot (power 6)");
 
 const fractals::PointwiseFractal &mandelbrot7_fractal =
-    fractals::make_fractal<MB<7, 4>, MB<7, 6>, MB<7, 10>, MB<7, 16>>(
+    fractals::make_fractal<MB<7, 4>, MB<7, 6>, MB<7, 10>, MB<7, 18>>(
         "Mandelflake (power 7)");
