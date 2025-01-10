@@ -323,7 +323,6 @@ private:
     std::pair<Complex, bool> epsilon(Complex delta) const {
       auto d = delta;
       Complex s = 0;
-      bool ok = true;
       typename Complex::value_type prev_norm = 0, term_norm = 0;
       for (int t = 0; t < Terms; t++) {
         auto term = terms[t] * d;
@@ -331,14 +330,10 @@ private:
         term_norm = norm(term);
         s += term;
         d = d * delta;
-        if (std::isnan(term_norm))
-          ok = false;
         // if (t > 0 && norm(s) < Precision * norm(lt))
         //   ok = false;
       }
-      if (prev_norm < Precision * term_norm)
-        ok = false;
-      return std::make_pair(s, ok);
+      return std::make_pair(s, prev_norm > Precision * term_norm);
     }
   };
 

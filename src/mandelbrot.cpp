@@ -115,8 +115,8 @@ using MB = PerturbatedMandelbrotCalculation<
 // implementations at different resolutions so that we don't lose precision or
 // use a slower algorithm than necessary.
 const fractals::PointwiseFractal &mandelbrot_fractal =
-    fractals::make_fractal<MB<2, 3, 4, 1000>, MB<2, 6>, MB<2, 10>, MB<2, 18>>(
-        "Mandelbrot (power 2)");
+    fractals::make_fractal<MB<2, 3, 4, 1000>, MB<2, 6>, MB<2, 10>,
+                           MB<2, 18, 5, 10>>("Mandelbrot (power 2)");
 
 // Cubic Mandelbrot has no glitches with 3 Taylor series terms, but
 // glitches quite badly with 4 terms. On the other hand, Square mandelbrot works
