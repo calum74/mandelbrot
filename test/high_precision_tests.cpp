@@ -304,6 +304,15 @@ void high_exponent_real_tests() {
   test_conversion(0);
   test_conversion(100012);
   test_conversion(0.123e-10);
+
+  {
+    using HP20 = fractals::high_precision_real<20>;
+    HP20 h1 = 1;
+    // Bug is here
+    h1 = h1 >> (9 * 64); // 1288); //  * 64);
+    auto h2 = fractals::convert<R>(h1);
+    std::cout << h1 << std::endl << h2;
+  }
 }
 
 int main() {

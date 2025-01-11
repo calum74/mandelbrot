@@ -9,12 +9,13 @@
 // Taylor series to skip iterations. The algorithms are implemented in
 // orbit.hpp. The class is templated so that we can configure the data types
 // for higher resolution rendering if required.
-template <typename LowPrecisionComplex, typename MediumPrecisionComplex,
+template <typename LowPrecisionComplex, typename HighExponentComplex,
           typename HighPrecisionComplex, typename Calculation, int Terms,
           int Precision>
 class PerturbatedMandelbrotCalculation : public fractals::PointwiseCalculation {
 public:
   using SmallReal = typename LowPrecisionComplex::value_type;
+  using HighExponentReal = typename HighExponentComplex::value_type;
   using BigReal = typename HighPrecisionComplex::value_type;
 
   // Initialize the fractal. We calculate the high precision reference orbit
@@ -61,8 +62,8 @@ public:
   // Look up the actual coordinates (or in this case, the delta from the center
   // (ref_x, ref_y)) from the plane.
   double calculate(int x, int y) const override {
-    LowPrecisionComplex delta = {coords.dx * SmallReal(x - ref_x),
-                                 coords.dy * SmallReal(y - ref_y)};
+    HighExponentComplex delta = {coords.dx * HighExponentReal(x - ref_x),
+                                 coords.dy * HighExponentReal(y - ref_y)};
 
     // The function `make_relative_orbit` will skip some iterations,
     // use `z.iteration()` to find out which iteration we are on.
@@ -94,7 +95,7 @@ private:
 
   // A mapping from points in the image to points in the complex plane.
   const fractals::plane<typename HighPrecisionComplex::value_type,
-                        typename LowPrecisionComplex::value_type>
+                        typename HighExponentComplex::value_type>
       coords;
 
   // Where in the image the reference orbit is.
@@ -104,7 +105,7 @@ private:
   // The calculated reference orbit, together with Taylor series terms for the
   // epsilon/dz for each iteration.
   mandelbrot::stored_taylor_series_orbit<
-      LowPrecisionComplex, MediumPrecisionComplex,
+      LowPrecisionComplex, HighExponentComplex,
       mandelbrot::basic_orbit<HighPrecisionComplex, Calculation>, Terms,
       Precision>
       reference_orbit;
@@ -125,8 +126,9 @@ using MB = PerturbatedMandelbrotCalculation<
 // implementations at different resolutions so that we don't lose precision or
 // use a slower algorithm than necessary.
 const fractals::PointwiseFractal &mandelbrot_fractal =
-    fractals::make_fractal<MB<2, 3, 4, 1000>, MB<2, 6>, MB<2, 10>,
-                           MB<2, 18, 5, 10>>("Mandelbrot (power 2)");
+    fractals::make_fractal<MB<2, 3, 4, 1000>, MB<2, 6>, MB<2, 10>, MB<2, 18>,
+                           MB<2, 32>, MB<2, 40>, MB<2, 64>>(
+        "Mandelbrot (power 2)");
 
 template <int N, int P, int T = 4, int Tolerance = 1000>
 using MBX = PerturbatedMandelbrotCalculation<

@@ -159,7 +159,7 @@ struct convert_to<high_exponent_real<D, E>, high_precision_real<N>> {
   static high_exponent_real<D, E> get(const high_precision_real<N> &x) {
     if (x.fraction[0] == 0) {
       int e = count_fractional_zeros(x);
-      return {(x >> e).to_double(), e};
+      return {(x << e).to_double(), -e};
     } else {
       return x.to_double();
     }
