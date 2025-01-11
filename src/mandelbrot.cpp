@@ -1,8 +1,8 @@
 // This is an implementation of the classic Mandelbrot set fractal.
 
 #include "mandelbrot.hpp"
-#include "exponented_real.hpp"
 #include "fractal.hpp"
+#include "high_exponent_real.hpp"
 #include "orbit.hpp"
 
 // Calculate the Mandelbrot set using perturbations and
