@@ -256,6 +256,9 @@ void test_conversion(double x) {
   auto b = fractals::convert<HP3>(a);
   auto c = fractals::convert<R>(b);
   auto d = fractals::convert<HP3>(a);
+  std::cout << x << std::endl;
+  std::cout << a << "=" << c << std::endl;
+
   assert(b == d);
   assert(a == c);
   auto e = fractals::convert<double>(a);

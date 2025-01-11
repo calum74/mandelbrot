@@ -558,8 +558,10 @@ high_precision_real<N> operator<<(const high_precision_real<N> &n, int shift) {
   result.negative = n.negative;
   if (shift > 0)
     raw_shiftleft(n, result, shift);
-  else
+  else if (shift < 0)
     raw_shiftright(n, result, -shift);
+  else
+    result = n;
   return result;
 }
 
