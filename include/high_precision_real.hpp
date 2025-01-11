@@ -10,6 +10,7 @@
 
 #pragma once
 
+#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <iostream>
@@ -530,8 +531,10 @@ void raw_shiftleft(const high_precision_real<N> &a, high_precision_real<N> &b,
   n = n % 64;
   for (int i = N - 1; i >= 0; i--) {
     if (i + m < N) {
-      b.fraction[i] = a.fraction[i + m] << n | extra;
+      b.fraction[i] = (a.fraction[i + m] << n) | extra;
       extra = a.fraction[i + m] >> (64 - n);
+      if (n == 0)
+        extra = 0; // ?? Why
     } else
       b.fraction[i] = 0;
   }

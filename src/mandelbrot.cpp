@@ -39,6 +39,7 @@ public:
   // The call to `valid_precision` checks the size of the radius relative to
   // the size of a BigReal to make sure we have sufficient accuracy.
   static bool valid_for(const view_coords &c) {
+    // !! Bug in comparison here - allows up to 3.
     return c.r <= 2 && valid_precision(BigReal{c.r});
   }
 

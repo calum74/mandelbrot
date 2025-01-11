@@ -250,17 +250,17 @@ template <typename T> void test_comparison(T a, T b) {
 
 void test_conversion(double x) {
   using R = fractals::high_exponent_real<double, int>;
-  using HP3 = fractals::high_precision_real<3>;
+  using HP = fractals::high_precision_real<6>;
 
   auto a = R(x);
-  auto b = fractals::convert<HP3>(a);
+  auto b = fractals::convert<HP>(a);
   auto c = fractals::convert<R>(b);
-  auto d = fractals::convert<HP3>(a);
+  auto d = fractals::convert<HP>(c);
   std::cout << x << std::endl;
-  std::cout << a << "=" << c << std::endl;
+  std::cout << a << "=" << b << "=" << c << std::endl;
 
-  assert(b == d);
   assert(a == c);
+  assert(b == d);
   auto e = fractals::convert<double>(a);
   auto f = fractals::convert<double>(b);
   assert(e == x);
@@ -307,6 +307,7 @@ void high_exponent_real_tests() {
   test_conversion(0);
   test_conversion(100012);
   test_conversion(0.123e-10);
+  test_conversion(0.00000000000000000003941);
 
   {
     using HP20 = fractals::high_precision_real<20>;
