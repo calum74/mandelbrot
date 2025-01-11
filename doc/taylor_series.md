@@ -6,11 +6,18 @@ Your main enemies when plotting the Mandelbrot set are (a) number of iterations,
 
 When plotting "deep" Mandelbrot sets, we are typically talking about hundreds of thousands, if not millions of iterations per pixel. We also require precision of say 10e-100 $`1 x 10^(-1000)`$ or even higher, and say 1000 bits of precision per number. This means we can't use hardware-based floating point. Both of these problems have the potential to make the naive Mandelbrot calculation infeasibly slow.
 
+## Basic perturbation theory
+
+## Generalizing to higher orders
+
+
+
+
 
 
 ## Parameter tuning
 
-The number of terms in the Taylor series
+The number of terms in the Taylor series should in theory improve the precision of the calculation
 
 ### Number of terms
 

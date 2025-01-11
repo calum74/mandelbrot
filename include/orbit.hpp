@@ -247,10 +247,17 @@ private:
 /*
   A Taylor series orbit, which is a reference orbit together with the Taylor
   series terms for each iteration. This allows for an efficient
-  (random-access) test. Complex is a lower-precision representation, e.g.
-  std::complex<double> ReferenceOrbit is a high-precision orbit.
+  (random-access) test.
+
+  Complex is a lower-precision representation, e.g.
+  `std::complex<double>`
+
+  HighExponentComplex is used for the Taylor series terms, whose exponents can
+  often exceed a standard `double` data type.
+
+  ReferenceOrbit is the high-precision orbit.
 */
-template <typename Complex, typename MediumPrecisionComplex,
+template <typename Complex, typename HighExponentComplex,
           typename ReferenceOrbit, int Terms, int Precision>
 class stored_taylor_series_orbit {
 public:
@@ -264,20 +271,30 @@ public:
       : reference(r) {
     for (int i = 0; !stop && i <= max_iterations && !escaped((*this)[i]); ++i)
       ; // Force evaluation of the reference orbit
-    debug_terms();
+    // debug_terms();
   }
 
   void debug_terms() const {
     // Debug - look at the terms
     int max_term[Terms] = {};
+    using R = HighExponentComplex::value_type;
+    R max[Terms] = {}, min[Terms] = {};
     for (int i = 0; i < entries.size(); ++i) {
       //
       bool failed = false;
       for (int t = 0; t < Terms; ++t) {
-        if (!max_term[t] &&
-            (!isfinite(fractals::real_part(entries[i].terms[t])) ||
+        if ((!isfinite(fractals::real_part(entries[i].terms[t])) ||
              !isfinite(fractals::imag_part(entries[i].terms[t])))) {
-          max_term[t] = i;
+          if (!max_term[t]) {
+            max_term[t] = i;
+          }
+        } else {
+          // It's finite
+          auto nt = fractals::norm(entries[i].terms[t]);
+          if (max[t] == R(0) || nt > max[t])
+            max[t] = nt;
+          if (min[t] == R(0) || nt < min[t])
+            min[t] = nt;
         }
       }
     }
@@ -288,18 +305,19 @@ public:
           std::cout << " " << entries[max_term[t]].terms[u];
         std::cout << std::endl;
       }
+      std::cout << "Max = " << max[t] << ", min = " << min[t] << std::endl;
     }
   }
 
   // Gets the corresponding epsilon (dz) for a given delta (dc)
   // at iteration i.
-  auto epsilon(int i, MediumPrecisionComplex delta) {
+  auto epsilon(int i, HighExponentComplex delta) {
     while (i >= entries.size())
       get_next();
     return entries[i].epsilon(delta);
   }
 
-  auto epsilon(int i, MediumPrecisionComplex delta) const {
+  auto epsilon(int i, HighExponentComplex delta) const {
     return entries.at(i).epsilon(delta);
   }
 
@@ -315,8 +333,8 @@ public:
 private:
   // Finds the number of iterations it's safe to skip
   // because we judge that we are sufficiently close to the reference orbit
-  std::pair<int, MediumPrecisionComplex>
-  find_iterations_to_skip(MediumPrecisionComplex delta, int max) const {
+  std::pair<int, HighExponentComplex>
+  find_iterations_to_skip(HighExponentComplex delta, int max) const {
     int min = 0;
 
     // Quoting Superfractalthing Maths by K.I. Martin,
@@ -326,7 +344,7 @@ private:
     // This means that we'll use the approximation until the terms run out,
     // then we transition to iteration.
 
-    MediumPrecisionComplex epsilon = {};
+    HighExponentComplex epsilon = {};
     while (max - min > 4) {
       int mid = (max + min) / 2;
       auto e = this->epsilon(mid, delta);
@@ -341,34 +359,66 @@ private:
   }
 
 private:
+  // An `Entry` is an orbital value (`z`) and the Taylor series terms (`terms`)
+  // for an iteration.
   struct Entry {
+
+    using norm_type = typename HighExponentComplex::value_type;
+
+    Entry(Complex z, const std::array<HighExponentComplex, Terms> &terms)
+        : z(z), terms(terms) {
+      // We'll look at the terms in the series to figure out what the maximum
+      // size of delta is for this term before imprecision sets in.
+      // Each term has a "norm" giving an indication of its size.
+      // We need to make sure that each term is sufficiently "small"
+      // relative to the previous term.
+
+      auto prev_norm = fractals::norm(terms[0]);
+      for (int i = 1; i < Terms - 1; i++) {
+        auto n = fractals::norm(terms[i]);
+        auto nr = prev_norm / (norm_type(100) * n);
+        prev_norm = n;
+        if (i == 1 || max_delta_norm > nr)
+          max_delta_norm = nr;
+      }
+      auto n = fractals::norm(terms[Terms - 1]);
+      auto nr = prev_norm / (norm_type(100) * n);
+
+      if (max_delta_norm > nr)
+        max_delta_norm = nr;
+    }
     Complex z;
-    std::array<MediumPrecisionComplex, Terms> terms;
+    std::array<HighExponentComplex, Terms> terms;
+
+    // The maximum delta for this term
+    // If we use a term with higher delta than this, we risk imprecision and
+    // therefore glitches
+    norm_type max_delta_norm = 0;
+
+    // TODO: Figure out the "maximum delta" for this term.
 
     // Returns the epsilon, and whether the epsilon is "accurate"
-    std::pair<MediumPrecisionComplex, bool>
-    epsilon(MediumPrecisionComplex delta) const {
+    // If false, then the first item is not set.
+    std::pair<HighExponentComplex, bool>
+    epsilon(HighExponentComplex delta) const {
+      auto nd = fractals::norm(delta); // TODO: Avoid recomputing this
+      if (nd > max_delta_norm)
+        return {HighExponentComplex(), false};
       auto d = delta;
-      MediumPrecisionComplex s(0);
-      typename MediumPrecisionComplex::value_type prev_norm = 0, term_norm = 0;
-      bool ok = true;
+      HighExponentComplex s(0);
+      typename HighExponentComplex::value_type prev_norm = 0, term_norm = 0;
       for (int t = 0; t < Terms; t++) {
         auto term = terms[t] * d;
         prev_norm = term_norm;
         term_norm = fractals::norm(term);
         s += term;
         d = d * delta;
-        // if (t > 0 && fractals::norm(s) <
-        //                  typename Complex::value_type(Precision) * prev_norm)
-        //   ok = false;
       }
-      ok = prev_norm >
-           typename MediumPrecisionComplex::value_type(Precision) * term_norm;
-      return std::make_pair(s, ok);
+      return std::make_pair(s, true);
     }
   };
 
-  taylor_series_orbit<MediumPrecisionComplex, ReferenceOrbit, Terms> reference;
+  taylor_series_orbit<HighExponentComplex, ReferenceOrbit, Terms> reference;
   std::vector<Entry> entries;
 
   void get_next() {

@@ -130,7 +130,7 @@ using MBX = PerturbatedMandelbrotCalculation<
     mandelbrot::mandelbrot_calculation<N>, T, Tolerance>;
 
 const fractals::PointwiseFractal &experimental_fractal =
-    fractals::make_fractal<MBX<2, 3, 4, 1000>, MBX<2, 6>, MBX<2, 10>,
+    fractals::make_fractal<MBX<2, 3, 4, 10000>, MBX<2, 6>, MBX<2, 10>,
                            MBX<2, 18, 5, 10>>("Experimental");
 
 // Cubic Mandelbrot has no glitches with 3 Taylor series terms, but

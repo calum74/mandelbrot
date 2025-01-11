@@ -1,22 +1,42 @@
 To view these fractals, please visit [Mandelbrot-Qt](https://https://github.com/calum74/mandelbrot-qt) for an application which renders these fractals. This contains the internal data structures which may be of interest.
 
+# Why a C++ template library
+
+Although C++ templates are ugly and hard to read, they offer a lot of benefits.
+
+A C++ template library allows the same code to work with many different configurations and data-types. If allows you to for example specify the power of the mandelbrot set `N`, the number of terms to compute in a series `T`, and the type of complex number you want to use for your calculation `Complex`. This will generate efficient code without sacrificing performance.
+
+```c++
+template<int N> struct mandelbrot_calculation
+{
+  ...
+  template <typename Complex, unsigned long T>
+  static std::array<Complex, T>
+  delta_terms(const Complex &z, const std::array<Complex, T> &previous) {
+     ...
+  }
+};
+```
+
+C++ templates allow different datatypes to be used at different resolutions, for example using `high_precision_real<3>` at low resolutions, and `high_precision_real<6>` at the next resolution.
+
+Importantly, templates enable fine-tuning and experiments. You can experiment with a new number type (e.g. `high_exponent_real`) without rewriting a lot of code. You can experiment with adding more terms to a Taylor series just by tuning a template parameter.
+
 # Classes
 
 ## high_exponent_real<Value, Exponent>
 
-Extends a `double` with an additional `Exponent` field, for situations where the 
+Extends a `double` with an additional `Exponent` field, for situations where a standard `double` precision number is not sufficient (for example deltas).
 
 ## high_precision_real<N>
 
-Arbitrary-precision fixed-point arithmetic. `N` refers (quite awkwardly) to the number of 64-bit integers used to store the number.
+Arbitrary-precision fixed-point arithmetic. `N` refers (quite awkwardly) to the number of 64-bit integers used to store the number. This is not optimized for ridiculously large values of `N`.
 
 ## mandelbrot_calculation<N>
 
-Represents the 
+Represents the equations for calculating a Mandelbrot set. `N` refers to the "power" of the Mandelbrot set, which is traditionally 2, but extends to arbitrary integers >1 (and indeed non-integers but that is out of scope).
 
-
-
-
+$`z -> z^N + c`$
 
 # About this repo
 

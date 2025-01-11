@@ -116,7 +116,7 @@ template <int N> struct mandelbrot_calculation {
   static std::array<Complex, T>
   delta_terms(const Complex &z, const std::array<Complex, T> &previous) {
     std::array<Complex, T> result;
-    result[0] = 1;
+    result[0] = 1;    // Represents the first ∂ in the equation for epsilon'
     Complex zJ(1, 0); // z^j
 
     for (int j = 0; j < N; j++, zJ = zJ * z) {
@@ -127,6 +127,10 @@ template <int N> struct mandelbrot_calculation {
     return result;
   }
 
+  // We need to pick exactly one term from the equation
+  // (A∂ + B∂^2 + C∂^3 ...)
+  // and multiply it with the terms from (A∂ + B∂^2 + C∂^3
+  // ...)^(seq_remaining-1)
   template <typename Complex, unsigned long T>
   static void distribute_terms(int delta_pow, int seq_remaining, Complex f,
                                const std::array<Complex, T> &previous,
