@@ -333,19 +333,52 @@ public:
 private:
   // Finds the number of iterations it's safe to skip
   // because we judge that we are sufficiently close to the reference orbit
-  std::pair<int, Complex>
-  find_iterations_to_skip(HighExponentComplex delta, int max,
-                          int &iterations_skipped) const {
+  Complex find_iterations_to_skip(HighExponentComplex delta, int max,
+                                  int &iterations_skipped) const {
     int min = 0;
 
-    // Quoting Superfractalthing Maths by K.I. Martin,
-    // The approximation should be good as long as the δ^3
-    // term has a magnitude significantly smaller then the δ^2 term.
-    //
-    // This means that we'll use the approximation until the terms run out,
-    // then we transition to iteration.
-
+    // Step 1: Establish the max and min
     Complex epsilon = {};
+    int window_size = 4;
+
+    int skipped = iterations_skipped;
+
+    if (skipped > max)
+      skipped = max;
+
+    auto e = this->epsilon(skipped, delta);
+    if (e.second && !escaped((*this)[skipped])) {
+      // Seek upwards
+      min = skipped;
+      epsilon = convert_complex<Complex>(e.first);
+      for (int mid = iterations_skipped + window_size; mid < max;
+           mid += (window_size *= 2)) {
+        e = this->epsilon(mid, delta);
+        if (e.second && !escaped((*this)[mid])) {
+          min = mid;
+          epsilon = convert_complex<Complex>(e.first);
+        } else {
+          max = mid;
+          break;
+        }
+      }
+    } else {
+      // Seek downwards
+      max = skipped;
+      for (int mid = iterations_skipped - window_size; mid >= 0;
+           mid -= (window_size *= 2)) {
+        e = this->epsilon(mid, delta);
+        if (e.second && !escaped((*this)[mid])) {
+          min = mid;
+          epsilon = convert_complex<Complex>(e.first);
+          break;
+        } else {
+          max = mid;
+        }
+      }
+    }
+
+    // Step 2:
     while (max - min > 4) {
       int mid = (max + min) / 2;
       auto e = this->epsilon(mid, delta);
@@ -355,8 +388,9 @@ private:
       } else
         max = mid;
     }
+    iterations_skipped = min;
 
-    return {min, epsilon};
+    return epsilon;
   }
 
 private:
@@ -438,7 +472,7 @@ public:
   relative_orbit make_relative_orbit(HighExponentComplex delta, int limit,
                                      int &iterations_skipped) const {
     auto s = find_iterations_to_skip(delta, entries.size(), iterations_skipped);
-    return {*this, convert_complex<Complex>(delta), s.first, s.second};
+    return {*this, convert_complex<Complex>(delta), iterations_skipped, s};
   }
 };
 
