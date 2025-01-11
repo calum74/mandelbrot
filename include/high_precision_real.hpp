@@ -532,9 +532,7 @@ void raw_shiftleft(const high_precision_real<N> &a, high_precision_real<N> &b,
   for (int i = N - 1; i >= 0; i--) {
     if (i + m < N) {
       b.fraction[i] = (a.fraction[i + m] << n) | extra;
-      extra = a.fraction[i + m] >> (64 - n);
-      if (n == 0)
-        extra = 0; // ?? Why
+      extra = n == 0 ? 0 : a.fraction[i + m] >> (64 - n);
     } else
       b.fraction[i] = 0;
   }
@@ -549,7 +547,7 @@ void raw_shiftright(const high_precision_real<N> &a, high_precision_real<N> &b,
   for (int i = 0; i < N; i++) {
     if (i - m >= 0) {
       b.fraction[i] = a.fraction[i - m] >> n | extra;
-      extra = a.fraction[i - m] << (64 - n);
+      extra = n == 0 ? 0 : a.fraction[i - m] << (64 - n);
     } else
       b.fraction[i] = 0;
   }
