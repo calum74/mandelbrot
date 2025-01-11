@@ -59,6 +59,11 @@ high_exponent_real<D, E> operator-(high_exponent_real<D, E> a,
 template <typename D, typename E>
 high_exponent_real<D, E> operator+(high_exponent_real<D, E> a,
                                    high_exponent_real<D, E> b) {
+  if (a.d == 0)
+    return b;
+  if (b.d == 0)
+    return a;
+
   // Need to figure out a sensible exponent
   if (a.e > b.e) {
     // Convert b to a's exponent

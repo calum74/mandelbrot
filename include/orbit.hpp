@@ -411,13 +411,13 @@ private:
       auto prev_norm = fractals::norm(terms[0]);
       for (int i = 1; i < Terms - 1; i++) {
         auto n = fractals::norm(terms[i]);
-        auto nr = prev_norm / (norm_type(10) * n);
+        auto nr = prev_norm / (norm_type(100) * n);
         prev_norm = n;
         if (i == 1 || max_delta_norm > nr)
           max_delta_norm = nr;
       }
       auto n = fractals::norm(terms[Terms - 1]);
-      auto nr = prev_norm / (norm_type(100) * n);
+      auto nr = prev_norm / (norm_type(1000) * n);
 
       if (max_delta_norm > nr)
         max_delta_norm = nr;

@@ -16,7 +16,7 @@ class PerturbatedMandelbrotCalculation : public fractals::PointwiseCalculation {
 public:
   using SmallReal = typename LowPrecisionComplex::value_type;
   using HighExponentReal = typename HighExponentComplex::value_type;
-  using BigReal = typename HighPrecisionComplex::value_type;
+  using HighPrecisionReal = typename HighPrecisionComplex::value_type;
 
   // Initialize the fractal. We calculate the high precision reference orbit
   // at the center of the view. Because this calculation can be time-consuming,
@@ -28,10 +28,10 @@ public:
         ref_y(h / 2),
         reference_orbit{
             mandelbrot::make_basic_orbit<Calculation>(HighPrecisionComplex{
-                coords.x0 + fractals::convert<BigReal>(coords.dx) *
-                                fractals::convert<BigReal>(ref_x),
-                coords.y0 + fractals::convert<BigReal>(coords.dy) *
-                                fractals::convert<BigReal>(ref_y)}),
+                coords.x0 + fractals::convert<HighPrecisionReal>(coords.dx) *
+                                fractals::convert<HighPrecisionReal>(ref_x),
+                coords.y0 + fractals::convert<HighPrecisionReal>(coords.dy) *
+                                fractals::convert<HighPrecisionReal>(ref_y)}),
             max_iterations, stop} {}
 
   // Are the given coordinates valid. Use this to prevent zooming out too far
@@ -40,7 +40,7 @@ public:
   // the size of a BigReal to make sure we have sufficient accuracy.
   static bool valid_for(const view_coords &c) {
     // !! Bug in comparison here - allows up to 3.
-    return c.r <= 2 && valid_precision(BigReal{c.r});
+    return c.r <= 2 && valid_precision(HighPrecisionReal{c.r});
   }
 
   // The initial coordinates to view the Mandelbrot set.
@@ -95,9 +95,7 @@ private:
   const int max_iterations;
 
   // A mapping from points in the image to points in the complex plane.
-  const fractals::plane<typename HighPrecisionComplex::value_type,
-                        typename HighExponentComplex::value_type>
-      coords;
+  const fractals::plane<HighPrecisionReal, HighExponentReal> coords;
 
   // Where in the image the reference orbit is.
   // Currently always at the center of the image.
