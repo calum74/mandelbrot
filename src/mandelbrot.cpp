@@ -123,9 +123,9 @@ const fractals::PointwiseFractal &mandelbrot_fractal =
     fractals::make_fractal<MB<2, 3, 4, 1000>, MB<2, 6>, MB<2, 10>,
                            MB<2, 18, 5, 10>>("Mandelbrot (power 2)");
 
-template <int N, int P, int T = 4, int Tolerance = 10000>
+template <int N, int P, int T = 4, int Tolerance = 1000>
 using MBX = PerturbatedMandelbrotCalculation<
-    std::complex<double>, std::complex<fractals::exponented_real<double>>,
+    std::complex<double>, std::complex<fractals::high_exponent_real<double>>,
     std::complex<fractals::high_precision_real<P>>,
     mandelbrot::mandelbrot_calculation<N>, T, Tolerance>;
 

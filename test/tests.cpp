@@ -144,7 +144,7 @@ int main() {
   }
 
   {
-    using R1 = fractals::exponented_real<double, int>;
+    using R1 = fractals::high_exponent_real<double, int>;
     using R2 = double;
     using R3 = fractals::high_precision_real<3>;
 

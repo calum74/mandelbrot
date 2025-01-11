@@ -249,7 +249,7 @@ template <typename T> void test_comparison(T a, T b) {
 }
 
 void test_conversion(double x) {
-  using R = fractals::exponented_real<double, int>;
+  using R = fractals::high_exponent_real<double, int>;
   using HP3 = fractals::high_precision_real<3>;
 
   auto a = R(x);
@@ -264,8 +264,8 @@ void test_conversion(double x) {
   assert(f == x);
 }
 
-void exponented_real_tests() {
-  using R = fractals::exponented_real<double, int>;
+void high_exponent_real_tests() {
+  using R = fractals::high_exponent_real<double, int>;
   using HP3 = fractals::high_precision_real<3>;
 
   R r1, r2;
@@ -319,5 +319,5 @@ int main() {
 
   random_bits();
 
-  exponented_real_tests();
+  high_exponent_real_tests();
 }

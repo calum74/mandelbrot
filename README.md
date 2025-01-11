@@ -2,7 +2,7 @@ To view these fractals, please visit [Mandelbrot-Qt](https://https://github.com/
 
 # Classes
 
-## exponented_real<Value, Exponent>
+## high_exponent_real<Value, Exponent>
 
 Extends a `double` with an additional `Exponent` field, for situations where the 
 
