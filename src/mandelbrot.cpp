@@ -116,7 +116,7 @@ double fractals::PointwiseCalculation::average_skipped() const { return 0; }
 
 template <int N, int P, int T = 4, int Tolerance = 100>
 using MB = PerturbatedMandelbrotCalculation<
-    std::complex<double>, std::complex<double>,
+    std::complex<double>, std::complex<fractals::high_exponent_real<double>>,
     std::complex<fractals::high_precision_real<P>>,
     mandelbrot::mandelbrot_calculation<N>, T, Tolerance>;
 

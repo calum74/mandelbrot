@@ -1,4 +1,5 @@
 #include "fractal.hpp"
+#include "high_exponent_real.hpp"
 #include "mandelbrot.hpp"
 #include "orbit.hpp"
 
@@ -169,7 +170,7 @@ private:
 
 template <int N>
 using MD = PerturbatedMandeldropCalculation<
-    std::complex<double>, std::complex<double>,
+    std::complex<double>, std::complex<fractals::high_exponent_real<double>>,
     std::complex<fractals::high_precision_real<N>>,
     mandelbrot::mandelbrot_calculation<2>, 4, 100>;
 
