@@ -113,6 +113,8 @@ public:
   // Also specify the number of iterations (500).
   static view_coords initial_coords() { return {0, -1, 3, 500}; }
 
+  mutable std::atomic<int> iterations_skipped;
+
   // Calculates a single point of the fractal, at position (x,y).
   // Look up the actual coordinates (or in this case, the delta from the center
   // (ref_x, ref_y)) from the plane.
@@ -120,9 +122,12 @@ public:
     LowPrecisionComplex delta =
         map_delta({coords.dx * (x - ref_x), coords.dy * (y - ref_y)});
 
+    int skipped = iterations_skipped;
     // The function `make_relative_orbit` will skip some iterations,
     // use `z.iteration()` to find out which iteration we are on.
-    auto z = reference_orbit.make_relative_orbit(delta, this->max_iterations);
+    auto z = reference_orbit.make_relative_orbit(delta, this->max_iterations,
+                                                 skipped);
+    iterations_skipped = skipped;
 
     while (norm(*z) <= (1 << 16)) {
       if (z.iteration() >= this->max_iterations)

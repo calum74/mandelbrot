@@ -55,6 +55,8 @@ public:
 
   double average_skipped() const override { return double(skipped_iterations) / points_calculated; }
 
+  mutable std::atomic<int> iterations_skipped;
+
   // Calculates a single point of the fractal, at position (x,y).
   // Look up the actual coordinates (or in this case, the delta from the center
   // (ref_x, ref_y)) from the plane.
@@ -64,7 +66,10 @@ public:
 
     // The function `make_relative_orbit` will skip some iterations,
     // use `z.iteration()` to find out which iteration we are on.
-    auto z = reference_orbit.make_relative_orbit(delta, this->max_iterations);
+    int skipped = iterations_skipped;
+    auto z = reference_orbit.make_relative_orbit(delta, this->max_iterations,
+                                                 skipped);
+    iterations_skipped = skipped;
 
     points_calculated++;
     skipped_iterations += z.iteration();

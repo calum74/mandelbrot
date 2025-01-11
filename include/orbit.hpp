@@ -333,8 +333,9 @@ public:
 private:
   // Finds the number of iterations it's safe to skip
   // because we judge that we are sufficiently close to the reference orbit
-  std::pair<int, HighExponentComplex>
-  find_iterations_to_skip(HighExponentComplex delta, int max) const {
+  std::pair<int, Complex>
+  find_iterations_to_skip(HighExponentComplex delta, int max,
+                          int &iterations_skipped) const {
     int min = 0;
 
     // Quoting Superfractalthing Maths by K.I. Martin,
@@ -344,13 +345,13 @@ private:
     // This means that we'll use the approximation until the terms run out,
     // then we transition to iteration.
 
-    HighExponentComplex epsilon = {};
+    Complex epsilon = {};
     while (max - min > 4) {
       int mid = (max + min) / 2;
       auto e = this->epsilon(mid, delta);
       if (e.second && !escaped((*this)[mid])) {
         min = mid;
-        epsilon = e.first;
+        epsilon = convert_complex<Complex>(e.first);
       } else
         max = mid;
     }
@@ -376,7 +377,7 @@ private:
       auto prev_norm = fractals::norm(terms[0]);
       for (int i = 1; i < Terms - 1; i++) {
         auto n = fractals::norm(terms[i]);
-        auto nr = prev_norm / (norm_type(100) * n);
+        auto nr = prev_norm / (norm_type(10) * n);
         prev_norm = n;
         if (i == 1 || max_delta_norm > nr)
           max_delta_norm = nr;
@@ -394,8 +395,6 @@ private:
     // If we use a term with higher delta than this, we risk imprecision and
     // therefore glitches
     norm_type max_delta_norm = 0;
-
-    // TODO: Figure out the "maximum delta" for this term.
 
     // Returns the epsilon, and whether the epsilon is "accurate"
     // If false, then the first item is not set.
@@ -430,9 +429,16 @@ public:
   using relative_orbit =
       perturbation_orbit<value_type, stored_taylor_series_orbit>;
 
-  relative_orbit make_relative_orbit(Complex delta, int limit) const {
-    auto s = find_iterations_to_skip(delta, entries.size());
-    return {*this, delta, s.first, convert_complex<Complex>(s.second)};
+  // Returns a new relative orbit, with a certain number of iterations already
+  // skipped.
+  // - `limit` is the bailout value
+  // - `iterations_skipped` is an in/out value for the number of iterations
+  // already taken. It's used to optimize the search for the next iteration
+  // limit.
+  relative_orbit make_relative_orbit(HighExponentComplex delta, int limit,
+                                     int &iterations_skipped) const {
+    auto s = find_iterations_to_skip(delta, entries.size(), iterations_skipped);
+    return {*this, convert_complex<Complex>(delta), s.first, s.second};
   }
 };
 

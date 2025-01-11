@@ -197,7 +197,8 @@ int main() {
         3, 100>
         taylor_series{reference_orbit, 100, stop};
 
-    auto relative = taylor_series.make_relative_orbit({0.01, 0.01}, 100);
+    auto relative =
+        taylor_series.make_relative_orbit({0.01, 0.01}, 100, iterations);
     iterations = relative.iteration();
 
     // Probably this will change
