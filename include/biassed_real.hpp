@@ -4,8 +4,10 @@
     Biassed floating-point numbers.
 */
 
+#include "convert.hpp"
 #include "real_number.hpp"
 #include <cmath>
+#include <complex>
 #include <iostream>
 
 namespace fractals {
@@ -80,6 +82,7 @@ std::ostream &operator<<(std::ostream &os, const biassed_real<Real, Bias> &r) {
 
 template <typename Real, int Bias1, int Bias2>
 std::complex<biassed_real<Real, Bias1 + Bias2>>
-operator*(std::complex<Real, Bias1>, std::complex<Real, Bias2>);
+operator*(std::complex<biassed_real<Real, Bias1>>,
+          std::complex<biassed_real<Real, Bias2>>);
 
 } // namespace fractals
