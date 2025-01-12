@@ -32,16 +32,16 @@ template <typename C> bool escaped(const C &c) {
 
 namespace detail {
 template <int N, int J> struct calculate_epsilon {
-  template <typename Complex>
-  static Complex eval(const Complex &z, const Complex &e) {
-    return choose<N, J>() * pow<J>(z) * pow<N - J>(e) +
+  template <typename Complex, typename Delta>
+  static Delta eval(const Complex &z, const Delta &e) {
+    return choose<N, J>() * Delta(pow<J>(z)) * pow<N - J>(e) +
            calculate_epsilon<N, J + 1>::eval(z, e);
   }
 };
 
 template <int N> struct calculate_epsilon<N, N> {
-  template <typename Complex>
-  static Complex eval(const Complex &z, const Complex &e) {
+  template <typename Complex, typename Delta>
+  static Delta eval(const Complex &z, const Delta &e) {
     return {0, 0};
   }
 };
@@ -64,9 +64,8 @@ template <int N> struct mandelbrot_calculation {
 
   // When performing perturbations (for higher precision), here is the general
   // formula for evaluating the epsilon (dz)
-  template <typename Complex>
-  static Complex step_epsilon(const Complex &z, const Complex &e,
-                              const Complex &d) {
+  template <typename Complex, typename Delta>
+  static Delta step_epsilon(const Complex &z, const Delta &e, const Delta &d) {
     return d + detail::calculate_epsilon<N, 0>::eval(z, e);
   }
 

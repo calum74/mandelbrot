@@ -11,7 +11,7 @@
 // for higher resolution rendering if required.
 template <typename LowPrecisionComplex, typename HighExponentComplex,
           typename HighPrecisionComplex, typename Calculation, int Terms,
-          int Precision>
+          int Precision, typename EpsilonType>
 class PerturbatedMandelbrotCalculation : public fractals::PointwiseCalculation {
 public:
   using SmallReal = typename LowPrecisionComplex::value_type;
@@ -106,7 +106,7 @@ private:
   mandelbrot::stored_taylor_series_orbit<
       LowPrecisionComplex, HighExponentComplex,
       mandelbrot::basic_orbit<HighPrecisionComplex, Calculation>, Terms,
-      Precision>
+      Precision, EpsilonType>
       reference_orbit;
 };
 
@@ -114,26 +114,36 @@ double fractals::PointwiseCalculation::average_iterations() const { return 0; }
 
 double fractals::PointwiseCalculation::average_skipped() const { return 0; }
 
-template <int N, int P, int T = 4, int Tolerance = 100>
+template <int N, int P, int T = 4, int Tolerance = 100,
+          typename EpsilonIteration = std::complex<double>>
 using MB = PerturbatedMandelbrotCalculation<
     std::complex<double>, std::complex<fractals::high_exponent_real<double>>,
     std::complex<fractals::high_precision_real<P>>,
-    mandelbrot::mandelbrot_calculation<N>, T, Tolerance>;
+    mandelbrot::mandelbrot_calculation<N>, T, Tolerance, EpsilonIteration>;
+
+template <int N, int P, int T = 4, int Tolerance = 100>
+using MB_high =
+    MB<N, P, T, Tolerance, std::complex<fractals::high_exponent_real<double>>>;
+
+// TODO: a more elegant way to choose parameters
 
 // Supply a list of fractals to `make_fractal`, which will create a factory
 // that selects the best fractal at each resolution. We need different
 // implementations at different resolutions so that we don't lose precision or
 // use a slower algorithm than necessary.
+// For the highest precition, we need to increase the precision on the epsilon
+// as well
 const fractals::PointwiseFractal &mandelbrot_fractal =
     fractals::make_fractal<MB<2, 3, 4, 1000>, MB<2, 6>, MB<2, 10>, MB<2, 18>,
-                           MB<2, 32>, MB<2, 40>, MB<2, 64>>(
+                           MB_high<2, 32>, MB_high<2, 40>, MB_high<2, 64>>(
         "Mandelbrot (power 2)");
 
-template <int N, int P, int T = 4, int Tolerance = 1000>
+template <int N, int P, int T = 4, int Tolerance = 1000,
+          typename EpsilonType = std::complex<double>>
 using MBX = PerturbatedMandelbrotCalculation<
     std::complex<double>, std::complex<fractals::high_exponent_real<double>>,
     std::complex<fractals::high_precision_real<P>>,
-    mandelbrot::mandelbrot_calculation<N>, T, Tolerance>;
+    mandelbrot::mandelbrot_calculation<N>, T, Tolerance, EpsilonType>;
 
 const fractals::PointwiseFractal &experimental_fractal =
     fractals::make_fractal<MBX<2, 3, 4, 10000>, MBX<2, 6>, MBX<2, 10>,

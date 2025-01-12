@@ -86,12 +86,17 @@ using high_precision_orbit =
     converted_orbit<LowPrecisionComplex,
                     basic_orbit<HighPrecisionComplex, Calculation>>;
 
-template <typename C, typename Ref> class relative_orbit {
+template <typename Complex, typename ReferenceOrbit,
+          typename DeltaType = Complex>
+class relative_orbit {
 public:
-  using value_type = C;
-  using calculation = typename Ref::calculation;
+  using value_type = Complex;
+  using delta_type = DeltaType;
+  using epsilon_type = delta_type;
+  using reference_orbit_type = ReferenceOrbit;
+  using calculation = typename reference_orbit_type::calculation;
 
-  relative_orbit(Ref ref, value_type delta)
+  relative_orbit(reference_orbit_type ref, value_type delta)
       : reference_orbit(ref), delta{delta}, epsilon{} {}
 
   value_type operator*() const { return *reference_orbit + epsilon; }
@@ -107,8 +112,9 @@ public:
   value_type get_epsilon() const { return epsilon; }
 
 private:
-  Ref reference_orbit;
-  value_type delta, epsilon;
+  reference_orbit_type reference_orbit;
+  delta_type delta;
+  epsilon_type epsilon;
 };
 
 template <typename C, typename Ref> class stored_orbit {
@@ -229,9 +235,11 @@ public:
     epsilon = calculation::step_epsilon(reference[j], epsilon, delta);
     j++;
 
-    auto z = reference[j] + epsilon;
+    auto z = reference[j] + convert_complex<value_type>(epsilon);
 
-    if (escaped(reference[j]) || fractals::norm(z) < fractals::norm(epsilon)) {
+    if (escaped(reference[j]) ||
+        fractals::norm(z) <
+            fractals::norm(convert_complex<value_type>(epsilon))) {
       // We have exceeded the bounds of the current orbit
       // We need to reset the current orbit.
       // Thanks to
@@ -266,7 +274,8 @@ private:
   ReferenceOrbit is the high-precision orbit.
 */
 template <typename Complex, typename HighExponentComplex,
-          typename ReferenceOrbit, int Terms, int Precision>
+          typename ReferenceOrbit, int Terms, int Precision,
+          typename IteratedEpsilonType = Complex>
 class stored_taylor_series_orbit {
 public:
   using value_type = Complex;
@@ -470,8 +479,8 @@ private:
   }
 
 public:
-  using relative_orbit =
-      perturbation_orbit<value_type, value_type, stored_taylor_series_orbit>;
+  using relative_orbit = perturbation_orbit<value_type, IteratedEpsilonType,
+                                            stored_taylor_series_orbit>;
 
   // Returns a new relative orbit, with a certain number of iterations already
   // skipped.
