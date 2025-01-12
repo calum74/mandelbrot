@@ -1,3 +1,4 @@
+#include "biassed_real.hpp"
 #include "high_exponent_real.hpp"
 #include "high_precision_real.hpp"
 #include "real_number.hpp"
