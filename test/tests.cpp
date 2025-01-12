@@ -97,19 +97,22 @@ int main() {
 
   {
     using Calc = mandelbrot::mandelbrot_calculation<2>;
-    std::complex<double> c = {-0.53235, -0.60034}, A = 0, B = 0, C = 0, z = 0;
+    std::complex<double> c = {-0.53235, -0.60034}, A = 0, B = 0, C = 0, D = 0,
+                         z = 0;
 
     c = {-0.2238286049999855391525793, -1.1167864957492792902234038};
     constexpr int N = 10;
-    std::array<std::complex<double>, N> V, zero;
+    std::array<std::complex<double>, N> V, V2, zero;
 
     for (int i = 0; i < 500 && !escaped(z); i++) {
       auto A2 = Calc::A(z, A);
       auto B2 = Calc::B(z, A, B);
       auto C2 = Calc::C(z, A, B, C);
+      auto D2 = Calc::D(z, A, B, C, D);
       A = A2;
       B = B2;
       C = C2;
+      D = D2;
       V = Calc::delta_terms(z, V);
       z = Calc::step(z, c);
 
@@ -126,6 +129,7 @@ int main() {
       assert(approx_eq(A, V[0]));
       assert(approx_eq(B, V[1]));
       assert(approx_eq(C, V[2]));
+      assert(approx_eq(D, V[3]));
     }
   }
 

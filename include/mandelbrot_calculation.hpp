@@ -9,10 +9,6 @@
   of deltas and Taylor series coefficeints for Mandelbrot sets of arbitrary
   powers.
 
-  Only the first 3 Taylor series coefficients are calculated, in principle we
-  could generalise this to an arbitrary number of coefficients although this has
-  not been implemented.
-
   I have not seen these formulae derived anywhere but they are an obvious
   generalisation of the original work by superfractalthing by K.I. Martin.
   https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set
@@ -30,6 +26,8 @@ template <typename C> bool escaped(const C &c) {
   return fractals::norm(c) >= typename C::value_type(4);
 }
 
+template <int N> struct mandelbrot_calculation;
+
 namespace detail {
 template <int N, int J> struct calculate_epsilon {
   template <typename Complex, typename Delta>
@@ -43,6 +41,73 @@ template <int N> struct calculate_epsilon<N, N> {
   template <typename Complex, typename Delta>
   static Delta eval(const Complex &z, const Delta &e) {
     return {0, 0};
+  }
+};
+
+// We need to pick exactly one term from the equation
+// (A∂ + B∂^2 + C∂^3 ...)
+// and multiply it with the terms from (A∂ + B∂^2 + C∂^3
+// ...)^(seq_remaining-1)
+template <typename Complex, unsigned long T>
+void distribute_terms(int delta_pow, int seq_remaining, Complex f,
+                      const std::array<Complex, T> &previous,
+                      std::array<Complex, T> &next) {
+  if (seq_remaining == 0) {
+    next[delta_pow - 1] += f;
+  } else {
+    for (int p = 1; p + delta_pow + seq_remaining <= T + 1; p++) {
+      // Distribute one term
+      distribute_terms(delta_pow + p, seq_remaining - 1, f * previous[p - 1],
+                       previous, next);
+    }
+  }
+}
+
+inline int fac(int n) {
+  int m = 1;
+  while (n > 1)
+    m *= n--;
+  return m;
+}
+
+template <typename Complex, unsigned long T, int N>
+struct calculate_delta_terms {
+  static std::array<Complex, T>
+  calculate(Complex z, const std::array<Complex, T> &previous) {
+    std::array<Complex, T> result;
+    result[0] = 1;    // Represents the first ∂ in the equation for epsilon'
+    Complex zJ(1, 0); // z^j
+
+    for (int j = 0; j < N; j++, zJ = zJ * z) {
+      int nCj = fac(N) / (fac(j) * fac(N - j));
+      distribute_terms(0, N - j, zJ * Complex(nCj), previous, result);
+    }
+
+    return result;
+  }
+};
+
+// Specialisation of the previous case for N=3 (might be a bit faster?)
+template <typename Complex, int N> struct calculate_delta_terms<Complex, 3, N> {
+  static std::array<Complex, 3>
+  calculate(Complex z, const std::array<Complex, 3> &previous) {
+    return {
+        mandelbrot_calculation<N>::A(z, previous[0]),
+        mandelbrot_calculation<N>::B(z, previous[0], previous[1]),
+        mandelbrot_calculation<N>::C(z, previous[0], previous[1], previous[2])};
+  }
+};
+
+// Specialisation of the previous case for N=3 (might be a bit faster?)
+template <typename Complex, int N> struct calculate_delta_terms<Complex, 4, N> {
+  static std::array<Complex, 4>
+  calculate(Complex z, const std::array<Complex, 4> &previous) {
+    return {
+        mandelbrot_calculation<N>::A(z, previous[0]),
+        mandelbrot_calculation<N>::B(z, previous[0], previous[1]),
+        mandelbrot_calculation<N>::C(z, previous[0], previous[1], previous[2]),
+        mandelbrot_calculation<N>::D(z, previous[0], previous[1], previous[2],
+                                     previous[3])};
   }
 };
 
@@ -94,11 +159,20 @@ template <int N> struct mandelbrot_calculation {
     }
   }
 
-  static int fac(int n) {
-    int m = 1;
-    while (n > 1)
-      m *= n--;
-    return m;
+  template <typename Complex>
+  static Complex D(const Complex &z, const Complex &A_prev,
+                   const Complex &B_prev, const Complex &C_prev,
+                   const Complex &D_prev) {
+    if constexpr (N > 3) {
+      return choose<N, 1>() * pow<N - 1>(z) * D_prev +
+             choose<N, 2>() * pow<N - 2>(z) *
+                 (pow<2>(B_prev) + 2 * A_prev * C_prev) +
+             choose<N, 4>() * pow<N - 4>(z) * pow<4>(A_prev);
+    } else {
+      return choose<N, 1>() * pow<N - 1>(z) * D_prev +
+             choose<N, 2>() * pow<N - 2>(z) *
+                 (pow<2>(B_prev) + 2 * A_prev * C_prev);
+    }
   }
 
   // For a Taylor series expansion of the form
@@ -114,36 +188,8 @@ template <int N> struct mandelbrot_calculation {
   template <typename Complex, unsigned long T>
   static std::array<Complex, T>
   delta_terms(const Complex &z, const std::array<Complex, T> &previous) {
-    std::array<Complex, T> result;
-    result[0] = 1;    // Represents the first ∂ in the equation for epsilon'
-    Complex zJ(1, 0); // z^j
-
-    for (int j = 0; j < N; j++, zJ = zJ * z) {
-      int nCj = fac(N) / (fac(j) * fac(N - j));
-      distribute_terms(0, N - j, zJ * Complex(nCj), previous, result);
-    }
-
-    return result;
+    return detail::calculate_delta_terms<Complex, T, N>::calculate(z, previous);
   }
-
-  // We need to pick exactly one term from the equation
-  // (A∂ + B∂^2 + C∂^3 ...)
-  // and multiply it with the terms from (A∂ + B∂^2 + C∂^3
-  // ...)^(seq_remaining-1)
-  template <typename Complex, unsigned long T>
-  static void distribute_terms(int delta_pow, int seq_remaining, Complex f,
-                               const std::array<Complex, T> &previous,
-                               std::array<Complex, T> &next) {
-    if (seq_remaining == 0) {
-      next[delta_pow - 1] += f;
-    } else {
-      for (int p = 1; p + delta_pow + seq_remaining <= T + 1; p++) {
-        // Distribute one term
-        distribute_terms(delta_pow + p, seq_remaining - 1, f * previous[p - 1],
-                         previous, next);
-      }
-    }
-  }
-};
+}; // mandelbrot_calculation
 
 } // namespace mandelbrot
