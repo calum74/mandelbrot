@@ -1,6 +1,8 @@
 #pragma once
 #include "convert.hpp"
 #include "high_precision_real.hpp"
+#include "real_number.hpp"
+
 #include <complex>
 
 #include <cmath>
@@ -190,6 +192,14 @@ high_exponent_real<D, E> operator>>(const high_exponent_real<D, E> &a,
                                     int shift) {
   return a << -shift;
 }
+
+template <int Digits, int MinExp, int MaxExp>
+  requires(Digits <= std::numeric_limits<long double>::digits &&
+           (MinExp<std::numeric_limits<long double>::min_exponent || MaxExp>
+                std::numeric_limits<long double>::max_exponent))
+struct make_real<Digits, MinExp, MaxExp> {
+  using type = high_exponent_real<long double, int>;
+};
 
 } // namespace fractals
 

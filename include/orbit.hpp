@@ -203,19 +203,24 @@ private:
 // An orbit that's relative to another reference orbit, so can be computed
 // using a low-precision complex number. ReferenceOrbit must be a
 // random-access orbit (supporting [])
-template <typename Complex, typename ReferenceOrbit> class perturbation_orbit {
+template <typename Complex, typename HighExponentComplex,
+          typename ReferenceOrbit>
+class perturbation_orbit {
 public:
   using value_type = Complex;
   using calculation = typename ReferenceOrbit::calculation;
 
-  perturbation_orbit(const ReferenceOrbit &ref, Complex delta,
-                     int starting_iteration = 0, Complex starting_epsilon = {})
+  perturbation_orbit(const ReferenceOrbit &ref, HighExponentComplex delta,
+                     int starting_iteration = 0,
+                     HighExponentComplex starting_epsilon = {})
       : n{starting_iteration}, j{n}, delta(delta), epsilon{starting_epsilon},
         reference{ref} {}
 
   int iteration() const { return n; }
 
-  value_type operator*() const { return reference[j] + epsilon; }
+  value_type operator*() const {
+    return reference[j] + convert_complex<value_type>(epsilon);
+  }
 
   perturbation_orbit &operator++() {
 
@@ -240,7 +245,7 @@ public:
 
 private:
   int n, j;
-  Complex delta, epsilon;
+  HighExponentComplex delta, epsilon;
   const ReferenceOrbit &reference;
 };
 
@@ -461,7 +466,7 @@ private:
 
 public:
   using relative_orbit =
-      perturbation_orbit<value_type, stored_taylor_series_orbit>;
+      perturbation_orbit<value_type, value_type, stored_taylor_series_orbit>;
 
   // Returns a new relative orbit, with a certain number of iterations already
   // skipped.

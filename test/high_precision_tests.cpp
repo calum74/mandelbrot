@@ -1,5 +1,7 @@
 #include "high_exponent_real.hpp"
 #include "high_precision_real.hpp"
+#include "real_number.hpp"
+
 #undef NDEBUG
 #include <cassert>
 #include <iomanip>
@@ -317,6 +319,19 @@ void high_exponent_real_tests() {
     auto h2 = fractals::convert<R>(h1);
     std::cout << h1 << std::endl << h2;
   }
+}
+
+void real_number_tests() {
+  using T1 = fractals::real_number<10, -10, 10>;
+  using T1 = float;
+
+  using T2 = fractals::real_number<1000, 0, 0>;
+  using T2 = fractals::real_number<1000, 0, 0>;
+
+  using T3 = fractals::real_number<40, -300, 300>;
+  using T3 = double;
+
+  using T4 = fractals::real_number<50, -1000, 1000>;
 }
 
 int main() {

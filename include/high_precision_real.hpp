@@ -16,6 +16,7 @@
 #include <iostream>
 
 #include "convert.hpp"
+#include "real_number.hpp"
 
 #if _WIN32
 #include <intrin.h>
@@ -592,6 +593,12 @@ bool valid_precision_for_inverse(const fractals::high_precision_real<N> &n) {
   // We must have something in the top 48-bits
   return n.fraction[N - 2] & 0xffffffffff000000ull;
 }
+
+template <int Digits>
+  requires(Digits > std::numeric_limits<long double>::digits)
+struct make_real<Digits, 0, 0> {
+  using type = high_precision_real<(Digits + 64) / 64>;
+};
 
 } // namespace fractals
 
