@@ -54,10 +54,11 @@ public:
   buffered_rendering_sequence(int w, int h, int stride)
       : async_rendering_sequence(w, h, stride), output(w * h) {}
 
-protected:
   // !! Unclear whether we need the members to be atomic
+  // !! Visibility
   std::vector<std::atomic<T>> output;
 
+protected:
   virtual T get_point(int x, int y) = 0;
 
 private:
