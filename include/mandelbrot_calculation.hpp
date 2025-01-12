@@ -20,7 +20,7 @@
 
 #pragma once
 
-#include "complex.hpp"
+#include "complex_number.hpp"
 #include <array>
 
 namespace mandelbrot {
