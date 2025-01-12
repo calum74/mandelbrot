@@ -201,13 +201,13 @@ struct make_real<Digits, MinExp, MaxExp> {
   using type = high_exponent_real<long double, int>;
 };
 
-} // namespace fractals
-
-// Override this because std::complex does incompatible things
+// Specialise this because std::complex does incompatible things
 template <typename D, typename E>
-std::complex<fractals::high_exponent_real<D, E>>
-operator*(std::complex<fractals::high_exponent_real<D, E>> a,
-          std::complex<fractals::high_exponent_real<D, E>> b) {
+std::complex<high_exponent_real<D, E>>
+operator*(std::complex<high_exponent_real<D, E>> a,
+          std::complex<high_exponent_real<D, E>> b) {
   return {a.real() * b.real() - a.imag() * b.imag(),
           a.real() * b.imag() + a.imag() * b.real()};
 }
+
+} // namespace fractals

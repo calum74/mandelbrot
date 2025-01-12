@@ -4,6 +4,7 @@
 
 #pragma once
 #include "convert.hpp"
+#include "real_number.hpp"
 #include <complex>
 
 namespace fractals {
@@ -108,5 +109,10 @@ template <int N, int M> constexpr int choose() {
 }
 
 inline bool isfinite(double d) { return std::isfinite(d); }
+
+// A complex number with the given precision
+template <int Digits, int MinExp, int MaxExp>
+using complex_number =
+    std::complex<typename make_real<Digits, MinExp, MaxExp>::type>;
 
 } // namespace fractals

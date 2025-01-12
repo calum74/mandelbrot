@@ -209,10 +209,12 @@ class perturbation_orbit {
 public:
   using value_type = Complex;
   using calculation = typename ReferenceOrbit::calculation;
+  using delta_type = HighExponentComplex;
+  using epsilon_type = delta_type;
 
-  perturbation_orbit(const ReferenceOrbit &ref, HighExponentComplex delta,
+  perturbation_orbit(const ReferenceOrbit &ref, delta_type delta,
                      int starting_iteration = 0,
-                     HighExponentComplex starting_epsilon = {})
+                     epsilon_type starting_epsilon = {})
       : n{starting_iteration}, j{n}, delta(delta), epsilon{starting_epsilon},
         reference{ref} {}
 
@@ -245,7 +247,8 @@ public:
 
 private:
   int n, j;
-  HighExponentComplex delta, epsilon;
+  delta_type delta;
+  epsilon_type epsilon;
   const ReferenceOrbit &reference;
 };
 
@@ -267,6 +270,9 @@ template <typename Complex, typename HighExponentComplex,
 class stored_taylor_series_orbit {
 public:
   using value_type = Complex;
+  using term_type = HighExponentComplex;
+  using delta_type = HighExponentComplex;
+  using epsilon_type = HighExponentComplex;
   using calculation = typename ReferenceOrbit::calculation;
 
   stored_taylor_series_orbit() = default;
@@ -316,30 +322,30 @@ public:
 
   // Gets the corresponding epsilon (dz) for a given delta (dc)
   // at iteration i.
-  auto epsilon(int i, HighExponentComplex delta) {
+  auto epsilon(int i, delta_type delta) {
     while (i >= entries.size())
       get_next();
     return entries[i].epsilon(delta);
   }
 
-  auto epsilon(int i, HighExponentComplex delta) const {
+  auto epsilon(int i, delta_type delta) const {
     return entries.at(i).epsilon(delta);
   }
 
   // Gets the value of the reference orbit at iteration i
-  Complex operator[](int i) {
+  value_type operator[](int i) {
     while (i >= entries.size())
       get_next();
     return entries[i].z;
   }
 
-  Complex operator[](int i) const { return entries.at(i).z; }
+  value_type operator[](int i) const { return entries.at(i).z; }
 
 private:
   // Finds the number of iterations it's safe to skip
   // because we judge that we are sufficiently close to the reference orbit
-  Complex find_iterations_to_skip(HighExponentComplex delta, int max,
-                                  int &iterations_skipped) const {
+  value_type find_iterations_to_skip(delta_type delta, int max,
+                                     int &iterations_skipped) const {
     int min = 0;
 
     // Step 1: Establish the max and min
@@ -403,9 +409,9 @@ private:
   // for an iteration.
   struct Entry {
 
-    using norm_type = typename HighExponentComplex::value_type;
+    using norm_type = typename term_type::value_type;
 
-    Entry(Complex z, const std::array<HighExponentComplex, Terms> &terms)
+    Entry(value_type z, const std::array<term_type, Terms> &terms)
         : z(z), terms(terms) {
       // We'll look at the terms in the series to figure out what the maximum
       // size of delta is for this term before imprecision sets in.
@@ -416,19 +422,19 @@ private:
       auto prev_norm = fractals::norm(terms[0]);
       for (int i = 1; i < Terms - 1; i++) {
         auto n = fractals::norm(terms[i]);
-        auto nr = prev_norm / (norm_type(100) * n);
+        auto nr = prev_norm / (norm_type(10) * n);
         prev_norm = n;
         if (i == 1 || max_delta_norm > nr)
           max_delta_norm = nr;
       }
       auto n = fractals::norm(terms[Terms - 1]);
-      auto nr = prev_norm / (norm_type(1000) * n);
+      auto nr = prev_norm / (norm_type(100) * n);
 
       if (max_delta_norm > nr)
         max_delta_norm = nr;
     }
-    Complex z;
-    std::array<HighExponentComplex, Terms> terms;
+    value_type z;
+    std::array<term_type, Terms> terms;
 
     // The maximum delta for this term
     // If we use a term with higher delta than this, we risk imprecision and
@@ -437,13 +443,12 @@ private:
 
     // Returns the epsilon, and whether the epsilon is "accurate"
     // If false, then the first item is not set.
-    std::pair<HighExponentComplex, bool>
-    epsilon(HighExponentComplex delta) const {
+    std::pair<epsilon_type, bool> epsilon(delta_type delta) const {
       auto nd = fractals::norm(delta); // TODO: Avoid recomputing this
       if (nd > max_delta_norm)
-        return {HighExponentComplex(), false};
+        return {epsilon_type(), false};
       auto d = delta;
-      HighExponentComplex s(0);
+      epsilon_type s(0);
       typename HighExponentComplex::value_type prev_norm = 0, term_norm = 0;
       for (int t = 0; t < Terms; t++) {
         auto term = terms[t] * d;
@@ -474,7 +479,7 @@ public:
   // - `iterations_skipped` is an in/out value for the number of iterations
   // already taken. It's used to optimize the search for the next iteration
   // limit.
-  relative_orbit make_relative_orbit(HighExponentComplex delta, int limit,
+  relative_orbit make_relative_orbit(delta_type delta, int limit,
                                      int &iterations_skipped) const {
     auto s = find_iterations_to_skip(delta, entries.size(), iterations_skipped);
     return {*this, convert_complex<Complex>(delta), iterations_skipped, s};
