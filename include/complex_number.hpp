@@ -110,6 +110,10 @@ template <int N, int M> constexpr int choose() {
 
 inline bool isfinite(double d) { return std::isfinite(d); }
 
+template <typename T> std::complex<T> normalize(const std::complex<T> &c) {
+  return {normalize(c.real()), normalize(c.imag())};
+}
+
 // A complex number with the given precision
 template <int Digits, int MinExp, int MaxExp>
 using complex_number =

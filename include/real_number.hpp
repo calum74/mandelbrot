@@ -42,6 +42,9 @@ struct make_real<Digits, MinExp, MaxExp> {
   using type = long double;
 };
 
+inline double normalize(double d) { return d; }
+inline float normalize(float f) { return f; }
+
 template <int Digits, int MinExp, int MaxExp>
 using real_number = typename make_real<Digits, MinExp, MaxExp>::type;
 

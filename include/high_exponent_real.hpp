@@ -48,8 +48,13 @@ public:
 };
 
 template <typename D, typename E>
+high_exponent_real<D, E> normalize(const high_exponent_real<D, E> e) {
+  return {e.d, e.e};
+}
+
+template <typename D, typename E>
 high_exponent_real<D, E> operator-(high_exponent_real<D, E> a) {
-  return {-a.d, a.e};
+  return {-a.d, a.e, skip_normalization()};
 }
 
 template <typename D, typename E>
@@ -69,25 +74,25 @@ high_exponent_real<D, E> operator+(high_exponent_real<D, E> a,
   // Need to figure out a sensible exponent
   if (a.e > b.e) {
     // Convert b to a's exponent
-    return {a.d + b.d * std::exp2(b.e - a.e), a.e};
+    return {a.d + b.d * std::exp2(b.e - a.e), a.e, skip_normalization()};
   } else if (a.e < b.e) {
     // Convert a to b's exponent
-    return {a.d * std::exp2(a.e - b.e) + b.d, b.e};
+    return {a.d * std::exp2(a.e - b.e) + b.d, b.e, skip_normalization()};
   } else {
-    return {a.d + b.d, a.e};
+    return {a.d + b.d, a.e, skip_normalization()};
   }
 }
 
 template <typename D, typename E>
 high_exponent_real<D, E> operator*(high_exponent_real<D, E> a,
                                    high_exponent_real<D, E> b) {
-  return {a.d * b.d, a.e + b.e};
+  return {a.d * b.d, a.e + b.e, skip_normalization()};
 }
 
 template <typename D, typename E>
 high_exponent_real<D, E> operator/(high_exponent_real<D, E> a,
                                    high_exponent_real<D, E> b) {
-  return high_exponent_real<D, E>{a.d / b.d, a.e - b.e};
+  return high_exponent_real<D, E>{a.d / b.d, a.e - b.e, skip_normalization()};
 }
 
 template <typename D, typename E>
@@ -100,6 +105,8 @@ std::ostream &operator<<(std::ostream &os, high_exponent_real<D, E> a) {
 
 template <typename D, typename E>
 int cmp(high_exponent_real<D, E> a, high_exponent_real<D, E> b) {
+  a = normalize(a);
+  b = normalize(b);
 
   // If the sign is different
   if (a.d < 0 && b.d > 0)
@@ -126,6 +133,8 @@ int cmp(high_exponent_real<D, E> a, high_exponent_real<D, E> b) {
 
 template <typename D, typename E>
 bool operator==(high_exponent_real<D, E> a, high_exponent_real<D, E> b) {
+  a = normalize(a);
+  b = normalize(b);
   return a.d == b.d && a.e == b.e;
 }
 

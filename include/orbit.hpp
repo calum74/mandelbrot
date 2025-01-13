@@ -198,6 +198,8 @@ public:
     // See
     // https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set
     terms = calculation::delta_terms(**this, terms);
+    for (auto &t : terms)
+      t = normalize(t);
     ++orbit;
     return *this;
   }
@@ -233,6 +235,7 @@ public:
   perturbation_orbit &operator++() {
 
     epsilon = calculation::step_epsilon(reference[j], epsilon, delta);
+    epsilon = fractals::normalize(epsilon);
     j++;
 
     auto z = reference[j] + convert_complex<value_type>(epsilon);
@@ -353,12 +356,12 @@ public:
 private:
   // Finds the number of iterations it's safe to skip
   // because we judge that we are sufficiently close to the reference orbit
-  value_type find_iterations_to_skip(delta_type delta, int max,
-                                     int &iterations_skipped) const {
+  epsilon_type find_iterations_to_skip(delta_type delta, int max,
+                                       int &iterations_skipped) const {
     int min = 0;
 
     // Step 1: Establish the max and min
-    Complex epsilon = {};
+    epsilon_type epsilon = {};
     int window_size = 4;
 
     int skipped = iterations_skipped;
@@ -370,13 +373,13 @@ private:
     if (e.second && !escaped((*this)[skipped])) {
       // Seek upwards
       min = skipped;
-      epsilon = convert_complex<Complex>(e.first);
+      epsilon = convert_complex<epsilon_type>(e.first);
       for (int mid = iterations_skipped + window_size; mid < max;
            mid += (window_size *= 2)) {
         e = this->epsilon(mid, delta);
         if (e.second && !escaped((*this)[mid])) {
           min = mid;
-          epsilon = convert_complex<Complex>(e.first);
+          epsilon = e.first;
         } else {
           max = mid;
           break;
@@ -390,7 +393,7 @@ private:
         e = this->epsilon(mid, delta);
         if (e.second && !escaped((*this)[mid])) {
           min = mid;
-          epsilon = convert_complex<Complex>(e.first);
+          epsilon = e.first;
           break;
         } else {
           max = mid;
@@ -398,13 +401,13 @@ private:
       }
     }
 
-    // Step 2:
+    // Step 2: Find the min using binary search
     while (max - min > 4) {
       int mid = (max + min) / 2;
       auto e = this->epsilon(mid, delta);
       if (e.second && !escaped((*this)[mid])) {
         min = mid;
-        epsilon = convert_complex<Complex>(e.first);
+        epsilon = e.first;
       } else
         max = mid;
     }
@@ -420,8 +423,8 @@ private:
 
     using norm_type = typename term_type::value_type;
 
-    Entry(value_type z, const std::array<term_type, Terms> &terms)
-        : z(z), terms(terms) {
+    Entry(value_type z, const std::array<term_type, Terms> &ts)
+        : z(z), terms(ts) {
       // We'll look at the terms in the series to figure out what the maximum
       // size of delta is for this term before imprecision sets in.
       // Each term has a "norm" giving an indication of its size.
@@ -431,13 +434,14 @@ private:
       auto prev_norm = fractals::norm(terms[0]);
       for (int i = 1; i < Terms - 1; i++) {
         auto n = fractals::norm(terms[i]);
-        auto nr = prev_norm / (norm_type(10) * n);
+        auto nr = prev_norm / (norm_type(10) * n); // TODO: Tweak this
         prev_norm = n;
         if (i == 1 || max_delta_norm > nr)
           max_delta_norm = nr;
       }
       auto n = fractals::norm(terms[Terms - 1]);
-      auto nr = prev_norm / (norm_type(100) * n);
+      auto nr = prev_norm /
+                (norm_type(100) * n); // TODO: Tweak this - Precision is ignored
 
       if (max_delta_norm > nr)
         max_delta_norm = nr;
@@ -446,7 +450,7 @@ private:
     std::array<term_type, Terms> terms;
 
     // The maximum delta for this term
-    // If we use a term with higher delta than this, we risk imprecision and
+    // If we use a delta with a higher norm than this, we risk imprecision and
     // therefore glitches
     norm_type max_delta_norm = 0;
 
@@ -491,7 +495,8 @@ public:
   relative_orbit make_relative_orbit(delta_type delta, int limit,
                                      int &iterations_skipped) const {
     auto s = find_iterations_to_skip(delta, entries.size(), iterations_skipped);
-    return {*this, convert_complex<Complex>(delta), iterations_skipped, s};
+    return {*this, convert_complex<Complex>(delta), iterations_skipped,
+            convert_complex<IteratedEpsilonType>(s)};
   }
 };
 
