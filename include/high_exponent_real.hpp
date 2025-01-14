@@ -45,6 +45,10 @@ public:
   high_exponent_real &operator+=(high_exponent_real a) {
     return *this = (*this + a);
   }
+
+  high_exponent_real &operator-=(high_exponent_real a) {
+    return *this = (*this - a);
+  }
 };
 
 template <typename D, typename E>

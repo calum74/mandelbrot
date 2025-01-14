@@ -27,13 +27,6 @@ public:
                                    std::atomic<bool> &stop)
       : max_iterations(c.max_iterations), coords(c, w, h), ref_x(w / 2),
         ref_y(h / 2),
-        reference_orbit{
-            HighPrecisionType{
-                coords.x0 + fractals::convert<HighPrecisionReal>(coords.dx) *
-                                fractals::convert<HighPrecisionReal>(ref_x),
-                coords.y0 + fractals::convert<HighPrecisionReal>(coords.dy) *
-                                fractals::convert<HighPrecisionReal>(ref_y)},
-            max_iterations, stop},
         orbits{HighPrecisionType{
                    coords.x0 + fractals::convert<HighPrecisionReal>(coords.dx) *
                                    fractals::convert<HighPrecisionReal>(ref_x),
@@ -83,8 +76,10 @@ public:
     // The function `make_relative_orbit` will skip some iterations,
     // use `z.iteration()` to find out which iteration we are on.
     int skipped = iterations_skipped;
-    auto z = reference_orbit.make_relative_orbit(delta, this->max_iterations,
-                                                 skipped);
+    auto ro = orbits.locate_closest_secondary_reference_orbit({0, 0});
+    auto z =
+        ro->second.make_relative_orbit(delta, this->max_iterations, skipped);
+
     iterations_skipped = skipped;
 
     points_calculated++;
@@ -120,11 +115,6 @@ private:
 
   // The calculated reference orbit, together with Taylor series terms for the
   // epsilon/dz for each iteration.
-  mandelbrot::stored_taylor_series_orbit<LowPrecisionType, DeltaType, TermType,
-                                         reference_orbit_type, Terms,
-                                         TermPrecision>
-      reference_orbit;
-
   mandelbrot::reference_orbit_manager<LowPrecisionType, DeltaType, TermType,
                                       reference_orbit_type, Terms,
                                       TermPrecision>
