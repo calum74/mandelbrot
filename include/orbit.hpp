@@ -22,8 +22,9 @@ concept Complex = requires(T v) {
 };
 
 template <typename T>
-concept Orbit = requires(T v) {
-  { *v } -> std::same_as<typename T::value_type>;
+concept IteratedOrbit = requires(T v) {
+  *v;
+  { *v } -> std::convertible_to<typename T::value_type>;
   ++v;
   // requires T::value_type;
   // requires(T::value_type);
@@ -31,7 +32,7 @@ concept Orbit = requires(T v) {
 };
 
 template <typename T>
-concept ReferenceOrbit = requires(T v, int i) {
+concept RandomAccessOrbit = requires(T v, int i) {
   { v[i] } -> std::same_as<typename T::value_type>;
 };
 
@@ -78,7 +79,7 @@ basic_orbit<T, C> make_basic_orbit(const T &c) {
   ReferenceOrbit is a high precision orbit (e.g.
   basic_orbit<std::complex<high_precision_real<>>>)
 */
-template <Complex T, Orbit ReferenceOrbit> class converted_orbit {
+template <Complex T, IteratedOrbit ReferenceOrbit> class converted_orbit {
 public:
   converted_orbit() = default;
   converted_orbit(const ReferenceOrbit &r) : reference(r) {}
@@ -109,7 +110,7 @@ template <Complex LowPrecisionComplex, Complex HighPrecisionComplex,
 using high_precision_orbit =
     converted_orbit<LowPrecisionComplex, basic_orbit<HighPrecisionComplex, C>>;
 
-template <Complex T, Orbit ReferenceOrbit, Complex DeltaType = T>
+template <Complex T, IteratedOrbit ReferenceOrbit, Complex DeltaType = T>
 class relative_orbit {
 public:
   using value_type = T;
@@ -139,7 +140,7 @@ private:
   epsilon_type epsilon;
 };
 
-template <Complex C, typename Ref> class stored_orbit {
+template <Complex C, IteratedOrbit Ref> class stored_orbit {
 public:
   stored_orbit(Ref o) : orbit(o) {}
 
@@ -183,12 +184,12 @@ private:
   std::vector<value_type> values;
 };
 
-template <typename C, typename Ref>
+template <Complex C, IteratedOrbit Ref>
 stored_orbit<C, Ref> make_stored_orbit(const Ref &r) {
   return {r};
 }
 
-template <typename Rel>
+template <IteratedOrbit Rel>
 relative_orbit<typename Rel::value_type, Rel> make_relative_orbit(Rel rel,
                                                                   auto delta) {
   return {rel, delta};
@@ -200,13 +201,13 @@ relative_orbit<typename Rel::value_type, Rel> make_relative_orbit(Rel rel,
 
   z = z_0 + A.delta + B.delta^2 + C.delta^3
 */
-template <typename Complex, typename ReferenceOrbit, int Terms>
+template <Complex C, IteratedOrbit ReferenceOrbit, int Terms>
 class taylor_series_orbit {
 public:
-  using value_type = Complex;
+  using value_type = C;
   using calculation = typename ReferenceOrbit::calculation;
 
-  std::array<Complex, Terms> terms;
+  std::array<C, Terms> terms;
 
   taylor_series_orbit() = default;
 
@@ -233,11 +234,11 @@ private:
 // An orbit that's relative to another reference orbit, so can be computed
 // using a low-precision complex number. ReferenceOrbit must be a
 // random-access orbit (supporting [])
-template <typename Complex, typename HighExponentComplex,
-          typename ReferenceOrbit>
+template <Complex C, Complex HighExponentComplex,
+          RandomAccessOrbit ReferenceOrbit>
 class perturbation_orbit {
 public:
-  using value_type = Complex;
+  using value_type = C;
   using calculation = typename ReferenceOrbit::calculation;
   using delta_type = HighExponentComplex;
   using epsilon_type = delta_type;
@@ -298,12 +299,11 @@ private:
 
   ReferenceOrbit is the high-precision orbit.
 */
-template <typename Complex, typename HighExponentComplex,
-          typename ReferenceOrbit, int Terms, int Precision,
-          typename IteratedEpsilonType = Complex>
+template <typename C, typename HighExponentComplex, typename ReferenceOrbit,
+          int Terms, int Precision, typename IteratedEpsilonType = C>
 class stored_taylor_series_orbit {
 public:
-  using value_type = Complex;
+  using value_type = C;
   using term_type = HighExponentComplex;
   using delta_type = HighExponentComplex;
   using epsilon_type = HighExponentComplex;
@@ -500,7 +500,8 @@ private:
   std::vector<Entry> entries;
 
   void get_next() {
-    entries.push_back({convert_complex<Complex>(*reference), reference.terms});
+    entries.push_back(
+        {convert_complex<value_type>(*reference), reference.terms});
     ++reference;
   }
 
@@ -517,8 +518,8 @@ public:
   relative_orbit make_relative_orbit(delta_type delta, int limit,
                                      int &iterations_skipped) const {
     auto s = find_iterations_to_skip(delta, entries.size(), iterations_skipped);
-    return {*this, convert_complex<Complex>(delta), iterations_skipped,
-            convert_complex<IteratedEpsilonType>(s)};
+    return {*this, convert_complex<IteratedEpsilonType>(delta),
+            iterations_skipped, convert_complex<IteratedEpsilonType>(s)};
   }
 };
 
@@ -542,7 +543,7 @@ calculated.
 precisely once.
 */
 template <Complex OrbitType, Complex DeltaType, Complex TermType,
-          Orbit ReferenceOrbit, int Terms, int Precision>
+          IteratedOrbit ReferenceOrbit, int Terms, int Precision>
 class taylor_series_cluster {
 public:
   using calculation = typename ReferenceOrbit::calculation;
