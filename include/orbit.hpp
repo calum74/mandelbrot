@@ -299,8 +299,8 @@ private:
 
   ReferenceOrbit is the high-precision orbit.
 */
-template <typename C, typename HighExponentComplex, typename ReferenceOrbit,
-          int Terms, int Precision, typename IteratedEpsilonType = C>
+template <Complex C, Complex HighExponentComplex, IteratedOrbit ReferenceOrbit,
+          int Terms, int Precision, Complex IteratedEpsilonType = C>
 class stored_taylor_series_orbit {
 public:
   using value_type = C;
@@ -548,7 +548,7 @@ class taylor_series_cluster {
 public:
   using calculation = typename ReferenceOrbit::calculation;
 
-  // stored_orbit<OrbitType> primary_orbit;
+  stored_orbit<OrbitType, ReferenceOrbit> primary_orbit;
 
   taylor_series_cluster(ReferenceOrbit orbit, int max_iterations,
                         std::atomic<bool> &stop);
