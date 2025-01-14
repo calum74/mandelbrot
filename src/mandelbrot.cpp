@@ -4,6 +4,7 @@
 #include "fractal.hpp"
 #include "high_exponent_real.hpp"
 #include "orbit.hpp"
+#include "reference_orbit_manager.hpp"
 
 // Calculate the Mandelbrot set using perturbations and
 // Taylor series to skip iterations. The algorithms are implemented in
@@ -27,12 +28,21 @@ public:
       : max_iterations(c.max_iterations), coords(c, w, h), ref_x(w / 2),
         ref_y(h / 2),
         reference_orbit{
-            mandelbrot::make_basic_orbit<Calculation>(HighPrecisionType{
+            HighPrecisionType{
                 coords.x0 + fractals::convert<HighPrecisionReal>(coords.dx) *
                                 fractals::convert<HighPrecisionReal>(ref_x),
                 coords.y0 + fractals::convert<HighPrecisionReal>(coords.dy) *
-                                fractals::convert<HighPrecisionReal>(ref_y)}),
-            max_iterations, stop} {}
+                                fractals::convert<HighPrecisionReal>(ref_y)},
+            max_iterations, stop},
+        orbits{HighPrecisionType{
+                   coords.x0 + fractals::convert<HighPrecisionReal>(coords.dx) *
+                                   fractals::convert<HighPrecisionReal>(ref_x),
+                   coords.y0 + fractals::convert<HighPrecisionReal>(coords.dy) *
+                                   fractals::convert<HighPrecisionReal>(ref_y)},
+               max_iterations, stop} {
+    orbits.add_secondary_reference_orbit(
+        {0, 0}, orbits.make_secondary_orbit({0, 0}, max_iterations, stop));
+  }
 
   // Are the given coordinates valid. Use this to prevent zooming out too far
   // or to select a different implementation for different resolutions.
@@ -53,15 +63,19 @@ public:
   mutable long points_calculated = 0;
   mutable long total_iterations = 0;
 
-  double average_iterations() const override { return double(total_iterations) / points_calculated; }
+  double average_iterations() const override {
+    return double(total_iterations) / points_calculated;
+  }
 
-  double average_skipped() const override { return double(skipped_iterations) / points_calculated; }
+  double average_skipped() const override {
+    return double(skipped_iterations) / points_calculated;
+  }
 
   mutable std::atomic<int> iterations_skipped;
 
   // Calculates a single point of the fractal, at position (x,y).
-  // Look up the actual coordinates (or in this case, the delta from the center
-  // (ref_x, ref_y)) from the plane.
+  // Look up the actual coordinates (or in this case, the delta from the
+  // center (ref_x, ref_y)) from the plane.
   double calculate(int x, int y) const override {
     DeltaType delta = {coords.dx * DeltaReal(x - ref_x),
                        coords.dy * DeltaReal(y - ref_y)};
@@ -101,13 +115,20 @@ private:
   // Currently always at the center of the image.
   const int ref_x, ref_y;
 
+  using reference_orbit_type =
+      mandelbrot::basic_orbit<HighPrecisionType, Calculation>;
+
   // The calculated reference orbit, together with Taylor series terms for the
   // epsilon/dz for each iteration.
-  mandelbrot::stored_taylor_series_orbit<
-      LowPrecisionType, DeltaType, TermType,
-      mandelbrot::basic_orbit<HighPrecisionType, Calculation>, Terms,
-      TermPrecision>
+  mandelbrot::stored_taylor_series_orbit<LowPrecisionType, DeltaType, TermType,
+                                         reference_orbit_type, Terms,
+                                         TermPrecision>
       reference_orbit;
+
+  mandelbrot::reference_orbit_manager<LowPrecisionType, DeltaType, TermType,
+                                      reference_orbit_type, Terms,
+                                      TermPrecision>
+      orbits;
 };
 
 double fractals::PointwiseCalculation::average_iterations() const { return 0; }

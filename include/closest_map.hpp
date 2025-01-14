@@ -7,7 +7,12 @@ namespace fractals {
 template <typename K, typename V, typename ProjectFn, typename DistanceFn>
 class closest_map {
 public:
-  using map_type = typename std::multimap<K, V>;
+  struct LessType {
+    ProjectFn fn;
+    bool operator()(const K &k1, const K &k2) const { return fn(k1) < fn(k2); }
+  };
+
+  using map_type = typename std::multimap<K, V, LessType>;
 
   using const_iterator = typename map_type::const_iterator;
 
@@ -59,11 +64,6 @@ public:
 private:
   ProjectFn project;
   DistanceFn distance;
-
-  struct LessType {
-    ProjectFn fn;
-    auto operator()(const K &k1, const K &k2) const { return fn(k1) < fn(k2); }
-  };
   map_type values;
 };
 

@@ -9,6 +9,7 @@
     For random-access orbits, the value of an element is given by operator[].
 */
 
+#pragma once
 #include "mandelbrot_calculation.hpp"
 #include <atomic>
 #include <vector>
@@ -115,7 +116,7 @@ public:
   using reference_orbit_type = ReferenceOrbit;
   using calculation = typename reference_orbit_type::calculation;
 
-  relative_orbit(reference_orbit_type ref, value_type delta)
+  relative_orbit(reference_orbit_type ref, delta_type delta)
       : reference_orbit(ref), delta{delta}, epsilon{} {}
 
   relative_orbit(const relative_orbit &other)
@@ -126,7 +127,9 @@ public:
     epsilon = {};
   }
 
-  value_type operator*() const { return *reference_orbit + epsilon; }
+  value_type operator*() const {
+    return *reference_orbit + convert<value_type>(epsilon);
+  }
 
   value_type reference_z() const { return *reference_orbit; }
 
