@@ -11,31 +11,34 @@ public:
 
   using const_iterator = typename map_type::const_iterator;
 
-  const_iterator find_closest(const key_type &k) const {
+  const_iterator find_closest(const K &k) const {
     auto center = values.lower_bound(k), best_match = center;
-    auto best_distance = distance(k, center);
 
     if (center != values.end()) {
+
+      auto best_distance = distance(k, center->first);
       auto j = center;
       // Seek forwards for the best match
-      for (++j; j != values.end() &&; ++j) {
-        auto d = distance(k, j);
+      for (++j; j != values.end(); ++j) {
+        auto d = distance(k, j->first);
         if (d < best_distance) {
           best_distance = d;
           best_match = j;
         }
-        if (best_distance < project(j) - project(center))
+        if (best_distance < project(j->first) - project(center->first))
           break;
       }
       // Seek backwards for the best match
       j = center;
-      for (--j; j != values.rend(); --j) {
-        auto d = distance(k, j);
+      for (--j;; --j) {
+        auto d = distance(k, j->first);
         if (d < best_distance) {
           best_distance = d;
           best_match = j;
         }
-        if (best_distance < project(center) - project(j))
+        if (best_distance < project(center->first) - project(j->first))
+          break;
+        if (j == values.begin())
           break;
       }
     }
@@ -43,7 +46,7 @@ public:
     return best_match;
   }
 
-  void insert(const key_type &k, value_type &&v) {
+  void insert(const K &k, V &&v) {
     values.insert({std::move(k), std::move(v)});
   }
 

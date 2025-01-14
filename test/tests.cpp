@@ -1,3 +1,4 @@
+#include "closest_map.hpp"
 #include "complex_number.hpp"
 #include "fractal.hpp"
 #include "high_exponent_real.hpp"
@@ -215,6 +216,27 @@ int main() {
     }
 
     assert(iterations == 5);
+  }
+
+  {
+    struct Fn {
+      int operator()(const std::pair<int, int> &p) const {
+        return p.first * p.first;
+      }
+
+      double operator()(const std::pair<int, int> &p1,
+                        const std::pair<int, int> &p2) const {
+        std::pair<int, int> d{p1.first - p2.first, p1.second - p2.second};
+        return d.first * d.first + d.second * d.second;
+      }
+    };
+
+    fractals::closest_map<std::pair<int, int>, std::string, Fn, Fn> m1;
+
+    m1.insert({1, 1}, "P1");
+    m1.insert({10, 10}, "P2");
+
+    assert(m1.find_closest({2, 2})->second == "P1");
   }
 
   return 0;
