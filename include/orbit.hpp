@@ -547,10 +547,35 @@ template <Complex OrbitType, Complex DeltaType, Complex TermType,
 class taylor_series_cluster {
 public:
   using calculation = typename ReferenceOrbit::calculation;
+  using value_type = OrbitType;
+  using delta_type = DeltaType;
+  using epsilon_type = DeltaType;
 
-  stored_orbit<OrbitType, ReferenceOrbit> primary_orbit;
+  // We only need to store the primary orbit in low precision
+  // (although obviously it was initially calculated to high precision)
+  using primary_orbit_type = stored_orbit<value_type, ReferenceOrbit>;
+  primary_orbit_type primary_orbit;
+
+  using secondary_reference_type =
+      relative_orbit<value_type, typename primary_orbit_type::reference_orbit>;
+
+  using secondary_orbit_type =
+      stored_taylor_series_orbit<value_type, delta_type,
+                                 secondary_reference_type, Terms, Precision,
+                                 epsilon_type>;
+
+  using relative_orbit = typename secondary_orbit_type::relative_orbit;
 
   taylor_series_cluster(ReferenceOrbit orbit, int max_iterations,
                         std::atomic<bool> &stop);
+
+  void make_secondary_orbit(delta_type delta);
+  secondary_orbit_type get_closest_orbit(delta_type);
+
+  relative_orbit make_relative_orbit(delta_type delta, int limit,
+                                     int &iterations_skipped) const;
+
+  //
+  secondary_orbit_type central_orbit;
 };
 } // namespace mandelbrot
