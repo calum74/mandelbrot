@@ -122,33 +122,31 @@ template <int N> struct mandelbrot_calculation {
   static constexpr int order = N;
 
   // The general form of the calculation z -> z^N + c
-  template <typename Complex>
-  static Complex step(const Complex &z, const Complex &c) {
+  template <Complex C> static C step(const C &z, const C &c) {
     return pow<N>(z) + c;
   }
 
   // When performing perturbations (for higher precision), here is the general
   // formula for evaluating the epsilon (dz)
-  template <typename Complex, typename Delta>
-  static Delta step_epsilon(const Complex &z, const Delta &e, const Delta &d) {
+  template <Complex OrbitType, Complex DeltaType>
+  static DeltaType step_epsilon(const OrbitType &z, const DeltaType &e,
+                                const DeltaType &d) {
     return d + detail::calculate_epsilon<N, 0>::eval(z, e);
   }
 
-  template <typename Complex>
-  static Complex A(const Complex &z, const Complex &A_prev) {
-    return choose<N, 1>() * pow<N - 1>(z) * A_prev + Complex{1, 0};
+  template <Complex C> static C A(const C &z, const C &A_prev) {
+    return choose<N, 1>() * pow<N - 1>(z) * A_prev + C{1, 0};
   }
 
-  template <typename Complex>
-  static Complex B(const Complex &z, const Complex &A_prev,
-                   const Complex &B_prev) {
+  template <Complex C>
+  static C B(const C &z, const C &A_prev, const C &B_prev) {
     return choose<N, 1>() * pow<N - 1>(z) * B_prev +
            choose<N, 2>() * pow<N - 2>(z) * pow<2>(A_prev);
   }
 
-  template <typename Complex>
-  static Complex C(const Complex &z, const Complex &A_prev,
-                   const Complex &B_prev, const Complex &C_prev) {
+  template <Complex Cx>
+  static Cx C(const Cx &z, const Cx &A_prev, const Cx &B_prev,
+              const Cx &C_prev) {
     if constexpr (N > 2) {
       return choose<N, 1>() * pow<N - 1>(z) * C_prev +
              2 * choose<N, 2>() * pow<N - 2>(z) * A_prev * B_prev +
@@ -159,10 +157,9 @@ template <int N> struct mandelbrot_calculation {
     }
   }
 
-  template <typename Complex>
-  static Complex D(const Complex &z, const Complex &A_prev,
-                   const Complex &B_prev, const Complex &C_prev,
-                   const Complex &D_prev) {
+  template <Complex C>
+  static C D(const C &z, const C &A_prev, const C &B_prev, const C &C_prev,
+             const C &D_prev) {
     if constexpr (N > 3) {
       return choose<N, 1>() * pow<N - 1>(z) * D_prev +
              choose<N, 2>() * pow<N - 2>(z) *
