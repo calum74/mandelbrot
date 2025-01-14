@@ -5,7 +5,7 @@ namespace fractals {
 
 // The coordinates of the current view, specified in high_precision numbers.
 struct view_coords {
-  using value_type = high_precision_real<64>;
+  using value_type = real_number<4096, 0, 0>; // 4096 with no exponent
   value_type x, y, r;
   int max_iterations;
 

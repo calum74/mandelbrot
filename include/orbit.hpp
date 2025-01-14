@@ -541,8 +541,7 @@ high exponent values such as `std::complex<high_exponent_real>`. Otherwise the
 Taylor series will run out of iterations even for low precisions.
 
 `DeltaType` is used to represent deltas, and can be `std::complex<double>` or
-`std::complex<high_exponent_real>` depending on the current precision being
-calculated.
+`std::complex<high_exponent_real>` depending on the precision required.
 
 `ReferenceOrbit` is a high precision reference orbit, that is iterated
 precisely once.
@@ -586,16 +585,6 @@ public:
                                             std::atomic<bool> &stop) const {
     return {{primary_orbit.make_reference(), delta}, max_iterations, stop};
   }
-
-  secondary_orbit_type get_closest_orbit(delta_type);
-
-  relative_orbit make_relative_orbit(delta_type delta, int limit,
-                                     int &iterations_skipped) const;
-
-  //
-  // secondary_orbit_type central_orbit;
-
-  // Our list of
-  std::vector<secondary_orbit_type> secondary_orbits;
 };
+
 } // namespace mandelbrot
