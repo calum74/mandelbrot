@@ -14,6 +14,24 @@
 #include <vector>
 
 namespace mandelbrot {
+template <typename T>
+concept Complex = requires(T v) {
+  // requires(typename T::value_type) {};
+  v.real();
+  v.imag();
+};
+
+template <typename T>
+concept Orbit = requires(T v, int i) {
+  *v;
+  v[i];
+  requires(T::value_type);
+  requires(T::calculation_type);
+};
+
+template <typename T>
+concept Calculation =
+    requires(T) { T::step(std::complex<double>(), std::complex<double>()); };
 
 /*
   A basic_orbit iterates the escape sequence manually.
@@ -22,10 +40,10 @@ namespace mandelbrot {
   Complex - the type of the complex number
   Calculation - how to calculate the sequence
 */
-template <typename Complex, typename Calculation> class basic_orbit {
+template <Complex T, Calculation C> class basic_orbit {
 public:
-  using value_type = Complex;
-  using calculation = Calculation;
+  using value_type = T;
+  using calculation = C;
 
   basic_orbit(value_type c = value_type{}) : c{c}, z{} {}
 
@@ -40,8 +58,8 @@ private:
   value_type c, z;
 };
 
-template <typename Calculation, typename Complex>
-basic_orbit<Complex, Calculation> make_basic_orbit(const Complex &c) {
+template <Calculation C, Complex T>
+basic_orbit<T, C> make_basic_orbit(const T &c) {
   return {c};
 }
 
@@ -54,12 +72,12 @@ basic_orbit<Complex, Calculation> make_basic_orbit(const Complex &c) {
   ReferenceOrbit is a high precision orbit (e.g.
   basic_orbit<std::complex<high_precision_real<>>>)
 */
-template <typename Complex, typename ReferenceOrbit> class converted_orbit {
+template <Complex T, Orbit ReferenceOrbit> class converted_orbit {
 public:
   converted_orbit() = default;
   converted_orbit(const ReferenceOrbit &r) : reference(r) {}
 
-  using value_type = Complex;
+  using value_type = T;
   using calculation = typename ReferenceOrbit::calculation;
 
   value_type operator*() const {
@@ -80,17 +98,15 @@ private:
   low-precision sequence. Most algorithms don't need the
   high-precision number.
  */
-template <typename LowPrecisionComplex, typename HighPrecisionComplex,
-          typename Calculation>
+template <Complex LowPrecisionComplex, Complex HighPrecisionComplex,
+          Calculation C>
 using high_precision_orbit =
-    converted_orbit<LowPrecisionComplex,
-                    basic_orbit<HighPrecisionComplex, Calculation>>;
+    converted_orbit<LowPrecisionComplex, basic_orbit<HighPrecisionComplex, C>>;
 
-template <typename Complex, typename ReferenceOrbit,
-          typename DeltaType = Complex>
+template <typename T, typename ReferenceOrbit, typename DeltaType = T>
 class relative_orbit {
 public:
-  using value_type = Complex;
+  using value_type = T;
   using delta_type = DeltaType;
   using epsilon_type = delta_type;
   using reference_orbit_type = ReferenceOrbit;
@@ -417,8 +433,8 @@ private:
   }
 
 private:
-  // An `Entry` is an orbital value (`z`) and the Taylor series terms (`terms`)
-  // for an iteration.
+  // An `Entry` is an orbital value (`z`) and the Taylor series terms
+  // (`terms`) for an iteration.
   struct Entry {
 
     using norm_type = typename term_type::value_type;
@@ -500,4 +516,34 @@ public:
   }
 };
 
+/*
+A group of "secondary" reference orbits clustered around a single
+high precision "primary" reference orbit. The idea is to make it cheap to
+create secondary orbits that are closer to the point being calculated,
+allowing it to skip a much higher number of iterations.
+
+`OrbitType` is a regular complex number like `std::complex<double>`.
+
+`TermType` is used to represent terms in the Taylor series. These should be
+high exponent values such as `std::complex<high_exponent_real>`. Otherwise the
+Taylor series will run out of iterations even for low precisions.
+
+`DeltaType` is used to represent deltas, and can be `std::complex<double>` or
+`std::complex<high_exponent_real>` depending on the current precision being
+calculated.
+
+`ReferenceOrbit` is a high precision reference orbit, that is iterated
+precisely once.
+*/
+template <Complex OrbitType, Complex DeltaType, Complex TermType,
+          Orbit ReferenceOrbit, int Terms, int Precision>
+class taylor_series_cluster {
+public:
+  using calculation = typename ReferenceOrbit::calculation;
+
+  // stored_orbit<OrbitType> primary_orbit;
+
+  taylor_series_cluster(ReferenceOrbit orbit, int max_iterations,
+                        std::atomic<bool> &stop);
+};
 } // namespace mandelbrot
