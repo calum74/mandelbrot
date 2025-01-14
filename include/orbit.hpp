@@ -20,6 +20,7 @@ concept IteratedOrbit = requires(T v) {
   *v;
   { *v } -> std::convertible_to<typename T::value_type>;
   ++v;
+  v.reset();
   // requires T::value_type;
   // requires(T::value_type);
   // requires(T::calculation);
@@ -47,6 +48,8 @@ public:
   using calculation = C;
 
   basic_orbit(value_type c = value_type{}) : c{c}, z{} {}
+
+  void reset() { z = 0; }
 
   const value_type &operator*() const { return z; }
 
@@ -115,6 +118,14 @@ public:
   relative_orbit(reference_orbit_type ref, value_type delta)
       : reference_orbit(ref), delta{delta}, epsilon{} {}
 
+  relative_orbit(const relative_orbit &other)
+      : reference_orbit(other.reference_orbit), delta(other.delta), epsilon{} {}
+
+  void reset() {
+    reference_orbit.reset();
+    epsilon = {};
+  }
+
   value_type operator*() const { return *reference_orbit + epsilon; }
 
   value_type reference_z() const { return *reference_orbit; }
@@ -135,22 +146,27 @@ private:
 
 template <Complex C, IteratedOrbit Ref> class stored_orbit {
 public:
-  stored_orbit(Ref o) : orbit(o) {}
+  stored_orbit(Ref orbit, int max_iterations, std::atomic<bool> &stop) {
+    // Store up to max_iterations or until orbit has escaped
+    // Note that `orbit` is a value type so is reset to the beginning
+    do {
+      values.push_back(convert<C>(*orbit));
+      ++orbit;
+    } while (!stop && values.size() <= max_iterations &&
+             !escaped(values.back()));
+  }
 
   using value_type = C;
   using calculation = typename Ref::calculation;
 
-  const value_type &operator[](int n) {
-    while (values.size() <= n)
-      push_next();
-    return values[n];
-  }
+  value_type operator[](int n) const { return values.at(n); }
 
   struct reference_orbit {
   public:
     using value_type = C;
     using calculation = typename Ref::calculation;
-    reference_orbit(stored_orbit &ref) : ref{ref}, current{0} {}
+    reference_orbit(const stored_orbit &ref) : ref{ref}, current{0} {}
+    reference_orbit(const reference_orbit &ref) : ref{ref.ref}, current{0} {}
 
     value_type operator*() const { return ref[current]; }
 
@@ -159,27 +175,26 @@ public:
       return *this;
     }
 
+    void reset() { current = 0; }
+
   private:
     int current;
 
-    stored_orbit &ref;
+    const stored_orbit &ref;
   };
 
-  reference_orbit make_reference() { return {*this}; }
+  reference_orbit make_reference() const { return {*this}; }
+
+  auto size() const { return values.size(); }
 
 private:
-  void push_next() {
-    values.push_back(convert<C>(*orbit));
-    ++orbit;
-  }
-
-  Ref orbit;
   std::vector<value_type> values;
 };
 
 template <Complex C, IteratedOrbit Ref>
-stored_orbit<C, Ref> make_stored_orbit(const Ref &r) {
-  return {r};
+stored_orbit<C, Ref> make_stored_orbit(const Ref &r, int max_iterations,
+                                       std::atomic<bool> &stop) {
+  return {r, max_iterations, stop};
 }
 
 template <IteratedOrbit Rel>
@@ -243,6 +258,8 @@ public:
                      epsilon_type starting_epsilon = {})
       : n{starting_iteration}, j{n}, delta(delta), epsilon{starting_epsilon},
         reference{ref} {}
+
+  perturbation_orbit(const perturbation_orbit &other) = delete;
 
   int iteration() const { return n; }
 
@@ -308,11 +325,14 @@ public:
   stored_taylor_series_orbit(ReferenceOrbit r, int max_iterations,
                              std::atomic<bool> &stop)
       : reference(r) {
-    for (int i = 0; !stop && i <= max_iterations && !escaped((*this)[i]); ++i)
-      ; // Force evaluation of the reference orbit
+    do {
+      get_next();
+    } while (!stop && entries.size() <= max_iterations &&
+             !escaped(entries.back().z));
     // debug_terms();
   }
 
+  // !! This does not belong here
   void debug_terms() const {
     // Debug - look at the terms
     int max_term[Terms] = {};
@@ -348,26 +368,13 @@ public:
     }
   }
 
-  // Gets the corresponding epsilon (dz) for a given delta (dc)
-  // at iteration i.
-  auto epsilon(int i, delta_type delta) {
-    while (i >= entries.size())
-      get_next();
-    return entries[i].epsilon(delta);
-  }
-
   auto epsilon(int i, delta_type delta) const {
     return entries.at(i).epsilon(delta);
   }
 
-  // Gets the value of the reference orbit at iteration i
-  value_type operator[](int i) {
-    while (i >= entries.size())
-      get_next();
-    return entries[i].z;
-  }
-
   value_type operator[](int i) const { return entries.at(i).z; }
+
+  auto size() const { return entries.size(); }
 
 private:
   // Finds the number of iterations it's safe to skip
@@ -384,18 +391,20 @@ private:
 
     if (skipped > max)
       skipped = max;
+    if (skipped >= this->entries.size())
+      skipped = this->entries.size() - 1;
 
     auto e = this->epsilon(skipped, delta);
-    if (e.second && !escaped((*this)[skipped])) {
+    if (e && !escaped((*this)[skipped])) {
       // Seek upwards
       min = skipped;
-      epsilon = convert<epsilon_type>(e.first);
+      epsilon = convert<epsilon_type>(*e);
       for (int mid = iterations_skipped + window_size; mid < max;
            mid += (window_size *= 2)) {
         e = this->epsilon(mid, delta);
-        if (e.second && !escaped((*this)[mid])) {
+        if (e && !escaped((*this)[mid])) {
           min = mid;
-          epsilon = e.first;
+          epsilon = *e;
         } else {
           max = mid;
           break;
@@ -407,9 +416,9 @@ private:
       for (int mid = iterations_skipped - window_size; mid >= 0;
            mid -= (window_size *= 2)) {
         e = this->epsilon(mid, delta);
-        if (e.second && !escaped((*this)[mid])) {
+        if (e && !escaped((*this)[mid])) {
           min = mid;
-          epsilon = e.first;
+          epsilon = *e;
           break;
         } else {
           max = mid;
@@ -421,9 +430,9 @@ private:
     while (max - min > 4) {
       int mid = (max + min) / 2;
       auto e = this->epsilon(mid, delta);
-      if (e.second && !escaped((*this)[mid])) {
+      if (e && !escaped((*this)[mid])) {
         min = mid;
-        epsilon = e.first;
+        epsilon = *e;
       } else
         max = mid;
     }
@@ -439,6 +448,13 @@ private:
 
     using delta_norm = typename delta_type::value_type;
     using term_norm = typename term_type::value_type;
+
+    value_type z;
+    std::array<term_type, Terms> terms;
+    // The maximum delta for this term
+    // If we use a delta with a higher norm than this, we risk imprecision and
+    // therefore glitches
+    delta_norm max_delta_norm = 0;
 
     Entry(value_type z, const std::array<term_type, Terms> &ts)
         : z(z), terms(ts) {
@@ -465,21 +481,12 @@ private:
       if (max_delta_norm > convert<delta_norm>(nr))
         max_delta_norm = nr;
     }
-    value_type z;
-    std::array<term_type, Terms> terms;
 
-    // The maximum delta for this term
-    // If we use a delta with a higher norm than this, we risk imprecision and
-    // therefore glitches
-    delta_norm max_delta_norm = 0;
-
-    // Returns the epsilon, and whether the epsilon is "accurate"
-    // If false, then no epsilon is returned
-    // TODO: Use std::optional.
-    std::pair<epsilon_type, bool> epsilon(delta_type delta) const {
+    // Returns the epsilon, if it's accurate.
+    std::optional<epsilon_type> epsilon(delta_type delta) const {
       auto nd = fractals::norm(delta); // TODO: Avoid recomputing this
       if (nd > max_delta_norm)
-        return {epsilon_type(), false};
+        return std::nullopt;
       auto d_conv = convert<term_type>(delta);
       term_type d = d_conv;
       term_type s(0);
@@ -491,7 +498,7 @@ private:
         s += term;
         d = d * d_conv;
       }
-      return std::make_pair(convert<epsilon_type>(s), true);
+      return convert<epsilon_type>(s);
     }
   };
 
@@ -556,7 +563,8 @@ public:
   primary_orbit_type primary_orbit;
 
   using secondary_reference_type =
-      relative_orbit<value_type, typename primary_orbit_type::reference_orbit>;
+      relative_orbit<value_type, typename primary_orbit_type::reference_orbit,
+                     delta_type>;
 
   using secondary_orbit_type =
       stored_taylor_series_orbit<value_type, delta_type, term_type,
@@ -565,17 +573,27 @@ public:
 
   using relative_orbit = typename secondary_orbit_type::relative_orbit;
 
+  // We initially calculate the primary orbit, but don't create any secondary
+  // orbits yet
   taylor_series_cluster(ReferenceOrbit orbit, int max_iterations,
-                        std::atomic<bool> &stop);
+                        std::atomic<bool> &stop)
+      : primary_orbit(orbit, max_iterations, stop) {}
 
-  void make_secondary_orbit(delta_type delta);
+  // Constructs and fully evaluates a secondary orbit
+  // (thread-safe)
+  secondary_orbit_type make_secondary_orbit(delta_type delta,
+                                            int max_iterations,
+                                            std::atomic<bool> &stop) const {
+    return {{primary_orbit.make_reference(), delta}, max_iterations, stop};
+  }
+
   secondary_orbit_type get_closest_orbit(delta_type);
 
   relative_orbit make_relative_orbit(delta_type delta, int limit,
                                      int &iterations_skipped) const;
 
   //
-  secondary_orbit_type central_orbit;
+  // secondary_orbit_type central_orbit;
 
   // Our list of
   std::vector<secondary_orbit_type> secondary_orbits;

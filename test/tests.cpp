@@ -178,8 +178,9 @@ int main() {
         mandelbrot::make_basic_orbit<mandelbrot::mandelbrot_calculation<2>>(
             std::complex<R1>{0.49, 0.49});
 
-    auto stored_orbit =
-        mandelbrot::make_stored_orbit<std::complex<R1>>(reference_orbit);
+    std::atomic<bool> stop;
+    auto stored_orbit = mandelbrot::make_stored_orbit<std::complex<R1>>(
+        reference_orbit, 100, stop);
 
     // Reset the reference orbit
     auto relative_orbit = mandelbrot::make_relative_orbit(
@@ -193,7 +194,6 @@ int main() {
 
     assert(iterations == 5);
 
-    std::atomic<bool> stop;
     mandelbrot::stored_taylor_series_orbit<
         std::complex<R1>, std::complex<R1>, std::complex<R1>,
         mandelbrot::basic_orbit<std::complex<R1>,

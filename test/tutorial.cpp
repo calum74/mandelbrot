@@ -84,8 +84,8 @@ int main() {
   // Let's create a stored orbit, which lazily stores all of the complex numbers
   // in the orbit. Although the numbers stored in the orbit are of low precision
   // std::complex<double>, they have been derived from a high-precision orbit.
-  auto stored_orbit =
-      mandelbrot::make_stored_orbit<std::complex<double>>(reference_orbit);
+  auto stored_orbit = mandelbrot::make_stored_orbit<std::complex<double>>(
+      reference_orbit, 100, stop);
 
   // Now, create a "relative orbit", which is a low-precision delta {0.01,0.01},
   // relative to our reference orbit.
@@ -106,11 +106,6 @@ int main() {
 
   // The advanced algorithms can use Taylor series to skip large numbers of
   // iterations
-
-  // Reset the reference orbit
-  reference_orbit =
-      mandelbrot::make_basic_orbit<mandelbrot::mandelbrot_calculation<2>>(
-          std::complex<R>{0.49, 0.49});
 
   // Compute the Taylor series coefficients for the given reference orbit.
   mandelbrot::stored_taylor_series_orbit<
@@ -133,6 +128,50 @@ int main() {
   while (!mandelbrot::escaped(*relative) && iterations < 100) {
     ++iterations;
     ++relative;
+  }
+
+  std::cout << "Escaped after " << iterations << " iterations\n";
+
+  // Let's look at Taylor series "clusters"
+
+  // To create a cluster, we need to configure the data-types
+  // orbit_type
+  // delta_type
+  // term_type
+  // reference orbit
+  // number of taylor-series terms (3)
+  // Taylor-series precision factor.
+
+  mandelbrot::taylor_series_cluster<
+      std::complex<double>, std::complex<double>, std::complex<double>,
+      mandelbrot::basic_orbit<std::complex<R>,
+                              mandelbrot::mandelbrot_calculation<2>>,
+      3, 100>
+      cluster1{reference_orbit, 100, stop};
+
+  // The constructor has evaluated the reference orbit to the
+  // specified number of iterations (or, until it has escaped, whichever is
+  // sooner).
+
+  std::cout << "Reference orbit contains " << cluster1.primary_orbit.size()
+            << " points\n";
+
+  // We can then create a secondary orbit relative within the cluster
+  auto secondary = cluster1.make_secondary_orbit({0.01, 0.0}, 100, stop);
+
+  std::cout << "Secondary orbit contains " << secondary.size() << " points\n";
+
+  iterations = 0;
+  // And then our final orbit
+  auto tertiary = secondary.make_relative_orbit({0.0, 0.01}, 100, iterations);
+
+  // We can then skip iterations on tertiary
+  std::cout << "Skipped " << iterations << " iterations\n";
+
+  // Iterate the tertiary orbit as before, using perturbation.
+  while (!mandelbrot::escaped(*tertiary) && iterations < 100) {
+    ++iterations;
+    ++tertiary;
   }
 
   std::cout << "Escaped after " << iterations << " iterations\n";
