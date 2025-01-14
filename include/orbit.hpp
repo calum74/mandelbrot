@@ -14,12 +14,6 @@
 #include <vector>
 
 namespace mandelbrot {
-template <typename T>
-concept Complex = requires(T v) {
-  // requires(typename T::value_type) {};
-  { v.real() } -> std::same_as<typename T::value_type>;
-  v.imag();
-};
 
 template <typename T>
 concept IteratedOrbit = requires(T v) {
@@ -110,10 +104,11 @@ template <Complex LowPrecisionComplex, Complex HighPrecisionComplex,
 using high_precision_orbit =
     converted_orbit<LowPrecisionComplex, basic_orbit<HighPrecisionComplex, C>>;
 
-template <Complex T, IteratedOrbit ReferenceOrbit, Complex DeltaType = T>
+template <Complex OrbitType, IteratedOrbit ReferenceOrbit,
+          Complex DeltaType = OrbitType>
 class relative_orbit {
 public:
-  using value_type = T;
+  using value_type = OrbitType;
   using delta_type = DeltaType;
   using epsilon_type = delta_type;
   using reference_orbit_type = ReferenceOrbit;
@@ -201,13 +196,15 @@ relative_orbit<typename Rel::value_type, Rel> make_relative_orbit(Rel rel,
 
   z = z_0 + A.delta + B.delta^2 + C.delta^3
 */
-template <Complex C, IteratedOrbit ReferenceOrbit, int Terms>
+template <Complex OrbitType, Complex TermType, IteratedOrbit ReferenceOrbit,
+          int Terms>
 class taylor_series_orbit {
 public:
-  using value_type = C;
+  using value_type = OrbitType;
+  using term_type = TermType;
   using calculation = typename ReferenceOrbit::calculation;
 
-  std::array<C, Terms> terms;
+  std::array<term_type, Terms> terms;
 
   taylor_series_orbit() = default;
 
@@ -299,14 +296,14 @@ private:
 
   ReferenceOrbit is the high-precision orbit.
 */
-template <Complex C, Complex HighExponentComplex, IteratedOrbit ReferenceOrbit,
-          int Terms, int Precision, Complex IteratedEpsilonType = C>
+template <Complex OrbitType, Complex DeltaType, Complex TermType,
+          IteratedOrbit ReferenceOrbit, int Terms, int Precision>
 class stored_taylor_series_orbit {
 public:
-  using value_type = C;
-  using term_type = HighExponentComplex;
-  using delta_type = HighExponentComplex;
-  using epsilon_type = HighExponentComplex;
+  using value_type = OrbitType;
+  using term_type = TermType;
+  using delta_type = DeltaType;
+  using epsilon_type = DeltaType;
   using calculation = typename ReferenceOrbit::calculation;
 
   stored_taylor_series_orbit() = default;
@@ -322,7 +319,7 @@ public:
   void debug_terms() const {
     // Debug - look at the terms
     int max_term[Terms] = {};
-    using R = HighExponentComplex::value_type;
+    using R = TermType::value_type;
     R max[Terms] = {}, min[Terms] = {};
     for (int i = 0; i < entries.size(); ++i) {
       //
@@ -443,7 +440,8 @@ private:
   // (`terms`) for an iteration.
   struct Entry {
 
-    using norm_type = typename term_type::value_type;
+    using delta_norm = typename delta_type::value_type;
+    using term_norm = typename term_type::value_type;
 
     Entry(value_type z, const std::array<term_type, Terms> &ts)
         : z(z), terms(ts) {
@@ -456,16 +454,18 @@ private:
       auto prev_norm = fractals::norm(terms[0]);
       for (int i = 1; i < Terms - 1; i++) {
         auto n = fractals::norm(terms[i]);
-        auto nr = prev_norm / (norm_type(10) * n); // TODO: Tweak this
+        auto nr = convert<delta_norm>(prev_norm /
+                                      (term_norm(10) * n)); // TODO: Tweak this
         prev_norm = n;
         if (i == 1 || max_delta_norm > nr)
           max_delta_norm = nr;
       }
       auto n = fractals::norm(terms[Terms - 1]);
-      auto nr = prev_norm /
-                (norm_type(100) * n); // TODO: Tweak this - Precision is ignored
+      auto nr = convert<delta_norm>(
+          prev_norm /
+          (term_norm(100) * n)); // TODO: Tweak this - Precision is ignored
 
-      if (max_delta_norm > nr)
+      if (max_delta_norm > convert<delta_norm>(nr))
         max_delta_norm = nr;
     }
     value_type z;
@@ -474,29 +474,31 @@ private:
     // The maximum delta for this term
     // If we use a delta with a higher norm than this, we risk imprecision and
     // therefore glitches
-    norm_type max_delta_norm = 0;
+    delta_norm max_delta_norm = 0;
 
     // Returns the epsilon, and whether the epsilon is "accurate"
-    // If false, then the first item is not set.
+    // If false, then no epsilon is returned
+    // TODO: Use std::optional.
     std::pair<epsilon_type, bool> epsilon(delta_type delta) const {
       auto nd = fractals::norm(delta); // TODO: Avoid recomputing this
       if (nd > max_delta_norm)
         return {epsilon_type(), false};
-      auto d = delta;
-      epsilon_type s(0);
-      typename HighExponentComplex::value_type prev_norm = 0, term_norm = 0;
+      auto d_conv = convert_complex<term_type>(delta);
+      term_type d = d_conv;
+      term_type s(0);
+      typename TermType::value_type prev_norm = 0, term_norm = 0;
       for (int t = 0; t < Terms; t++) {
         auto term = terms[t] * d;
         prev_norm = term_norm;
         term_norm = fractals::norm(term);
         s += term;
-        d = d * delta;
+        d = d * d_conv;
       }
-      return std::make_pair(s, true);
+      return std::make_pair(convert_complex<epsilon_type>(s), true);
     }
   };
 
-  taylor_series_orbit<HighExponentComplex, ReferenceOrbit, Terms> reference;
+  taylor_series_orbit<value_type, term_type, ReferenceOrbit, Terms> reference;
   std::vector<Entry> entries;
 
   void get_next() {
@@ -506,8 +508,8 @@ private:
   }
 
 public:
-  using relative_orbit = perturbation_orbit<value_type, IteratedEpsilonType,
-                                            stored_taylor_series_orbit>;
+  using relative_orbit =
+      perturbation_orbit<value_type, epsilon_type, stored_taylor_series_orbit>;
 
   // Returns a new relative orbit, with a certain number of iterations already
   // skipped.
@@ -518,14 +520,14 @@ public:
   relative_orbit make_relative_orbit(delta_type delta, int limit,
                                      int &iterations_skipped) const {
     auto s = find_iterations_to_skip(delta, entries.size(), iterations_skipped);
-    return {*this, convert_complex<IteratedEpsilonType>(delta),
-            iterations_skipped, convert_complex<IteratedEpsilonType>(s)};
+    return {*this, convert_complex<epsilon_type>(delta), iterations_skipped,
+            convert_complex<epsilon_type>(s)};
   }
 };
 
 /*
 A group of "secondary" reference orbits clustered around a single
-high precision "primary" reference orbit. The idea is to make it cheap to
+high precision "primary" reference orbit. The big idea is to make it cheap to
 create secondary orbits that are closer to the point being calculated,
 allowing it to skip a much higher number of iterations.
 
@@ -543,12 +545,13 @@ calculated.
 precisely once.
 */
 template <Complex OrbitType, Complex DeltaType, Complex TermType,
-          IteratedOrbit ReferenceOrbit, int Terms, int Precision>
+          IteratedOrbit ReferenceOrbit, int Terms, int TermPrecision>
 class taylor_series_cluster {
 public:
   using calculation = typename ReferenceOrbit::calculation;
   using value_type = OrbitType;
   using delta_type = DeltaType;
+  using term_type = TermType;
   using epsilon_type = DeltaType;
 
   // We only need to store the primary orbit in low precision
@@ -560,9 +563,9 @@ public:
       relative_orbit<value_type, typename primary_orbit_type::reference_orbit>;
 
   using secondary_orbit_type =
-      stored_taylor_series_orbit<value_type, delta_type,
-                                 secondary_reference_type, Terms, Precision,
-                                 epsilon_type>;
+      stored_taylor_series_orbit<value_type, delta_type, term_type,
+                                 secondary_reference_type, Terms,
+                                 TermPrecision>;
 
   using relative_orbit = typename secondary_orbit_type::relative_orbit;
 
@@ -577,5 +580,8 @@ public:
 
   //
   secondary_orbit_type central_orbit;
+
+  // Our list of
+  std::vector<secondary_orbit_type> secondary_orbits;
 };
 } // namespace mandelbrot

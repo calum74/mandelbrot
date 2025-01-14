@@ -9,14 +9,14 @@
 // Taylor series to skip iterations. The algorithms are implemented in
 // orbit.hpp. The class is templated so that we can configure the data types
 // for higher resolution rendering if required.
-template <typename LowPrecisionComplex, typename HighExponentComplex,
-          typename HighPrecisionComplex, typename Calculation, int Terms,
-          int Precision, typename EpsilonType>
+template <mandelbrot::Complex LowPrecisionType, mandelbrot::Complex DeltaType,
+          mandelbrot::Complex TermType, mandelbrot::Complex HighPrecisionType,
+          mandelbrot::Calculation Calculation, int Terms, int TermPrecision>
 class PerturbatedMandelbrotCalculation : public fractals::PointwiseCalculation {
 public:
-  using SmallReal = typename LowPrecisionComplex::value_type;
-  using HighExponentReal = typename HighExponentComplex::value_type;
-  using HighPrecisionReal = typename HighPrecisionComplex::value_type;
+  using SmallReal = typename LowPrecisionType::value_type;
+  using DeltaReal = typename DeltaType::value_type;
+  using HighPrecisionReal = typename HighPrecisionType::value_type;
 
   // Initialize the fractal. We calculate the high precision reference orbit
   // at the center of the view. Because this calculation can be time-consuming,
@@ -27,7 +27,7 @@ public:
       : max_iterations(c.max_iterations), coords(c, w, h), ref_x(w / 2),
         ref_y(h / 2),
         reference_orbit{
-            mandelbrot::make_basic_orbit<Calculation>(HighPrecisionComplex{
+            mandelbrot::make_basic_orbit<Calculation>(HighPrecisionType{
                 coords.x0 + fractals::convert<HighPrecisionReal>(coords.dx) *
                                 fractals::convert<HighPrecisionReal>(ref_x),
                 coords.y0 + fractals::convert<HighPrecisionReal>(coords.dy) *
@@ -63,8 +63,8 @@ public:
   // Look up the actual coordinates (or in this case, the delta from the center
   // (ref_x, ref_y)) from the plane.
   double calculate(int x, int y) const override {
-    HighExponentComplex delta = {coords.dx * HighExponentReal(x - ref_x),
-                                 coords.dy * HighExponentReal(y - ref_y)};
+    DeltaType delta = {coords.dx * DeltaReal(x - ref_x),
+                       coords.dy * DeltaReal(y - ref_y)};
 
     // The function `make_relative_orbit` will skip some iterations,
     // use `z.iteration()` to find out which iteration we are on.
@@ -95,7 +95,7 @@ private:
   const int max_iterations;
 
   // A mapping from points in the image to points in the complex plane.
-  const fractals::plane<HighPrecisionReal, HighExponentReal> coords;
+  const fractals::plane<HighPrecisionReal, DeltaReal> coords;
 
   // Where in the image the reference orbit is.
   // Currently always at the center of the image.
@@ -104,9 +104,9 @@ private:
   // The calculated reference orbit, together with Taylor series terms for the
   // epsilon/dz for each iteration.
   mandelbrot::stored_taylor_series_orbit<
-      LowPrecisionComplex, HighExponentComplex,
-      mandelbrot::basic_orbit<HighPrecisionComplex, Calculation>, Terms,
-      Precision, EpsilonType>
+      LowPrecisionType, DeltaType, TermType,
+      mandelbrot::basic_orbit<HighPrecisionType, Calculation>, Terms,
+      TermPrecision>
       reference_orbit;
 };
 
@@ -115,11 +115,12 @@ double fractals::PointwiseCalculation::average_iterations() const { return 0; }
 double fractals::PointwiseCalculation::average_skipped() const { return 0; }
 
 template <int N, int P, int T = 4, int Tolerance = 100,
-          typename EpsilonIteration = std::complex<double>>
+          typename DeltaType = std::complex<double>>
 using MB = PerturbatedMandelbrotCalculation<
-    std::complex<double>, std::complex<fractals::high_exponent_real<double>>,
+    std::complex<double>, DeltaType,
+    std::complex<fractals::high_exponent_real<double>>,
     std::complex<fractals::high_precision_real<P>>,
-    mandelbrot::mandelbrot_calculation<N>, T, Tolerance, EpsilonIteration>;
+    mandelbrot::mandelbrot_calculation<N>, T, Tolerance>;
 
 template <int N, int P, int T = 4, int Tolerance = 100>
 using MB_high =
@@ -138,16 +139,8 @@ const fractals::PointwiseFractal &mandelbrot_fractal =
                            MB_high<2, 32>, MB_high<2, 40>, MB_high<2, 64>>(
         "Mandelbrot (power 2)");
 
-template <int N, int P, int T = 4, int Tolerance = 1000,
-          typename EpsilonType = std::complex<double>>
-using MBX = PerturbatedMandelbrotCalculation<
-    std::complex<double>, std::complex<fractals::high_exponent_real<double>>,
-    std::complex<fractals::high_precision_real<P>>,
-    mandelbrot::mandelbrot_calculation<N>, T, Tolerance, EpsilonType>;
-
-const fractals::PointwiseFractal &experimental_fractal =
-    fractals::make_fractal<MBX<2, 3, 4, 10000>, MBX<2, 6>, MBX<2, 10>,
-                           MBX<2, 18, 5, 10>>("Experimental");
+// Nothing here now
+const fractals::PointwiseFractal &experimental_fractal = mandelbrot_fractal;
 
 // Cubic Mandelbrot has no glitches with 3 Taylor series terms, but
 // glitches quite badly with 4 terms. On the other hand, Square mandelbrot works

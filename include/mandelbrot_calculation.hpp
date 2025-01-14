@@ -22,7 +22,7 @@
 namespace mandelbrot {
 using namespace fractals;
 
-template <typename C> bool escaped(const C &c) {
+template <Complex C> bool escaped(const C &c) {
   return fractals::norm(c) >= typename C::value_type(4);
 }
 
@@ -30,16 +30,16 @@ template <int N> struct mandelbrot_calculation;
 
 namespace detail {
 template <int N, int J> struct calculate_epsilon {
-  template <typename Complex, typename Delta>
-  static Delta eval(const Complex &z, const Delta &e) {
-    return choose<N, J>() * Delta(pow<J>(z)) * pow<N - J>(e) +
+  template <Complex OrbitType, Complex DeltaType>
+  static DeltaType eval(const OrbitType &z, const DeltaType &e) {
+    return choose<N, J>() * DeltaType(pow<J>(z)) * pow<N - J>(e) +
            calculate_epsilon<N, J + 1>::eval(z, e);
   }
 };
 
 template <int N> struct calculate_epsilon<N, N> {
-  template <typename Complex, typename Delta>
-  static Delta eval(const Complex &z, const Delta &e) {
+  template <Complex OrbitType, Complex DeltaType>
+  static DeltaType eval(const OrbitType &z, const DeltaType &e) {
     return {0, 0};
   }
 };
@@ -48,14 +48,14 @@ template <int N> struct calculate_epsilon<N, N> {
 // (A∂ + B∂^2 + C∂^3 ...)
 // and multiply it with the terms from (A∂ + B∂^2 + C∂^3
 // ...)^(seq_remaining-1)
-template <typename Complex, unsigned long T>
-void distribute_terms(int delta_pow, int seq_remaining, Complex f,
-                      const std::array<Complex, T> &previous,
-                      std::array<Complex, T> &next) {
+template <Complex TermType, unsigned long Terms>
+void distribute_terms(int delta_pow, int seq_remaining, TermType f,
+                      const std::array<TermType, Terms> &previous,
+                      std::array<TermType, Terms> &next) {
   if (seq_remaining == 0) {
     next[delta_pow - 1] += f;
   } else {
-    for (int p = 1; p + delta_pow + seq_remaining <= T + 1; p++) {
+    for (int p = 1; p + delta_pow + seq_remaining <= Terms + 1; p++) {
       // Distribute one term
       distribute_terms(delta_pow + p, seq_remaining - 1, f * previous[p - 1],
                        previous, next);
@@ -70,17 +70,17 @@ inline int fac(int n) {
   return m;
 }
 
-template <typename Complex, unsigned long T, int N>
+template <Complex TermType, unsigned long Terms, int N>
 struct calculate_delta_terms {
-  static std::array<Complex, T>
-  calculate(Complex z, const std::array<Complex, T> &previous) {
-    std::array<Complex, T> result;
+  static std::array<TermType, Terms>
+  calculate(TermType z, const std::array<TermType, Terms> &previous) {
+    std::array<TermType, Terms> result;
     result[0] = 1;    // Represents the first ∂ in the equation for epsilon'
-    Complex zJ(1, 0); // z^j
+    TermType zJ(1, 0); // z^j
 
     for (int j = 0; j < N; j++, zJ = zJ * z) {
       int nCj = fac(N) / (fac(j) * fac(N - j));
-      distribute_terms(0, N - j, zJ * Complex(nCj), previous, result);
+      distribute_terms(0, N - j, zJ * TermType(nCj), previous, result);
     }
 
     return result;
@@ -185,10 +185,11 @@ template <int N> struct mandelbrot_calculation {
   //             = ∂ + sum(j=0..n-1)( C(n,j).z^j.(A∂ + B∂^2 + C∂^3 ...)^(n-j) )
   //
   // for the next iteration. We equate terms in ∂^n.
-  template <typename Complex, unsigned long T>
-  static std::array<Complex, T>
-  delta_terms(const Complex &z, const std::array<Complex, T> &previous) {
-    return detail::calculate_delta_terms<Complex, T, N>::calculate(z, previous);
+  template <Complex OrbitType, Complex TermType, unsigned long Terms>
+  static std::array<TermType, Terms>
+  delta_terms(const OrbitType &z, const std::array<TermType, Terms> &previous) {
+    return detail::calculate_delta_terms<TermType, Terms, N>::calculate(
+        TermType(z), previous);
   }
 }; // mandelbrot_calculation
 

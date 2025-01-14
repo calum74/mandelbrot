@@ -159,8 +159,13 @@ bool operator<=(high_exponent_real<D, E> a, high_exponent_real<D, E> b) {
 }
 
 template <typename D, typename E>
-struct convert_to<D, high_exponent_real<D, E>> {
-  static D get(const high_exponent_real<D, E> &x) { return x.to_double(); }
+struct convert_to<double, high_exponent_real<D, E>> {
+  static double get(const high_exponent_real<D, E> &x) { return x.to_double(); }
+};
+
+template <typename D, typename E>
+struct convert_to<high_exponent_real<D, E>, double> {
+  static high_exponent_real<D, E> get(double x) { return {x}; }
 };
 
 template <int N, typename D, typename E>

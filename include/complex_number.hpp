@@ -119,4 +119,11 @@ template <int Digits, int MinExp, int MaxExp>
 using complex_number =
     std::complex<typename make_real<Digits, MinExp, MaxExp>::type>;
 
+template <typename T>
+concept Complex = requires(T v) {
+  // requires(typename T::value_type) {};
+  { v.real() } -> std::same_as<typename T::value_type>;
+  v.imag();
+};
+
 } // namespace fractals
