@@ -368,8 +368,8 @@ public:
     }
   }
 
-  auto epsilon(int i, delta_type delta) const {
-    return entries.at(i).epsilon(delta);
+  auto epsilon(int i, delta_type delta, auto nd) const {
+    return entries.at(i).epsilon(delta, nd);
   }
 
   value_type operator[](int i) const { return entries.at(i).z; }
@@ -386,6 +386,7 @@ private:
     // Step 1: Establish the max and min
     epsilon_type epsilon = {};
     int window_size = 4;
+    auto nd = fractals::norm(delta);
 
     int skipped = iterations_skipped;
 
@@ -394,14 +395,14 @@ private:
     if (skipped >= this->entries.size())
       skipped = this->entries.size() - 1;
 
-    auto e = this->epsilon(skipped, delta);
+    auto e = this->epsilon(skipped, delta, nd);
     if (e && !escaped((*this)[skipped])) {
       // Seek upwards
       min = skipped;
       epsilon = convert<epsilon_type>(*e);
       for (int mid = iterations_skipped + window_size; mid < max;
            mid += (window_size *= 2)) {
-        e = this->epsilon(mid, delta);
+        e = this->epsilon(mid, delta, nd);
         if (e && !escaped((*this)[mid])) {
           min = mid;
           epsilon = *e;
@@ -415,7 +416,7 @@ private:
       max = skipped;
       for (int mid = iterations_skipped - window_size; mid >= 0;
            mid -= (window_size *= 2)) {
-        e = this->epsilon(mid, delta);
+        e = this->epsilon(mid, delta, nd);
         if (e && !escaped((*this)[mid])) {
           min = mid;
           epsilon = *e;
@@ -429,7 +430,7 @@ private:
     // Step 2: Find the min using binary search
     while (max - min > 4) {
       int mid = (max + min) / 2;
-      auto e = this->epsilon(mid, delta);
+      auto e = this->epsilon(mid, delta, nd);
       if (e && !escaped((*this)[mid])) {
         min = mid;
         epsilon = *e;
@@ -483,8 +484,7 @@ private:
     }
 
     // Returns the epsilon, if it's accurate.
-    std::optional<epsilon_type> epsilon(delta_type delta) const {
-      auto nd = fractals::norm(delta); // TODO: Avoid recomputing this
+    std::optional<epsilon_type> epsilon(delta_type delta, delta_norm nd) const {
       if (nd > max_delta_norm)
         return std::nullopt;
       auto d_conv = convert<term_type>(delta);
