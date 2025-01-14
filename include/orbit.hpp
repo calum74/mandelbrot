@@ -81,9 +81,7 @@ public:
   using value_type = T;
   using calculation = typename ReferenceOrbit::calculation;
 
-  value_type operator*() const {
-    return convert_complex<value_type>(*reference);
-  }
+  value_type operator*() const { return convert<value_type>(*reference); }
 
   converted_orbit &operator++() {
     ++reference;
@@ -171,7 +169,7 @@ public:
 
 private:
   void push_next() {
-    values.push_back(convert_complex<C>(*orbit));
+    values.push_back(convert<C>(*orbit));
     ++orbit;
   }
 
@@ -211,7 +209,7 @@ public:
   taylor_series_orbit(ReferenceOrbit o) : orbit(o) {}
 
   // Convert the high-precision value into a low-precision value
-  value_type operator*() const { return convert_complex<value_type>(*orbit); }
+  value_type operator*() const { return convert<value_type>(*orbit); }
 
   taylor_series_orbit &operator++() {
 
@@ -249,7 +247,7 @@ public:
   int iteration() const { return n; }
 
   value_type operator*() const {
-    return reference[j] + convert_complex<value_type>(epsilon);
+    return reference[j] + convert<value_type>(epsilon);
   }
 
   perturbation_orbit &operator++() {
@@ -258,11 +256,10 @@ public:
     epsilon = fractals::normalize(epsilon);
     j++;
 
-    auto z = reference[j] + convert_complex<value_type>(epsilon);
+    auto z = reference[j] + convert<value_type>(epsilon);
 
     if (escaped(reference[j]) ||
-        fractals::norm(z) <
-            fractals::norm(convert_complex<value_type>(epsilon))) {
+        fractals::norm(z) < fractals::norm(convert<value_type>(epsilon))) {
       // We have exceeded the bounds of the current orbit
       // We need to reset the current orbit.
       // Thanks to
@@ -392,7 +389,7 @@ private:
     if (e.second && !escaped((*this)[skipped])) {
       // Seek upwards
       min = skipped;
-      epsilon = convert_complex<epsilon_type>(e.first);
+      epsilon = convert<epsilon_type>(e.first);
       for (int mid = iterations_skipped + window_size; mid < max;
            mid += (window_size *= 2)) {
         e = this->epsilon(mid, delta);
@@ -483,7 +480,7 @@ private:
       auto nd = fractals::norm(delta); // TODO: Avoid recomputing this
       if (nd > max_delta_norm)
         return {epsilon_type(), false};
-      auto d_conv = convert_complex<term_type>(delta);
+      auto d_conv = convert<term_type>(delta);
       term_type d = d_conv;
       term_type s(0);
       typename TermType::value_type prev_norm = 0, term_norm = 0;
@@ -494,7 +491,7 @@ private:
         s += term;
         d = d * d_conv;
       }
-      return std::make_pair(convert_complex<epsilon_type>(s), true);
+      return std::make_pair(convert<epsilon_type>(s), true);
     }
   };
 
@@ -502,8 +499,7 @@ private:
   std::vector<Entry> entries;
 
   void get_next() {
-    entries.push_back(
-        {convert_complex<value_type>(*reference), reference.terms});
+    entries.push_back({convert<value_type>(*reference), reference.terms});
     ++reference;
   }
 
@@ -520,8 +516,8 @@ public:
   relative_orbit make_relative_orbit(delta_type delta, int limit,
                                      int &iterations_skipped) const {
     auto s = find_iterations_to_skip(delta, entries.size(), iterations_skipped);
-    return {*this, convert_complex<epsilon_type>(delta), iterations_skipped,
-            convert_complex<epsilon_type>(s)};
+    return {*this, convert<epsilon_type>(delta), iterations_skipped,
+            convert<epsilon_type>(s)};
   }
 };
 
