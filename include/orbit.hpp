@@ -17,16 +17,22 @@ namespace mandelbrot {
 template <typename T>
 concept Complex = requires(T v) {
   // requires(typename T::value_type) {};
-  v.real();
+  { v.real() } -> std::same_as<typename T::value_type>;
   v.imag();
 };
 
 template <typename T>
-concept Orbit = requires(T v, int i) {
-  *v;
-  v[i];
-  requires(T::value_type);
-  requires(T::calculation_type);
+concept Orbit = requires(T v) {
+  { *v } -> std::same_as<typename T::value_type>;
+  ++v;
+  // requires T::value_type;
+  // requires(T::value_type);
+  // requires(T::calculation);
+};
+
+template <typename T>
+concept ReferenceOrbit = requires(T v, int i) {
+  { v[i] } -> std::same_as<typename T::value_type>;
 };
 
 template <typename T>
@@ -103,7 +109,7 @@ template <Complex LowPrecisionComplex, Complex HighPrecisionComplex,
 using high_precision_orbit =
     converted_orbit<LowPrecisionComplex, basic_orbit<HighPrecisionComplex, C>>;
 
-template <typename T, typename ReferenceOrbit, typename DeltaType = T>
+template <Complex T, Orbit ReferenceOrbit, Complex DeltaType = T>
 class relative_orbit {
 public:
   using value_type = T;
@@ -133,7 +139,7 @@ private:
   epsilon_type epsilon;
 };
 
-template <typename C, typename Ref> class stored_orbit {
+template <Complex C, typename Ref> class stored_orbit {
 public:
   stored_orbit(Ref o) : orbit(o) {}
 
@@ -152,7 +158,7 @@ public:
     using calculation = typename Ref::calculation;
     reference_orbit(stored_orbit &ref) : ref{ref}, current{0} {}
 
-    const value_type &operator*() const { return ref[current]; }
+    value_type operator*() const { return ref[current]; }
 
     reference_orbit &operator++() {
       ++current;
