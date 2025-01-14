@@ -12,24 +12,30 @@ public:
   using const_iterator = typename map_type::const_iterator;
 
   const_iterator find_closest(const K &k) const {
-    auto center = values.lower_bound(k), best_match = center;
+    if (values.begin() == values.end())
+      return values.end();
 
-    if (center != values.end()) {
+    auto center = values.lower_bound(k);
+    if (center == values.end())
+      center--;
+    auto best_match = center;
 
-      auto best_distance = distance(k, center->first);
-      auto j = center;
-      // Seek forwards for the best match
-      for (++j; j != values.end(); ++j) {
-        auto d = distance(k, j->first);
-        if (d < best_distance) {
-          best_distance = d;
-          best_match = j;
-        }
-        if (best_distance < project(j->first) - project(center->first))
-          break;
+    auto best_distance = distance(k, center->first);
+    auto j = center;
+    // Seek forwards for the best match
+    for (++j; j != values.end(); ++j) {
+      auto d = distance(k, j->first);
+      if (d < best_distance) {
+        best_distance = d;
+        best_match = j;
       }
+      if (best_distance < project(j->first) - project(center->first))
+        break;
+    }
+
+    if (center != values.begin()) {
       // Seek backwards for the best match
-      j = center;
+      auto j = center;
       for (--j;; --j) {
         auto d = distance(k, j->first);
         if (d < best_distance) {

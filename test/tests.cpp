@@ -235,8 +235,15 @@ int main() {
 
     m1.insert({1, 1}, "P1");
     m1.insert({10, 10}, "P2");
+    m1.insert({20, -5}, "P3");
 
     assert(m1.find_closest({2, 2})->second == "P1");
+    assert(m1.find_closest({5, 10})->second == "P2");
+    assert(m1.find_closest({15, 10})->second == "P2");
+    assert(m1.find_closest({15, -10})->second == "P3");
+    assert(m1.find_closest({-1, -1})->second == "P1");
+    assert(m1.find_closest({25, 10})->second == "P2");
+    assert(m1.find_closest({25, -5})->second == "P3");
   }
 
   return 0;
