@@ -3,6 +3,7 @@
 #include "fractal.hpp"
 #include "high_exponent_real.hpp"
 #include "high_precision_real.hpp"
+#include "magic_algorithm.hpp"
 #include "mandelbrot.hpp"
 #include "orbit.hpp"
 #include "rendering_sequence.hpp"

@@ -249,6 +249,9 @@ public:
     epsilon = fractals::normalize(epsilon);
     j++;
 
+    assert(j < reference.size()); // !! This will probably start to fail until
+                                  // we fix this
+
     auto z = reference[j] + convert<value_type>(epsilon);
 
     if (j == reference.size() - 1 || escaped(reference[j]) ||
@@ -272,6 +275,45 @@ private:
   epsilon_type epsilon;
   const ReferenceOrbit &reference;
 };
+
+template <int Precision1 = 10, int Precision2 = 100, Complex TermType,
+          unsigned long Terms>
+typename TermType::value_type
+maximum_delta_norm(const std::array<TermType, Terms> &terms) {
+  using term_norm = typename TermType::value_type;
+
+  term_norm max_delta_norm = 0;
+  term_norm p1(Precision1);
+  term_norm p2(Precision2);
+  term_norm prev_norm = fractals::norm(terms[0]);
+
+  for (int i = 1; i < Terms - 1; i++) {
+    auto n = fractals::norm(terms[i]);
+    auto nr = prev_norm / (p1 * n);
+    prev_norm = n;
+    if (i == 1 || max_delta_norm > nr)
+      max_delta_norm = nr;
+  }
+  auto n = fractals::norm(terms[Terms - 1]);
+  auto nr = prev_norm / (p2 * n);
+
+  if (max_delta_norm > nr)
+    max_delta_norm = nr;
+
+  return max_delta_norm;
+}
+
+template <Complex TermType, unsigned long Terms>
+TermType evaluate_epsilon(TermType delta,
+                          const std::array<TermType, Terms> &terms) {
+  TermType d = delta;
+  TermType result = terms[0] * delta;
+  for (int i = 1; i < Terms; ++i) {
+    d = d * delta;
+    result += terms[i] * d;
+  }
+  return result;
+}
 
 /*
   A Taylor series orbit, which is a reference orbit together with the Taylor
@@ -444,41 +486,15 @@ private:
       // Each term has a "norm" giving an indication of its size.
       // We need to make sure that each term is sufficiently "small"
       // relative to the previous term.
-
-      auto prev_norm = fractals::norm(terms[0]);
-      for (int i = 1; i < Terms - 1; i++) {
-        auto n = fractals::norm(terms[i]);
-        auto nr = convert<delta_norm>(prev_norm /
-                                      (term_norm(10) * n)); // TODO: Tweak this
-        prev_norm = n;
-        if (i == 1 || max_delta_norm > nr)
-          max_delta_norm = nr;
-      }
-      auto n = fractals::norm(terms[Terms - 1]);
-      auto nr = convert<delta_norm>(
-          prev_norm /
-          (term_norm(100) * n)); // TODO: Tweak this - Precision is ignored
-
-      if (max_delta_norm > convert<delta_norm>(nr))
-        max_delta_norm = nr;
+      max_delta_norm = convert<delta_norm>(maximum_delta_norm<10, 100>(terms));
     }
 
     // Returns the epsilon, if it's accurate.
     std::optional<epsilon_type> epsilon(delta_type delta, delta_norm nd) const {
       if (nd > max_delta_norm)
         return std::nullopt;
-      auto d_conv = convert<term_type>(delta);
-      term_type d = d_conv;
-      term_type s(0);
-      typename TermType::value_type prev_norm = 0, term_norm = 0;
-      for (int t = 0; t < Terms; t++) {
-        auto term = terms[t] * d;
-        prev_norm = term_norm;
-        term_norm = fractals::norm(term);
-        s += term;
-        d = d * d_conv;
-      }
-      return convert<epsilon_type>(s);
+      return convert<epsilon_type>(
+          evaluate_epsilon(convert<term_type>(delta), terms));
     }
   };
 
