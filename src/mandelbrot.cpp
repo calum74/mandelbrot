@@ -33,8 +33,19 @@ public:
                    coords.y0 + fractals::convert<HighPrecisionReal>(coords.dy) *
                                    fractals::convert<HighPrecisionReal>(ref_y)},
                max_iterations, stop} {
+    // std::cout << "Rendering " << c << std::endl;
     orbits.add_secondary_reference_orbit(
         {0, 0}, orbits.make_secondary_orbit({0, 0}, max_iterations, stop));
+
+#if 0
+    auto h4 = coords.dx * DeltaReal(h / 4);
+    auto w4 = coords.dy * DeltaReal(w / 4);
+    DeltaType deltas[] = {{w4, h4}, {-w4, h4}, {w4, -h4}, {-h4, -h4}};
+    for (auto &d : deltas) {
+      auto x = orbits.make_secondary_orbit(d, max_iterations, stop);
+      orbits.add_secondary_reference_orbit(d, std::move(x));
+    }
+#endif
   }
 
   // Are the given coordinates valid. Use this to prevent zooming out too far
@@ -76,10 +87,10 @@ public:
     // The function `make_relative_orbit` will skip some iterations,
     // use `z.iteration()` to find out which iteration we are on.
     int skipped = iterations_skipped;
-    auto ro = orbits.locate_closest_secondary_reference_orbit({0, 0});
-    auto z =
-        ro->second.make_relative_orbit(delta, this->max_iterations, skipped);
+    auto ro = orbits.locate_closest_secondary_reference_orbit(delta);
 
+    auto z = ro->second.make_relative_orbit(delta - ro->first,
+                                            this->max_iterations, skipped);
     iterations_skipped = skipped;
 
     points_calculated++;

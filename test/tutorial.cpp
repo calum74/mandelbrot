@@ -90,19 +90,7 @@ int main() {
   // Now, create a "relative orbit", which is a low-precision delta {0.01,0.01},
   // relative to our reference orbit.
 
-  // Reset the reference orbit
-  auto relative_orbit = mandelbrot::make_relative_orbit(
-      stored_orbit.make_reference(), std::complex<double>{0.01, 0.01});
-
   // Now we can iterate the relative orbit as if were a normal orbit.
-
-  iterations = 0;
-  while (!mandelbrot::escaped(*relative_orbit)) {
-    ++iterations;
-    ++relative_orbit;
-  }
-
-  std::cout << "Escaped after " << iterations << " iterations\n";
 
   // The advanced algorithms can use Taylor series to skip large numbers of
   // iterations

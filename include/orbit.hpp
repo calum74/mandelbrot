@@ -21,7 +21,7 @@ concept IteratedOrbit = requires(T v) {
   *v;
   { *v } -> std::convertible_to<typename T::value_type>;
   ++v;
-  v.reset();
+  // v.reset();
   // requires T::value_type;
   // requires(T::value_type);
   // requires(T::calculation);
@@ -108,7 +108,7 @@ using high_precision_orbit =
 
 template <Complex OrbitType, IteratedOrbit ReferenceOrbit,
           Complex DeltaType = OrbitType>
-class relative_orbit {
+class naive_relative_orbit {
 public:
   using value_type = OrbitType;
   using delta_type = DeltaType;
@@ -116,10 +116,10 @@ public:
   using reference_orbit_type = ReferenceOrbit;
   using calculation = typename reference_orbit_type::calculation;
 
-  relative_orbit(reference_orbit_type ref, delta_type delta)
+  naive_relative_orbit(reference_orbit_type ref, delta_type delta)
       : reference_orbit(ref), delta{delta}, epsilon{} {}
 
-  relative_orbit(const relative_orbit &other)
+  naive_relative_orbit(const naive_relative_orbit &other)
       : reference_orbit(other.reference_orbit), delta(other.delta), epsilon{} {}
 
   void reset() {
@@ -133,7 +133,7 @@ public:
 
   value_type reference_z() const { return *reference_orbit; }
 
-  relative_orbit &operator++() {
+  naive_relative_orbit &operator++() {
     epsilon = calculation::step_epsilon(*reference_orbit, epsilon, delta);
     ++reference_orbit;
     return *this;
@@ -164,30 +164,6 @@ public:
 
   value_type operator[](int n) const { return values.at(n); }
 
-  struct reference_orbit {
-  public:
-    using value_type = C;
-    using calculation = typename Ref::calculation;
-    reference_orbit(const stored_orbit &ref) : ref{ref}, current{0} {}
-    reference_orbit(const reference_orbit &ref) : ref{ref.ref}, current{0} {}
-
-    value_type operator*() const { return ref[current]; }
-
-    reference_orbit &operator++() {
-      ++current;
-      return *this;
-    }
-
-    void reset() { current = 0; }
-
-  private:
-    int current;
-
-    const stored_orbit &ref;
-  };
-
-  reference_orbit make_reference() const { return {*this}; }
-
   auto size() const { return values.size(); }
 
 private:
@@ -201,8 +177,8 @@ stored_orbit<C, Ref> make_stored_orbit(const Ref &r, int max_iterations,
 }
 
 template <IteratedOrbit Rel>
-relative_orbit<typename Rel::value_type, Rel> make_relative_orbit(Rel rel,
-                                                                  auto delta) {
+naive_relative_orbit<typename Rel::value_type, Rel>
+make_naive_relative_orbit(Rel rel, auto delta) {
   return {rel, delta};
 }
 
@@ -247,13 +223,12 @@ private:
 // An orbit that's relative to another reference orbit, so can be computed
 // using a low-precision complex number. ReferenceOrbit must be a
 // random-access orbit (supporting [])
-template <Complex C, Complex HighExponentComplex,
-          RandomAccessOrbit ReferenceOrbit>
+template <Complex C, Complex DeltaType, RandomAccessOrbit ReferenceOrbit>
 class perturbation_orbit {
 public:
   using value_type = C;
   using calculation = typename ReferenceOrbit::calculation;
-  using delta_type = HighExponentComplex;
+  using delta_type = DeltaType;
   using epsilon_type = delta_type;
 
   perturbation_orbit(const ReferenceOrbit &ref, delta_type delta,
@@ -261,8 +236,6 @@ public:
                      epsilon_type starting_epsilon = {})
       : n{starting_iteration}, j{n}, delta(delta), epsilon{starting_epsilon},
         reference{ref} {}
-
-  perturbation_orbit(const perturbation_orbit &other) = delete;
 
   int iteration() const { return n; }
 
@@ -278,7 +251,7 @@ public:
 
     auto z = reference[j] + convert<value_type>(epsilon);
 
-    if (escaped(reference[j]) ||
+    if (j == reference.size() - 1 || escaped(reference[j]) ||
         fractals::norm(z) < fractals::norm(convert<value_type>(epsilon))) {
       // We have exceeded the bounds of the current orbit
       // We need to reset the current orbit.
@@ -372,10 +345,14 @@ public:
   }
 
   auto epsilon(int i, delta_type delta, auto nd) const {
+    assert(i >= 0 && i < entries.size());
     return entries.at(i).epsilon(delta, nd);
   }
 
-  value_type operator[](int i) const { return entries.at(i).z; }
+  value_type operator[](int i) const {
+    assert(i >= 0 && i < entries.size());
+    return entries.at(i).z;
+  }
 
   auto size() const { return entries.size(); }
 
@@ -403,7 +380,7 @@ private:
       // Seek upwards
       min = skipped;
       epsilon = convert<epsilon_type>(*e);
-      for (int mid = iterations_skipped + window_size; mid < max;
+      for (int mid = skipped + window_size; mid < max;
            mid += (window_size *= 2)) {
         e = this->epsilon(mid, delta, nd);
         if (e && !escaped((*this)[mid])) {
@@ -417,7 +394,7 @@ private:
     } else {
       // Seek downwards
       max = skipped;
-      for (int mid = iterations_skipped - window_size; mid >= 0;
+      for (int mid = skipped - window_size; mid >= 0;
            mid -= (window_size *= 2)) {
         e = this->epsilon(mid, delta, nd);
         if (e && !escaped((*this)[mid])) {
@@ -565,8 +542,7 @@ public:
   primary_orbit_type primary_orbit;
 
   using secondary_reference_type =
-      relative_orbit<value_type, typename primary_orbit_type::reference_orbit,
-                     delta_type>;
+      perturbation_orbit<value_type, delta_type, primary_orbit_type>;
 
   using secondary_orbit_type =
       stored_taylor_series_orbit<value_type, delta_type, term_type,
@@ -586,7 +562,7 @@ public:
   secondary_orbit_type make_secondary_orbit(delta_type delta,
                                             int max_iterations,
                                             std::atomic<bool> &stop) const {
-    return {{primary_orbit.make_reference(), delta}, max_iterations, stop};
+    return {{primary_orbit, delta}, max_iterations, stop};
   }
 };
 
