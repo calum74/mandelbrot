@@ -3,6 +3,7 @@
 #include "mandelbrot.hpp"
 #include "fractal.hpp"
 #include "high_exponent_real.hpp"
+#include "magic_algorithm.hpp"
 #include "orbit.hpp"
 #include "reference_orbit_manager.hpp"
 
@@ -36,6 +37,15 @@ public:
     // std::cout << "Rendering " << c << std::endl;
     orbits.add_secondary_reference_orbit(
         {0, 0}, orbits.make_secondary_orbit({0, 0}, max_iterations, stop));
+
+    auto diagonal_size = DeltaType(coords.dx * fractals::convert<DeltaReal>(w),
+                                   coords.dy * fractals::convert<DeltaReal>(h));
+
+    mandelbrot::magic<LowPrecisionType, DeltaType, TermType, 4>(
+        max_iterations, 0, 0, w, h, diagonal_size, orbits.primary_orbit, stop,
+        [&](int x, int y, double c) {
+          std::cout << "(" << x << "," << y << "," << c << ")\n";
+        });
 
 #if 0
     auto h4 = coords.dx * DeltaReal(h / 4);

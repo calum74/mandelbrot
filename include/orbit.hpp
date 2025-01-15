@@ -303,16 +303,17 @@ maximum_delta_norm(const std::array<TermType, Terms> &terms) {
   return max_delta_norm;
 }
 
-template <Complex TermType, unsigned long Terms>
-TermType evaluate_epsilon(TermType delta,
-                          const std::array<TermType, Terms> &terms) {
-  TermType d = delta;
-  TermType result = terms[0] * delta;
+template <Complex DeltaType, Complex TermType, unsigned long Terms>
+DeltaType evaluate_epsilon(DeltaType delta,
+                           const std::array<TermType, Terms> &terms) {
+  TermType d = convert<TermType>(delta);
+  TermType dc = d;
+  TermType result = terms[0] * dc;
   for (int i = 1; i < Terms; ++i) {
-    d = d * delta;
+    d = d * dc;
     result += terms[i] * d;
   }
-  return result;
+  return convert<DeltaType>(result);
 }
 
 /*

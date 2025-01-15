@@ -172,6 +172,11 @@ struct convert_to<high_exponent_real<D, E>, double> {
   static high_exponent_real<D, E> get(double x) { return {x}; }
 };
 
+template <typename D, typename E>
+struct convert_to<high_exponent_real<D, E>, int> {
+  static high_exponent_real<D, E> get(int x) { return {x}; }
+};
+
 template <int N, typename D, typename E>
 struct convert_to<high_precision_real<N>, high_exponent_real<D, E>> {
   static high_precision_real<N> get(const high_exponent_real<D, E> &x) {

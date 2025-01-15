@@ -1,4 +1,5 @@
 #pragma once
+#include "convert.hpp"
 #include "orbit.hpp"
 
 namespace mandelbrot {
@@ -36,63 +37,96 @@ Arguments:
     x0, y0: The position of the top-left pixel.
     w, h: The size of the region in pixels.
     epsilon: The position of this orbit relative to the central orbit. We update
-this each iteration. size: The dimensions (width,height) of this region as a
-complex number. central_orbit: A stored orbit generated from high-precision
-numbers. starts at {0,0} stop: A cancellation token
+        this each iteration.
+
+    diagnonal_size: The dimensions (width,height) of this region as a
+        complex number.
+
+central_orbit: A stored orbit generated from high-precision
+        numbers. starts at {0,0} stop: A cancellation token
 
     iteration is initially 0.
     j is initially 0.
-
 */
 template <Complex LowPrecisionType, Complex DeltaType, Complex TermType,
-          unsigned long Terms, Calculation Calc,
-          RandomAccessOrbit HighPrecisionReferenceOrbit, typename OutputFn>
-void magic(int iteration, int max_iterations, int x0, int y0, int w, int h,
-           DeltaType epsilon, DeltaType size,
-           const HighPrecisionReferenceOrbit &central_orbit, int j,
-           std::atomic<bool> &stop, OutputFn fn) {
+          unsigned long Terms, RandomAccessOrbit HighPrecisionReferenceOrbit,
+          typename OutputFn>
+void magic(int max_iterations, int x0, int y0, int w, int h, DeltaType diagonal,
+           const HighPrecisionReferenceOrbit &central_orbit,
+           std::atomic<bool> &stop, OutputFn fn, DeltaType central_delta = {},
+           int iteration = 0, int j = 0) {
 
-  auto size_norm = fractals::norm(size); // !! Should be previous size_norm/4
+  using calculation = typename HighPrecisionReferenceOrbit::calculation;
+  // Novelty #1:
+  // We use the norm of the delta to inform us how much we allow the series to
+  // diverge
+  typename TermType::value_type size_norm =
+      fractals::norm(diagonal); // !! Should be previous size_norm/4
 
-  // Start a new Taylor series for the epsilon relative to the current orbit
-  // (not the central orbit)
+  // Novelty #2: Construct a Taylor series for the epsilon relative to the
+  // current orbit (not the central orbit)
   std::array<TermType, Terms> epsilon_terms;
+
+  DeltaType epsilon = {0, 0};
 
   LowPrecisionType z;
 
   do {
     z = central_orbit[j];
 
-    epsilon_terms = Calc::step_delta(z + epsilon, epsilon_terms);
-    epsilon = Calc::step_epsilon(z, epsilon);
+    epsilon_terms = calculation::delta_terms(
+        z + convert<LowPrecisionType>(epsilon), epsilon_terms);
+    epsilon = calculation::step_epsilon(z, epsilon, central_delta);
     epsilon = fractals::normalize(epsilon);
     j++;
 
-    // TODO: Reference magic here
+    if (j == central_orbit.size() - 1 || escaped(central_orbit[j]) ||
+        fractals::norm(z) < convert<typename LowPrecisionType::value_type>(
+                                fractals::norm(epsilon))) {
+      // We have exceeded the bounds of the current orbit
+      // We need to reset the current orbit.
+      // Thanks to
+      // https://github.com/ImaginaFractal/Algorithms/blob/main/Perturbation.cpp
+      // https://philthompson.me/2022/Perturbation-Theory-and-the-Mandelbrot-set.html
+      epsilon = z;
+      j = 0;
+    }
 
     iteration++;
 
     if (stop)
       return;
   } while (!stop && iteration < max_iterations && !escaped(z) &&
-           size_norm < maximum_norm(epsilon_terms));
+           size_norm < maximum_delta_norm(epsilon_terms));
+
+  std::cout << "Iteration to " << iteration << std::endl;
 
   if (iteration < max_iterations) {
 
     // Branch step - split the current orbit into 4 parts
-    auto half_size = size * 0.5;
-    auto quarter_size = half_size * 0.5;
+    auto half_size = diagonal * DeltaType(0.5);
+    auto quarter_size = half_size * DeltaType(0.5);
 
-    // For the top-left quadrant
-    // Calculate the terms
-
-    auto upper_left_center = -quarter_size;
+    auto lower_right_delta = quarter_size;
+    auto upper_left_delta = -quarter_size;
+    auto upper_right_delta =
+        DeltaType(-upper_left_delta.real(), upper_left_delta.imag());
+    auto lower_left_delta = -upper_right_delta;
 
     auto upper_left_epsilon =
-        epsilon + evaluate_epsilon(upper_left_center, epsilon_terms);
+        epsilon + evaluate_epsilon(upper_left_delta, epsilon_terms);
+    auto lower_right_epsilon =
+        epsilon + evaluate_epsilon(lower_right_delta, epsilon_terms);
+    auto upper_right_epsilon =
+        epsilon + evaluate_epsilon(upper_right_delta, epsilon_terms);
+    auto lower_left_epsilon =
+        epsilon + evaluate_epsilon(lower_left_delta, epsilon_terms);
 
-    magic(iteration, max_iterations, x0, y0, w / 2, h / 2, upper_left_epsilon,
-          half_size, central_orbit, stop);
+    magic<LowPrecisionType, DeltaType, TermType, Terms>(
+        max_iterations, x0, y0, w / 2, h / 2, half_size, central_orbit, stop,
+        fn, central_delta + upper_left_delta, iteration, j);
+
+    // etc
   }
 }
 } // namespace mandelbrot
