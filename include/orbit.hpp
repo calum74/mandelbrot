@@ -231,15 +231,18 @@ public:
   using delta_type = DeltaType;
   using epsilon_type = delta_type;
 
+  perturbation_orbit(const ReferenceOrbit &ref, delta_type delta)
+      : perturbation_orbit(ref, delta, 0, {}) {}
+
   perturbation_orbit(const ReferenceOrbit &ref, delta_type delta,
-                     int starting_iteration = 0,
-                     epsilon_type starting_epsilon = {})
+                     int starting_iteration, epsilon_type starting_epsilon)
       : n{starting_iteration}, j{n}, delta(delta), epsilon{starting_epsilon},
         reference{ref} {}
 
   int iteration() const { return n; }
 
   value_type operator*() const {
+    assert(j >= 0 && j < reference.size());
     return reference[j] + convert<value_type>(epsilon);
   }
 
@@ -249,8 +252,8 @@ public:
     epsilon = fractals::normalize(epsilon);
     j++;
 
-    assert(j < reference.size()); // !! This will probably start to fail until
-                                  // we fix this
+    assert(j >= 0 && j < reference.size()); // !! This will probably start to
+                                            // fail until we fix this
 
     auto z = reference[j] + convert<value_type>(epsilon);
 
@@ -275,6 +278,12 @@ private:
   epsilon_type epsilon;
   const ReferenceOrbit &reference;
 };
+
+template <Complex C, Complex DeltaType, RandomAccessOrbit ReferenceOrbit>
+perturbation_orbit<C, DeltaType, ReferenceOrbit>
+make_perturbation_orbit(const ReferenceOrbit &ref, DeltaType delta) {
+  return {ref, delta};
+}
 
 template <int Precision1 = 10, int Precision2 = 100, Complex TermType,
           unsigned long Terms>

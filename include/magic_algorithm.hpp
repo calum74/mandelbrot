@@ -54,43 +54,30 @@ template <Complex LowPrecisionType, Complex DeltaType, Complex TermType,
 void magic(int max_iterations, int x0, int y0, int w, int h, DeltaType diagonal,
            const HighPrecisionReferenceOrbit &central_orbit,
            std::atomic<bool> &stop, OutputFn fn, DeltaType central_delta = {},
-           DeltaType central_epsilon = {}, int iteration = 0, int j = 0) {
+           DeltaType central_epsilon = {}, int iteration = 0, int j = 0,
+           int debug_depth = 0) {
 
   using calculation = typename HighPrecisionReferenceOrbit::calculation;
 
-  if (w <= 1 || h <= 1) {
+  if (stop)
+    return;
+  const int Limit = 16;
+  if (w <= Limit || h <= Limit) {
 
-    while (iteration < max_iterations &&
-           !escaped(central_orbit[j] +
-                    convert<LowPrecisionType>(central_epsilon))) {
-      auto z = central_orbit[j];
-      central_epsilon =
-          calculation::step_epsilon(z, central_epsilon, central_delta);
-      central_epsilon = fractals::normalize(central_epsilon);
-      j++;
+    int it = 0;
+    auto orbit =
+        make_perturbation_orbit<LowPrecisionType>(central_orbit, central_delta);
 
-      if (j == central_orbit.size() - 1 || escaped(central_orbit[j]) ||
-          fractals::norm(z) < convert<typename LowPrecisionType::value_type>(
-                                  fractals::norm(central_epsilon))) {
-        // We have exceeded the bounds of the current orbit
-        // We need to reset the current orbit.
-        // Thanks to
-        // https://github.com/ImaginaFractal/Algorithms/blob/main/Perturbation.cpp
-        // https://philthompson.me/2022/Perturbation-Theory-and-the-Mandelbrot-set.html
-        central_epsilon = z;
-        j = 0;
-      }
+    for (; it < 50 && !escaped(*orbit); ++it)
+      ++orbit;
 
-      iteration++;
-    }
+        // auto it = 100 * fractals::norm(central_delta);
 
-    // Render a single point or strip
-
-    // Iterate a small set of points
-    for (int i = 0; i < w; ++i)
-      for (int j = 0; j < h; ++j) {
-        fn(x0 + i, y0 + j, iteration);
-      }
+        // Iterate a small set of points
+        for (int i = 0; i < w; ++i)
+          for (int j = 0; j < h; ++j) {
+            fn(x0 + i, y0 + j, it, iteration);
+          }
 
     return;
   }
@@ -112,8 +99,13 @@ void magic(int max_iterations, int x0, int y0, int w, int h, DeltaType diagonal,
     zd = z + convert<LowPrecisionType>(central_delta);
 
     local_epsilon_terms = calculation::delta_terms(
-        zd /* + convert<LowPrecisionType>(central_epsilon) */,
+        z + central_epsilon /* + convert<LowPrecisionType>(central_epsilon) */,
         local_epsilon_terms);
+
+    if (iteration % 10 == 0) {
+      for (auto &t : local_epsilon_terms)
+        t = fractals::normalize(t);
+    }
 
     // Epsilon is simply the deviation from the central orbit and nothing
     // special
@@ -145,7 +137,7 @@ void magic(int max_iterations, int x0, int y0, int w, int h, DeltaType diagonal,
   // std::cout << "Iteration to " << iteration << std::endl;
 
   // Branch step - split the current orbit into 4 parts
-  auto half_size = diagonal * DeltaType(0.5);
+  auto half_size = DeltaType{diagonal.real() * 0.5, diagonal.imag() * 0.5};
   auto quarter_size = half_size * DeltaType(0.5);
 
   auto lower_right_delta = quarter_size;
@@ -158,29 +150,31 @@ void magic(int max_iterations, int x0, int y0, int w, int h, DeltaType diagonal,
   // via the current Taylor series, as if we have computed it from the
   // beginning. It doesn't work though.
   auto upper_left_epsilon =
-      central_delta + evaluate_epsilon(upper_left_delta, local_epsilon_terms);
+      central_epsilon + evaluate_epsilon(upper_left_delta, local_epsilon_terms);
   auto lower_right_epsilon =
-      central_delta + evaluate_epsilon(lower_right_delta, local_epsilon_terms);
+      central_epsilon +
+      evaluate_epsilon(lower_right_delta, local_epsilon_terms);
   auto upper_right_epsilon =
-      central_delta + evaluate_epsilon(upper_right_delta, local_epsilon_terms);
+      central_epsilon +
+      evaluate_epsilon(upper_right_delta, local_epsilon_terms);
   auto lower_left_epsilon =
-      central_delta + evaluate_epsilon(lower_left_delta, local_epsilon_terms);
+      central_epsilon + evaluate_epsilon(lower_left_delta, local_epsilon_terms);
 
   magic<LowPrecisionType, DeltaType, TermType, Terms>(
       max_iterations, x0, y0, w / 2, h / 2, half_size, central_orbit, stop, fn,
-      central_delta + upper_left_delta, upper_left_epsilon, iteration, j);
-
+      central_delta + upper_left_delta, upper_left_epsilon, iteration, j,
+      debug_depth + 1);
   magic<LowPrecisionType, DeltaType, TermType, Terms>(
       max_iterations, x0 + w / 2, y0, w - w / 2, h / 2, half_size,
       central_orbit, stop, fn, central_delta + upper_right_delta,
-      upper_right_epsilon, iteration, j);
+      upper_right_epsilon, iteration, j, debug_depth + 1);
   magic<LowPrecisionType, DeltaType, TermType, Terms>(
       max_iterations, x0, y0 + h / 2, w / 2, h - h / 2, half_size,
       central_orbit, stop, fn, central_delta + lower_left_delta,
-      lower_left_epsilon, iteration, j);
+      lower_left_epsilon, iteration, j, debug_depth + 1);
   magic<LowPrecisionType, DeltaType, TermType, Terms>(
       max_iterations, x0 + w / 2, y0 + h / 2, w - w / 2, h - h / 2, half_size,
       central_orbit, stop, fn, central_delta + lower_right_delta,
-      lower_right_epsilon, iteration, j);
+      lower_right_epsilon, iteration, j, debug_depth + 1);
 }
 } // namespace mandelbrot
