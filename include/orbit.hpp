@@ -232,12 +232,20 @@ public:
   using epsilon_type = delta_type;
 
   perturbation_orbit(const ReferenceOrbit &ref, delta_type delta)
-      : perturbation_orbit(ref, delta, 0, {}) {}
+      : perturbation_orbit(ref, delta, 0, 0, {}) {}
 
   perturbation_orbit(const ReferenceOrbit &ref, delta_type delta,
-                     int starting_iteration, epsilon_type starting_epsilon)
-      : n{starting_iteration}, j{n}, delta(delta), epsilon{starting_epsilon},
-        reference{ref} {}
+                     int starting_iteration, int start_j,
+                     epsilon_type starting_epsilon)
+      : n{starting_iteration}, j{start_j}, delta(delta),
+        epsilon{starting_epsilon}, reference{ref} {}
+
+  // Constructs a perturbation orbit that has the same reference orbit
+  // and same iteration number, but now refers to a different delta.
+  perturbation_orbit translate(delta_type new_delta,
+                               epsilon_type new_epsilon) const {
+    return {reference, new_delta, n, j, new_epsilon};
+  }
 
   int iteration() const { return n; }
 
@@ -276,6 +284,8 @@ private:
   int n, j;
   delta_type delta;
   epsilon_type epsilon;
+
+public:
   const ReferenceOrbit &reference;
 };
 
@@ -530,7 +540,7 @@ public:
                                      int &iterations_skipped) const {
     auto s = find_iterations_to_skip(delta, entries.size(), iterations_skipped);
     return {*this, convert<epsilon_type>(delta), iterations_skipped,
-            convert<epsilon_type>(s)};
+            iterations_skipped, convert<epsilon_type>(s)};
   }
 };
 

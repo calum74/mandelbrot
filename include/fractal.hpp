@@ -37,6 +37,8 @@ class PointwiseFractal {
 public:
   virtual const char *name() const = 0;
 
+  virtual const char *family() const = 0; //
+
   // Creates and initializes a new calculation.
   // Called once for each generated fractal image.
   virtual std::unique_ptr<PointwiseCalculation>
@@ -56,10 +58,13 @@ template <typename... Ts> class MultiPrecisionFactory;
 template <typename T, typename... Ts>
 class MultiPrecisionFactory<T, Ts...> : public PointwiseFractal {
 public:
-  MultiPrecisionFactory(const char *name) : n{name}, tail{name} {}
+  MultiPrecisionFactory(const char *name, const char *family)
+      : n{name}, f{family}, tail{name, family} {}
 
   view_coords initial_coords() const override { return T::initial_coords(); }
   const char *name() const override { return n; }
+
+  const char *family() const override { return f; }
 
   std::unique_ptr<PointwiseCalculation>
   create(const view_coords &c, int x, int y,
@@ -76,11 +81,13 @@ private:
   MultiPrecisionFactory<Ts...> tail;
 
   const char *n;
+  const char *f;
 };
 
 template <typename T> class MultiPrecisionFactory<T> : public PointwiseFractal {
 public:
-  MultiPrecisionFactory(const char *name) : n{name} {}
+  MultiPrecisionFactory(const char *name, const char *family)
+      : n{name}, f{family} {}
 
   std::unique_ptr<PointwiseCalculation>
   create(const view_coords &c, int x, int y,
@@ -92,12 +99,15 @@ public:
 
   const char *name() const override { return n; }
 
+  const char *family() const override { return f; }
+
   bool valid_for(const view_coords &c) const override {
     return T::valid_for(c);
   }
 
 private:
   const char *n;
+  const char *f;
 };
 } // namespace detail
 
@@ -106,8 +116,14 @@ private:
   can be run at different levels of precision.
 */
 template <typename... Ts>
+detail::MultiPrecisionFactory<Ts...> make_fractal(const char *name,
+                                                  const char *family) {
+  return {name, family};
+}
+
+template <typename... Ts>
 detail::MultiPrecisionFactory<Ts...> make_fractal(const char *name) {
-  return {name};
+  return {name, name};
 }
 
 }; // namespace fractals

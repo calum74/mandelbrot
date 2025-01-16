@@ -159,7 +159,7 @@ using MB_high =
 const fractals::PointwiseFractal &mandelbrot_fractal =
     fractals::make_fractal<MB<2, 3, 4, 1000>, MB<2, 6>, MB<2, 10>, MB<2, 18>,
                            MB_high<2, 32>, MB_high<2, 40>, MB_high<2, 64>>(
-        "Mandelbrot (power 2)");
+        "Mandelbrot (power 2)", "mandelbrot");
 
 // Cubic Mandelbrot has no glitches with 3 Taylor series terms, but
 // glitches quite badly with 4 terms. On the other hand, Square mandelbrot works
