@@ -230,6 +230,9 @@ void magic(
               delta_from_previous;
   }
 
+  // Pay attention: This bit is magic.
+  // If we have one relative orbit, we can switch it to a different location
+  // without recomputing all the terms from iteration 0.
   auto orbit = parent_orbit.translate(central_delta, epsilon);
 
   branch->compute_terms(orbit, max_iterations, fractals::norm(diagonal_size));
