@@ -3,32 +3,32 @@
 
 namespace mandelbrot {
 
-template <Complex OrbitType, Complex TermType, unsigned long Terms>
-struct series_entry {
-  OrbitType z;
-  std::array<TermType, Terms> terms;
-
-  template <typename DeltaType> DeltaType epsilon(DeltaType delta) const {
-    return evaluate_epsilon(delta, terms);
-  }
-
-  template <typename DeltaType> DeltaType evaluate_z(DeltaType delta) const {
-    return z + epsilon(delta);
-  }
-
-  typename TermType::value_type maximum_delta_norm() const {
-    return mandelbrot::maximum_delta_norm(terms);
-  }
-};
-
 /*
 A reference branch is similar to a reference orbit, however it is stored in
 sections. Nearby branches can share a common root, and we only need to create
 new branches when the current branch runs out of road.
 */
 template <typename OrbitType, typename DeltaType, typename TermType,
-          unsigned long Terms>
+          unsigned long Terms, typename HighPrecisionReferenceOrbit>
 class reference_branch {
+
+  struct series_entry {
+    OrbitType z;
+    std::array<TermType, Terms> terms;
+
+    DeltaType epsilon(DeltaType delta) const {
+      return evaluate_epsilon(delta, terms);
+    }
+
+    DeltaType evaluate_z(DeltaType delta) const { return z + epsilon(delta); }
+
+    typename TermType::value_type maximum_delta_norm() const {
+      // TODO: Tweak this when done
+      return mandelbrot::maximum_delta_norm<10, 1000>(terms);
+    }
+
+    perturbation_orbit<OrbitType, DeltaType, HighPrecisionReferenceOrbit> orbit;
+  };
 
 public:
   // The iteration number
@@ -39,34 +39,35 @@ public:
 
   // If there is a previous branch, this is it
   // Invariant: iteration==0 or previous_branch!=0
-  std::shared_ptr<reference_branch> previous_branch;
+  std::shared_ptr<reference_branch> parent;
 
   // The delta of the orbit relative to the previous branch
-  DeltaType delta_to_previous_branch;
+  DeltaType delta_to_parent;
 
-  reference_branch() : iteration(0), delta_to_previous_branch(0) {}
+  reference_branch() : iteration(0), delta_to_parent(0) {}
 
-  reference_branch(std::shared_ptr<reference_branch> previous,
-                   DeltaType delta_from_previous_branch)
-      : iteration(previous->iteration + previous->size()),
-        previous_branch(previous),
-        delta_to_previous_branch(-delta_from_previous_branch) {}
+  reference_branch(const std::shared_ptr<reference_branch> &parent,
+                   DeltaType delta_from_parent)
+      : iteration(parent->iteration + parent->size()), parent(parent),
+        delta_to_parent(-delta_from_parent) {}
 
   // ref is the sequence of numbers at the center of this orbit
-  template <IteratedOrbit ReferenceOrbit>
-  void compute_terms(ReferenceOrbit &ref, int max_iterations,
+  void compute_terms(perturbation_orbit<OrbitType, DeltaType,
+                                        HighPrecisionReferenceOrbit> &ref,
+                     int max_iterations,
                      typename TermType::value_type max_delta_norm) {
     std::array<TermType, Terms> terms;
     terms[0] = 1.0;
     do {
-      series.push_back({*ref, terms});
-      terms = ReferenceOrbit::calculation::delta_terms(*ref, terms);
+      series.push_back({*ref, terms, ref});
+      terms =
+          HighPrecisionReferenceOrbit::calculation::delta_terms(*ref, terms);
       for (auto &t : terms) // TODO: Every 10 iterations
         t = normalize(t);
       ++ref;
     } while (iteration + size() < max_iterations && !escaped(*ref) &&
              max_delta_norm < series.back().maximum_delta_norm());
-    final_entry = {*ref, terms};
+    final_entry = {*ref, terms, ref};
   }
 
   // The number of iterations covered by this branch
@@ -77,35 +78,38 @@ public:
   // The terms in this series are the epsilon values from THIS orbit,
   // evaluated using deltas from THIS orbit.
   // This may be empty.
-  std::vector<series_entry<OrbitType, TermType, Terms>> series;
+  std::vector<series_entry> series;
 
   // Our very last entry, which corresponds to the first iteration of any child
   // branches
-  series_entry<OrbitType, TermType, Terms> final_entry;
+  series_entry final_entry;
 
   // Delta is to the center of this branch
   int find_escape_iteration(DeltaType delta) const {
     // Look at the first term
 
     if (series.empty()) {
-      if (previous_branch)
-        return previous_branch->find_escape_iteration(delta +
-                                                      delta_to_previous_branch);
+      if (parent)
+        return parent->find_escape_iteration(delta + delta_to_parent);
       else
         return 0;
     }
 
+    // Has the last term escaped
+    if (!escaped(series.back().evaluate_z(delta)))
+      return -1;
+
     // Look at the first item
     if (escaped(series.front().evaluate_z(delta)))
-      return previous_branch->find_escape_iteration(delta +
-                                                    delta_to_previous_branch);
+      return parent->find_escape_iteration(delta + delta_to_parent);
 
     int min = 0;
     int max = series.size() - 1;
     OrbitType z;
 
-    while (max > min) {
+    while (max > min + 1) {
       auto mid = (min + max) / 2;
+      assert(min >= 0 && mid < series.size());
       z = series[mid].evaluate_z(delta);
       if (escaped(z)) {
         max = mid - 1;
@@ -152,7 +156,7 @@ Arguments:
 
     central_delta: The position of this orbit relative to the central orbit.
 
-    diagnonal_size: The dimensions (width,height) of this region as a
+    diagonal_size: The dimensions (width,height) of this region as a
         complex number.
 
 central_orbit: A stored orbit generated from high-precision
@@ -166,13 +170,13 @@ template <Complex LowPrecisionType, Complex DeltaType, Complex TermType,
           typename OutputFn>
 void magic(int max_iterations, int x0, int y0, int w, int h,
            DeltaType diagonal_size, DeltaType central_delta,
-           DeltaType delta_from_previous,
-           perturbation_orbit<LowPrecisionType, DeltaType,
-                              HighPrecisionReferenceOrbit> // !! const reference
-               parent_orbit,
+           DeltaType delta_from_parent,
+           const perturbation_orbit<LowPrecisionType, DeltaType,
+                                    HighPrecisionReferenceOrbit> &parent_orbit,
            std::atomic<bool> &stop, OutputFn fn,
-           const std::shared_ptr<reference_branch<LowPrecisionType, DeltaType,
-                                                  TermType, Terms>> &previous) {
+           const std::shared_ptr<
+               reference_branch<LowPrecisionType, DeltaType, TermType, Terms,
+                                HighPrecisionReferenceOrbit>> &parent) {
 
   using calculation = typename HighPrecisionReferenceOrbit::calculation;
 
@@ -182,7 +186,7 @@ void magic(int max_iterations, int x0, int y0, int w, int h,
   if (w <= Limit || h <= Limit) {
 
     // Let's dump the path
-    for (auto p = previous; p; p = p->previous_branch) {
+    for (auto p = parent; p; p = p->parent) {
       std::cout << (p->iteration + p->size()) << " "; //  << p->size();
       //
     }
@@ -195,7 +199,7 @@ void magic(int max_iterations, int x0, int y0, int w, int h,
     // Look up the escape iteration instead using the branches
     // it = previous->find_escape_iteration(delta_from_previous);
 
-    int iteration = previous ? previous->iteration + previous->size() : 0;
+    int iteration = parent ? parent->iteration + parent->size() : 0;
 
     auto pixel_delta =
         DeltaType{diagonal_size.real() / w, diagonal_size.imag() / h};
@@ -208,32 +212,35 @@ void magic(int max_iterations, int x0, int y0, int w, int h,
         // auto delta_to_point = x;
 
         auto point_delta_from_parent =
-            delta_from_previous - half_diag +
+            delta_from_parent - half_diag +
             DeltaType{pixel_delta.real() * i, pixel_delta.imag() * j};
 
-        auto epsilon = previous->final_entry.epsilon(point_delta_from_parent);
+        int it; // auto it =
+                // parent->find_escape_iteration(point_delta_from_parent);
+        if (true) {
+          auto epsilon = parent->final_entry.epsilon(point_delta_from_parent);
 
-        // To carry on the current orbit:
-        auto orbit =
-            parent_orbit.split_relative(point_delta_from_parent, epsilon);
+          // To carry on the current orbit:
+          auto orbit =
+              parent_orbit.split_relative(point_delta_from_parent, epsilon);
 
-        // To evaluate manually (slow):
-        // perturbation_orbit<LowPrecisionType, DeltaType,
-        //                   HighPrecisionReferenceOrbit>
-        //    orbit(parent_orbit.reference,
-        //          top_left + DeltaType{pixel_delta.real() * i,
-        //                               pixel_delta.imag() * j});
+          // To evaluate manually (slow):
+          // perturbation_orbit<LowPrecisionType, DeltaType,
+          //                   HighPrecisionReferenceOrbit>
+          //    orbit(parent_orbit.reference,
+          //          top_left + DeltaType{pixel_delta.real() * i,
+          //                               pixel_delta.imag() * j});
 
-        int it = 0; // parent_orbit.iteration();
+          it = 0;
 
-        for (; it < max_iterations && !escaped(*orbit); ++it)
-          ++orbit;
+          for (; it < max_iterations && !escaped(*orbit); ++it)
+            ++orbit;
 
-        // auto it = 100 * fractals::norm(central_delta);
+          // auto it = 100 * fractals::norm(central_delta);
 
-        // Iterate a small set of points
-
-        if (it == max_iterations)
+          // Iterate a small set of points
+        }
+        if (it < 0 || it >= max_iterations)
           it = 0;
 
         fn(x0 + i, y0 + j, it, iteration);
@@ -244,18 +251,19 @@ void magic(int max_iterations, int x0, int y0, int w, int h,
 
   // Create a new branch
   auto branch =
-      previous
-          ? std::make_shared<
-                reference_branch<LowPrecisionType, DeltaType, TermType, Terms>>(
-                previous, delta_from_previous)
-          : std::make_shared<reference_branch<LowPrecisionType, DeltaType,
-                                              TermType, Terms>>();
+      parent ? std::make_shared<
+                   reference_branch<LowPrecisionType, DeltaType, TermType,
+                                    Terms, HighPrecisionReferenceOrbit>>(
+                   parent, delta_from_parent)
+             : std::make_shared<
+                   reference_branch<LowPrecisionType, DeltaType, TermType,
+                                    Terms, HighPrecisionReferenceOrbit>>();
 
   // Compute the terms of the new branch
-  DeltaType epsilon_from_previous = {};
+  DeltaType epsilon_from_parent = {};
 
-  if (previous) {
-    epsilon_from_previous = previous->final_entry.epsilon(delta_from_previous);
+  if (parent) {
+    epsilon_from_parent = parent->final_entry.epsilon(delta_from_parent);
   }
 
   // Pay attention: This bit is magic.
@@ -264,7 +272,7 @@ void magic(int max_iterations, int x0, int y0, int w, int h,
   // We do need to know the new epsilon, which we computed using the Taylor
   // series.
   auto orbit =
-      parent_orbit.split_relative(delta_from_previous, epsilon_from_previous);
+      parent_orbit.split_relative(delta_from_parent, epsilon_from_parent);
 
   branch->compute_terms(orbit, max_iterations, fractals::norm(diagonal_size));
 
@@ -308,7 +316,8 @@ void magic(int max_iterations, int x0, int y0, int w, int h,
   perturbation_orbit<LowPrecisionType, DeltaType, HighPrecisionReferenceOrbit>
       orbit(central_orbit, {});
 
-  magic<LowPrecisionType, DeltaType, TermType, Terms>(
+  magic<LowPrecisionType, DeltaType, TermType, Terms,
+        HighPrecisionReferenceOrbit>(
       max_iterations, x0, y0, w, h, diagonal_size, {}, {}, orbit, stop, fn, {});
 }
 } // namespace mandelbrot

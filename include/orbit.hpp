@@ -231,6 +231,8 @@ public:
   using delta_type = DeltaType;
   using epsilon_type = delta_type;
 
+  perturbation_orbit() = default; // Not great.
+
   perturbation_orbit(const ReferenceOrbit &ref, delta_type delta)
       : perturbation_orbit(ref, delta, 0, 0, {}) {}
 
@@ -238,36 +240,41 @@ public:
                      int starting_iteration, int start_j,
                      epsilon_type starting_epsilon)
       : n{starting_iteration}, j{start_j}, delta(delta),
-        epsilon{starting_epsilon}, reference{ref} {}
+        epsilon{starting_epsilon}, reference{&ref} {
+    if (j == ref.size() - 1) {
+      epsilon = (*reference)[j] + convert<value_type>(epsilon);
+      j = 0;
+    }
+  }
 
   // Constructs a perturbation orbit that has the same reference orbit
   // and same iteration number, but now refers to a different delta.
   perturbation_orbit
   split_relative(delta_type delta_from_current_orbit,
                  epsilon_type epsilon_from_current_orbit) const {
-    return {reference, delta + delta_from_current_orbit, n, j,
-            epsilon_from_current_orbit - epsilon + delta_from_current_orbit};
+    return {*reference, delta + delta_from_current_orbit, n, j,
+            epsilon_from_current_orbit + epsilon};
   }
 
   int iteration() const { return n; }
 
   value_type operator*() const {
-    assert(j >= 0 && j < reference.size());
-    return reference[j] + convert<value_type>(epsilon);
+    assert(j >= 0 && j < reference->size());
+    return (*reference)[j] + convert<value_type>(epsilon);
   }
 
   perturbation_orbit &operator++() {
 
-    epsilon = calculation::step_epsilon(reference[j], epsilon, delta);
+    epsilon = calculation::step_epsilon((*reference)[j], epsilon, delta);
     epsilon = fractals::normalize(epsilon);
     j++;
 
-    assert(j >= 0 && j < reference.size()); // !! This will probably start to
-                                            // fail until we fix this
+    assert(j >= 0 && j < reference->size()); // !! This will probably start to
+                                             // fail until we fix this
 
-    auto z = reference[j] + convert<value_type>(epsilon);
+    auto z = (*reference)[j] + convert<value_type>(epsilon);
 
-    if (j == reference.size() - 1 || escaped(reference[j]) ||
+    if (j == (*reference).size() - 1 || escaped((*reference)[j]) ||
         fractals::norm(z) < fractals::norm(convert<value_type>(epsilon))) {
       // We have exceeded the bounds of the current orbit
       // We need to reset the current orbit.
@@ -288,7 +295,7 @@ private:
   epsilon_type epsilon;
 
 public:
-  const ReferenceOrbit &reference;
+  const ReferenceOrbit *reference = 0;
 };
 
 template <Complex C, Complex DeltaType, RandomAccessOrbit ReferenceOrbit>
