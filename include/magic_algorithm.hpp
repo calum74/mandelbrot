@@ -8,10 +8,13 @@ struct series_entry {
   OrbitType z;
   std::array<TermType, Terms> terms;
 
-  template <typename DeltaType> DeltaType epsilon(DeltaType delta) {
+  template <typename DeltaType> DeltaType epsilon(DeltaType delta) const {
     return evaluate_epsilon(delta, terms);
   }
-  // template <typename DeltaType> DeltaType evaluate_z(DeltaType delta);
+
+  template <typename DeltaType> DeltaType evaluate_z(DeltaType delta) const {
+    return z + epsilon(delta);
+  }
 
   typename TermType::value_type maximum_delta_norm() const {
     return mandelbrot::maximum_delta_norm(terms);
@@ -35,7 +38,7 @@ public:
   int iteration;
 
   // If there is a previous branch, this is it
-  // Invariant: base_iteration==0 or previous_branch!=0
+  // Invariant: iteration==0 or previous_branch!=0
   std::shared_ptr<reference_branch> previous_branch;
 
   // The delta of the orbit relative to the previous branch
@@ -81,13 +84,15 @@ public:
   series_entry<OrbitType, TermType, Terms> final_entry;
 
   // Delta is to the center of this branch
-  OrbitType find_escape_iteration(DeltaType delta) const {
+  int find_escape_iteration(DeltaType delta) const {
     // Look at the first term
 
     if (series.empty()) {
       if (previous_branch)
         return previous_branch->find_escape_iteration(delta +
                                                       delta_to_previous_branch);
+      else
+        return 0;
     }
 
     // Look at the first item
@@ -103,12 +108,12 @@ public:
       auto mid = (min + max) / 2;
       z = series[mid].evaluate_z(delta);
       if (escaped(z)) {
-        max = mid;
+        max = mid - 1;
       } else {
-        min = mid + 1;
+        min = mid;
       }
     }
-    return z;
+    return min + iteration;
   }
 };
 
@@ -186,25 +191,39 @@ void magic(
     // each pixel, and be able to use the reference orbits we calculated along
     // the way
 
-    perturbation_orbit<LowPrecisionType, DeltaType, HighPrecisionReferenceOrbit>
-        orbit(parent_orbit.reference, central_delta);
-
-    int it = 0; // parent_orbit.iteration();
-
-    for (; it < max_iterations && !escaped(*orbit); ++it)
-      ++orbit;
-
-    // auto it = 100 * fractals::norm(central_delta);
-
-    // Iterate a small set of points
-
-    if (it == max_iterations)
-      it = 0;
+    // Look up the escape iteration instead using the branches
+    // it = previous->find_escape_iteration(delta_from_previous);
 
     int iteration = previous ? previous->iteration + previous->size() : 0;
 
-    for (int i = 0; i < w; ++i)
-      for (int j = 0; j < h; ++j) {
+    auto pixel_delta =
+        DeltaType{diagonal_size.real() / w, diagonal_size.imag() / h};
+    auto half_diag =
+        DeltaType{diagonal_size.real() * 0.5, diagonal_size.imag() * 0.5};
+    auto top_left = central_delta - half_diag;
+
+    for (int j = 0; j < h; ++j)
+      for (int i = 0; i < w; ++i) {
+        // auto delta_to_point = x;
+
+        perturbation_orbit<LowPrecisionType, DeltaType,
+                           HighPrecisionReferenceOrbit>
+            orbit(parent_orbit.reference,
+                  top_left + DeltaType{pixel_delta.real() * i,
+                                       pixel_delta.imag() * j});
+
+        int it = 0; // parent_orbit.iteration();
+
+        for (; it < max_iterations && !escaped(*orbit); ++it)
+          ++orbit;
+
+        // auto it = 100 * fractals::norm(central_delta);
+
+        // Iterate a small set of points
+
+        if (it == max_iterations)
+          it = 0;
+
         fn(x0 + i, y0 + j, it, iteration);
       }
 
@@ -221,11 +240,9 @@ void magic(
                                               TermType, Terms>>();
 
   // Compute the terms of the new branch
-  int iteration = 0;
   DeltaType epsilon = {};
 
   if (previous) {
-    iteration = previous->iteration + previous->size();
     epsilon = previous->final_entry.epsilon(delta_from_previous) -
               delta_from_previous;
   }
@@ -233,7 +250,9 @@ void magic(
   // Pay attention: This bit is magic.
   // If we have one relative orbit, we can switch it to a different location
   // without recomputing all the terms from iteration 0.
-  auto orbit = parent_orbit.translate(central_delta, epsilon);
+  // We do need to know the new epsilon, which we computed using the Taylor
+  // series.
+  auto orbit = parent_orbit.split(central_delta, epsilon);
 
   branch->compute_terms(orbit, max_iterations, fractals::norm(diagonal_size));
 
