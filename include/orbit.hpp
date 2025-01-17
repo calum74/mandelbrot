@@ -242,9 +242,11 @@ public:
 
   // Constructs a perturbation orbit that has the same reference orbit
   // and same iteration number, but now refers to a different delta.
-  perturbation_orbit split(delta_type new_delta,
-                           epsilon_type new_epsilon) const {
-    return {reference, new_delta, n, j, new_epsilon - epsilon};
+  perturbation_orbit
+  split_relative(delta_type delta_from_current_orbit,
+                 epsilon_type epsilon_from_current_orbit) const {
+    return {reference, delta + delta_from_current_orbit, n, j,
+            epsilon_from_current_orbit - epsilon + delta_from_current_orbit};
   }
 
   int iteration() const { return n; }

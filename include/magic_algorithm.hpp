@@ -164,14 +164,15 @@ central_orbit: A stored orbit generated from high-precision
 template <Complex LowPrecisionType, Complex DeltaType, Complex TermType,
           unsigned long Terms, RandomAccessOrbit HighPrecisionReferenceOrbit,
           typename OutputFn>
-void magic(
-    int max_iterations, int x0, int y0, int w, int h, DeltaType diagonal_size,
-    DeltaType central_delta, DeltaType delta_from_previous,
-    perturbation_orbit<LowPrecisionType, DeltaType, HighPrecisionReferenceOrbit>
-        parent_orbit,
-    std::atomic<bool> &stop, OutputFn fn,
-    const std::shared_ptr<reference_branch<LowPrecisionType, DeltaType,
-                                           TermType, Terms>> &previous) {
+void magic(int max_iterations, int x0, int y0, int w, int h,
+           DeltaType diagonal_size, DeltaType central_delta,
+           DeltaType delta_from_previous,
+           perturbation_orbit<LowPrecisionType, DeltaType,
+                              HighPrecisionReferenceOrbit> // !! const reference
+               parent_orbit,
+           std::atomic<bool> &stop, OutputFn fn,
+           const std::shared_ptr<reference_branch<LowPrecisionType, DeltaType,
+                                                  TermType, Terms>> &previous) {
 
   using calculation = typename HighPrecisionReferenceOrbit::calculation;
 
@@ -206,11 +207,22 @@ void magic(
       for (int i = 0; i < w; ++i) {
         // auto delta_to_point = x;
 
-        perturbation_orbit<LowPrecisionType, DeltaType,
-                           HighPrecisionReferenceOrbit>
-            orbit(parent_orbit.reference,
-                  top_left + DeltaType{pixel_delta.real() * i,
-                                       pixel_delta.imag() * j});
+        auto point_delta_from_parent =
+            delta_from_previous - half_diag +
+            DeltaType{pixel_delta.real() * i, pixel_delta.imag() * j};
+
+        auto epsilon = previous->final_entry.epsilon(point_delta_from_parent);
+
+        // To carry on the current orbit:
+        auto orbit =
+            parent_orbit.split_relative(point_delta_from_parent, epsilon);
+
+        // To evaluate manually (slow):
+        // perturbation_orbit<LowPrecisionType, DeltaType,
+        //                   HighPrecisionReferenceOrbit>
+        //    orbit(parent_orbit.reference,
+        //          top_left + DeltaType{pixel_delta.real() * i,
+        //                               pixel_delta.imag() * j});
 
         int it = 0; // parent_orbit.iteration();
 
@@ -240,11 +252,10 @@ void magic(
                                               TermType, Terms>>();
 
   // Compute the terms of the new branch
-  DeltaType epsilon = {};
+  DeltaType epsilon_from_previous = {};
 
   if (previous) {
-    epsilon = previous->final_entry.epsilon(delta_from_previous) -
-              delta_from_previous;
+    epsilon_from_previous = previous->final_entry.epsilon(delta_from_previous);
   }
 
   // Pay attention: This bit is magic.
@@ -252,7 +263,8 @@ void magic(
   // without recomputing all the terms from iteration 0.
   // We do need to know the new epsilon, which we computed using the Taylor
   // series.
-  auto orbit = parent_orbit.split(central_delta, epsilon);
+  auto orbit =
+      parent_orbit.split_relative(delta_from_previous, epsilon_from_previous);
 
   branch->compute_terms(orbit, max_iterations, fractals::norm(diagonal_size));
 
