@@ -6,6 +6,7 @@
 #include "magic_algorithm.hpp"
 #include "mandelbrot.hpp"
 #include "orbit.hpp"
+#include "orbit_manager.hpp"
 #include "rendering_sequence.hpp"
 #include "view_parameters.hpp"
 
@@ -21,6 +22,8 @@ void compare_orbits(Orbit1 o1, Orbit2 o2, int n) {
   for (int i = 0; i < n; ++i) {
     auto d = norm(*o1 - *o2);
     assert(d < 0.0001);
+    if (escaped(*o1))
+      return;
     ++o1;
     ++o2;
   }
@@ -233,6 +236,36 @@ int main() {
     assert(m1.find_closest({-1, -1})->second == "P1");
     assert(m1.find_closest({25, 10})->second == "P2");
     assert(m1.find_closest({25, -5})->second == "P3");
+  }
+
+  {
+
+    mandelbrot::orbit_manager<
+        std::complex<double>,
+        std::complex<fractals::high_exponent_real<double>>,
+        std::complex<fractals::high_exponent_real<double>>, 4, 100,
+        mandelbrot::basic_orbit<std::complex<double>,
+                                mandelbrot::mandelbrot_calculation<2>>>
+        manager;
+
+    std::atomic<bool> stop;
+    manager.initialize(std::complex{0.5, 0.5}, 100, stop);
+    manager.new_view({0, 0}, {1, 1}, 4);
+
+    auto orbit1 = manager.lookup({0.1, 0.1}, 100);
+
+    compare_orbits(
+        orbit1,
+        mandelbrot::make_basic_orbit<mandelbrot::mandelbrot_calculation<2>>(
+            std::complex{0.6, 0.6}),
+        100);
+
+    // The thread function runs in the background...
+    manager.thread_fn(std::complex{0.5, 0.5}, 100, stop);
+
+    auto orbit2 = manager.lookup({0.1, 0.1}, 100); //
+
+    // TODO: Compare the orbits
   }
 
   return 0;

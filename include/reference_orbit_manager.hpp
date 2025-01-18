@@ -59,6 +59,11 @@ public:
     return orbits.find_closest(delta);
   }
 
+  // The entire image moves by a certain distance
+  void move_by(DeltaType delta, DeltaType new_size);
+
+  void recalculate_primary_orbit(...);
+
 private:
   map_type orbits;
 };
