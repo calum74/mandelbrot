@@ -65,8 +65,16 @@ public:
   // Starts the orbit manager by reusing the current reference orbit. This
   // is fast. delta is the delta from the previous center. Not threadsafe
   void new_view(DeltaType delta, DeltaType maxDelta, int maxSecondaryOrbits) {
+
+    if (!primary_series) {
+      // TODO: Calculate the initial series
+    }
+
     auto new_primary_series = std::make_shared<secondary_orbit>(
-        primary_series->delta - delta, std::move(primary_series->orbit));
+        primary_series->delta - delta,
+        primary_series
+            ->orbit); // ?? !! Move the orbit (was this unsafe/unstable?
+    orbit_storage.push_back(new_primary_series);
 
     std::vector<std::atomic<secondary_orbit *>> new_lookup(maxSecondaryOrbits *
                                                            maxSecondaryOrbits);
@@ -125,7 +133,7 @@ public:
     // Find the cell corresponding to delta
     int x = 0.5 * lookup_width *
             (1.0 + convert<double>(delta.real() / max_delta.real()));
-    int y = 0.5 * lookup_width *
+    int y = 0.5 * lookup_height *
             (1.0 + convert<double>(delta.imag() / max_delta.imag()));
 
     if (x < 0)
@@ -135,11 +143,14 @@ public:
     if (y < 0)
       y = 0;
     if (y >= lookup_height)
-      x = lookup_height - 1;
+      y = lookup_height - 1;
 
     // Threadsafe because we are doing an atomic read of the orbit_lookup.
     // The underlying objects are guaranteed to be valid.
-    secondary_orbit *local_reference = orbit_lookup.at(x + y * lookup_height);
+    auto index = x + y * lookup_width;
+    assert(index >= 0);
+    assert(index < orbit_lookup.size());
+    secondary_orbit *local_reference = orbit_lookup.at(x + y * lookup_width);
 
     return local_reference->orbit.make_relative_orbit(
         delta - local_reference->delta, max_iterations,

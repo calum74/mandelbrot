@@ -5,6 +5,7 @@
 #include "high_exponent_real.hpp"
 #include "orbit.hpp"
 #include "orbit_manager.hpp"
+#include <future>
 
 // Calculate the Mandelbrot set using perturbations and
 // Taylor series to skip iterations. The algorithms are implemented in
@@ -22,14 +23,73 @@ public:
   using reference_orbit_type =
       mandelbrot::basic_orbit<HighPrecisionType, Calculation>;
 
+  HighPrecisionType center;
+
+  void initialize(const view_coords &c, int w, int h,
+                  std::atomic<bool> &stop) override {
+
+    max_iterations = c.max_iterations;
+
+    auto new_center = HighPrecisionType{c.x, c.y};
+
+    auto delta = convert<DeltaType>(new_center - center);
+
+    center = new_center;
+
+    fractals::plane<HighPrecisionReal, DeltaReal> new_coords(c, w, h);
+
+    coords = new_coords;
+    ref_x = w / 2;
+    ref_y = h / 2;
+
+    if (stop)
+      return;
+
+    try_stop_orbits_thread();
+
+    orbits.new_view(
+        delta, DeltaType{DeltaReal(0.5) * coords.w, DeltaReal(0.5) * coords.h},
+        4);
+
+    // In a thread:
+
+    reference_orbit_type init(HighPrecisionType{
+        coords.x0 + fractals::convert<HighPrecisionReal>(coords.dx) *
+                        fractals::convert<HighPrecisionReal>(ref_x),
+        coords.y0 + fractals::convert<HighPrecisionReal>(coords.dy) *
+                        fractals::convert<HighPrecisionReal>(ref_y)});
+
+    orbits_thread = std::async([init, this] {
+      orbits.thread_fn(init, max_iterations, stop_orbits_thread);
+      // std::cout << "Finished orbits\n";
+    });
+  }
+
+  ~PerturbatedMandelbrotCalculation() { try_stop_orbits_thread(); }
+
+  void try_stop_orbits_thread() {
+    if (orbits_thread.valid()) {
+      stop_orbits_thread = true;
+      orbits_thread.wait();
+      stop_orbits_thread = false;
+    }
+  }
+
+  std::atomic<bool> stop_orbits_thread;
+  std::future<void> orbits_thread;
+
   // Initialize the fractal. We calculate the high precision reference orbit
   // at the center of the view. Because this calculation can be time-consuming,
   // we provide a "stop" flag which is used to exit the calculation early if the
   // view changes, to keep the UI responsive.
   PerturbatedMandelbrotCalculation(const view_coords &c, int w, int h,
-                                   std::atomic<bool> &stop)
-      : max_iterations(c.max_iterations), coords(c, w, h), ref_x(w / 2),
-        ref_y(h / 2) {
+                                   std::atomic<bool> &stop) {
+
+    max_iterations = c.max_iterations;
+    coords = {c, w, h};
+    ref_x = w / 2;
+    ref_y = h / 2;
+    center = HighPrecisionType{c.x, c.y};
 
     // For now, synchronously create a reference orbit
     reference_orbit_type init(HighPrecisionType{
@@ -39,12 +99,8 @@ public:
                         fractals::convert<HighPrecisionReal>(ref_y)});
 
     orbits.initialize(init, max_iterations, stop);
-    if (stop)
-      return;
 
-    orbits.new_view(
-        {0, 0}, DeltaType{DeltaReal(0.5) * coords.w, DeltaReal(0.5) * coords.h},
-        4);
+    initialize(c, w, h, stop);
   }
 
   // Are the given coordinates valid. Use this to prevent zooming out too far
@@ -104,14 +160,14 @@ public:
 
 private:
   // The maxumum number of iterations / bailout value.
-  const int max_iterations;
+  int max_iterations;
 
   // A mapping from points in the image to points in the complex plane.
-  const fractals::plane<HighPrecisionReal, DeltaReal> coords;
+  fractals::plane<HighPrecisionReal, DeltaReal> coords;
 
   // Where in the image the reference orbit is.
   // Currently always at the center of the image.
-  const int ref_x, ref_y;
+  int ref_x, ref_y;
 
   // The calculated reference orbit, together with Taylor series terms for the
   // epsilon/dz for each iteration.
@@ -123,6 +179,10 @@ private:
 double fractals::PointwiseCalculation::average_iterations() const { return 0; }
 
 double fractals::PointwiseCalculation::average_skipped() const { return 0; }
+
+void fractals::PointwiseCalculation::initialize(const view_coords &c, int x,
+                                                int y,
+                                                std::atomic<bool> &stop) {}
 
 template <int N, int P, int T = 4, int Tolerance = 100,
           typename DeltaType = std::complex<double>>

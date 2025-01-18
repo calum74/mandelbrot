@@ -28,6 +28,9 @@ public:
   // Gets the average number of skipped iterations, for fractals where this
   // makes sense.
   virtual double average_skipped() const;
+
+  virtual void initialize(const view_coords &c, int x, int y,
+                          std::atomic<bool> &stop);
 };
 
 /*
@@ -41,7 +44,7 @@ public:
 
   // Creates and initializes a new calculation.
   // Called once for each generated fractal image.
-  virtual std::unique_ptr<PointwiseCalculation>
+  virtual std::shared_ptr<PointwiseCalculation>
   create(const view_coords &c, int x, int y, std::atomic<bool> &stop) const = 0;
 
   // Retrieve the initial coordinates for this fractal.
@@ -66,11 +69,19 @@ public:
 
   const char *family() const override { return f; }
 
-  std::unique_ptr<PointwiseCalculation>
+  mutable std::shared_ptr<PointwiseCalculation> previous;
+
+  std::shared_ptr<PointwiseCalculation>
   create(const view_coords &c, int x, int y,
          std::atomic<bool> &stop) const override {
-    return T::valid_for(c) ? std::make_unique<T>(c, x, y, stop)
-                           : tail.create(c, x, y, stop);
+
+    if (T::valid_for(c)) {
+      if (!previous)
+        previous = std::make_shared<T>(c, x, y, stop);
+      previous->initialize(c, x, y, stop);
+      return previous;
+    }
+    return tail.create(c, x, y, stop);
   }
 
   bool valid_for(const view_coords &c) const override {
@@ -89,10 +100,15 @@ public:
   MultiPrecisionFactory(const char *name, const char *family)
       : n{name}, f{family} {}
 
-  std::unique_ptr<PointwiseCalculation>
+  mutable std::shared_ptr<PointwiseCalculation> previous;
+
+  std::shared_ptr<PointwiseCalculation>
   create(const view_coords &c, int x, int y,
          std::atomic<bool> &stop) const override {
-    return std::make_unique<T>(c, x, y, stop);
+    if (!previous)
+      previous = std::make_shared<T>(c, x, y, stop);
+    previous->initialize(c, x, y, stop);
+    return previous;
   }
 
   view_coords initial_coords() const override { return T::initial_coords(); }

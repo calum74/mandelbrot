@@ -162,7 +162,10 @@ public:
   using value_type = C;
   using calculation = typename Ref::calculation;
 
-  value_type operator[](int n) const { return values.at(n); }
+  value_type operator[](int n) const {
+    assert(n >= 0 && n < values.size());
+    return values.at(n);
+  }
 
   auto size() const { return values.size(); }
 

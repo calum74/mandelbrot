@@ -60,6 +60,11 @@ template <int N> struct high_precision_real {
     return *this = *this + b;
   }
 
+  high_precision_real &operator-=(const high_precision_real &b) {
+    // This could be implemented more efficiently
+    return *this = *this - b;
+  }
+
   high_precision_real &operator*=(const high_precision_real &b) {
     // This could be implemented more efficiently
     return *this = *this * b;
