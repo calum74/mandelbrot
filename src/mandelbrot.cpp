@@ -4,7 +4,7 @@
 #include "fractal.hpp"
 #include "high_exponent_real.hpp"
 #include "orbit.hpp"
-#include "reference_orbit_manager.hpp"
+#include "orbit_manager.hpp"
 
 // Calculate the Mandelbrot set using perturbations and
 // Taylor series to skip iterations. The algorithms are implemented in
@@ -19,6 +19,9 @@ public:
   using DeltaReal = typename DeltaType::value_type;
   using HighPrecisionReal = typename HighPrecisionType::value_type;
 
+  using reference_orbit_type =
+      mandelbrot::basic_orbit<HighPrecisionType, Calculation>;
+
   // Initialize the fractal. We calculate the high precision reference orbit
   // at the center of the view. Because this calculation can be time-consuming,
   // we provide a "stop" flag which is used to exit the calculation early if the
@@ -26,26 +29,22 @@ public:
   PerturbatedMandelbrotCalculation(const view_coords &c, int w, int h,
                                    std::atomic<bool> &stop)
       : max_iterations(c.max_iterations), coords(c, w, h), ref_x(w / 2),
-        ref_y(h / 2),
-        orbits{HighPrecisionType{
-                   coords.x0 + fractals::convert<HighPrecisionReal>(coords.dx) *
-                                   fractals::convert<HighPrecisionReal>(ref_x),
-                   coords.y0 + fractals::convert<HighPrecisionReal>(coords.dy) *
-                                   fractals::convert<HighPrecisionReal>(ref_y)},
-               max_iterations, stop} {
-    // std::cout << "Rendering " << c << std::endl;
-    orbits.add_secondary_reference_orbit(
-        {0, 0}, orbits.make_secondary_orbit({0, 0}, max_iterations, stop));
+        ref_y(h / 2) {
 
-#if 0
-    auto h4 = coords.dx * DeltaReal(h / 4);
-    auto w4 = coords.dy * DeltaReal(w / 4);
-    DeltaType deltas[] = {{w4, h4}, {-w4, h4}, {w4, -h4}, {-h4, -h4}};
-    for (auto &d : deltas) {
-      auto x = orbits.make_secondary_orbit(d, max_iterations, stop);
-      orbits.add_secondary_reference_orbit(d, std::move(x));
-    }
-#endif
+    // For now, synchronously create a reference orbit
+    reference_orbit_type init(HighPrecisionType{
+        coords.x0 + fractals::convert<HighPrecisionReal>(coords.dx) *
+                        fractals::convert<HighPrecisionReal>(ref_x),
+        coords.y0 + fractals::convert<HighPrecisionReal>(coords.dy) *
+                        fractals::convert<HighPrecisionReal>(ref_y)});
+
+    orbits.initialize(init, max_iterations, stop);
+    if (stop)
+      return;
+
+    orbits.new_view(
+        {0, 0}, DeltaType{DeltaReal(0.5) * coords.w, DeltaReal(0.5) * coords.h},
+        4);
   }
 
   // Are the given coordinates valid. Use this to prevent zooming out too far
@@ -84,14 +83,7 @@ public:
     DeltaType delta = {coords.dx * DeltaReal(x - ref_x),
                        coords.dy * DeltaReal(y - ref_y)};
 
-    // The function `make_relative_orbit` will skip some iterations,
-    // use `z.iteration()` to find out which iteration we are on.
-    int skipped = iterations_skipped;
-    auto ro = orbits.locate_closest_secondary_reference_orbit(delta);
-
-    auto z = ro->second.make_relative_orbit(delta - ro->first,
-                                            this->max_iterations, skipped);
-    iterations_skipped = skipped;
+    auto z = orbits.lookup(delta, max_iterations);
 
     points_calculated++;
     skipped_iterations += z.iteration();
@@ -121,14 +113,10 @@ private:
   // Currently always at the center of the image.
   const int ref_x, ref_y;
 
-  using reference_orbit_type =
-      mandelbrot::basic_orbit<HighPrecisionType, Calculation>;
-
   // The calculated reference orbit, together with Taylor series terms for the
   // epsilon/dz for each iteration.
-  mandelbrot::reference_orbit_manager<LowPrecisionType, DeltaType, TermType,
-                                      reference_orbit_type, Terms,
-                                      TermPrecision>
+  mandelbrot::orbit_manager<LowPrecisionType, DeltaType, TermType, Terms,
+                            TermPrecision, reference_orbit_type>
       orbits;
 };
 
