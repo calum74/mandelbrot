@@ -66,7 +66,7 @@ public:
   // is fast. delta is the delta from the previous center. Not threadsafe
   void new_view(DeltaType delta, DeltaType maxDelta, int maxSecondaryOrbits) {
     auto new_primary_series = std::make_shared<secondary_orbit>(
-        primary_series->delta + delta, std::move(primary_series->orbit));
+        primary_series->delta - delta, std::move(primary_series->orbit));
 
     std::vector<std::atomic<secondary_orbit *>> new_lookup(maxSecondaryOrbits *
                                                            maxSecondaryOrbits);
@@ -95,10 +95,9 @@ public:
                  std::atomic<bool> &stop) {
 
     // 1) Compute new primary reference orbit
-    primary_orbit_type new_primary(init, max_iterations, stop);
 
     if (primary_series->delta != DeltaType{0, 0}) {
-
+      primary_orbit_type new_primary(init, max_iterations, stop);
       if (stop)
         return;
 
@@ -124,11 +123,19 @@ public:
   // Threadsafe
   relative_orbit lookup(DeltaType delta, int max_iterations) const {
     // Find the cell corresponding to delta
-    int x = convert<double>(delta.real() / max_delta.real()) * lookup_width;
-    int y = convert<double>(delta.imag() / max_delta.imag()) * lookup_height;
+    int x = 0.5 * lookup_width *
+            (1.0 + convert<double>(delta.real() / max_delta.real()));
+    int y = 0.5 * lookup_width *
+            (1.0 + convert<double>(delta.imag() / max_delta.imag()));
 
-    assert(x >= 0 && x < lookup_width);
-    assert(y >= 0 && y < lookup_height);
+    if (x < 0)
+      x = 0;
+    if (x >= lookup_width)
+      x = lookup_width - 1;
+    if (y < 0)
+      y = 0;
+    if (y >= lookup_height)
+      x = lookup_height - 1;
 
     // Threadsafe because we are doing an atomic read of the orbit_lookup.
     // The underlying objects are guaranteed to be valid.

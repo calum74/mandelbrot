@@ -261,11 +261,39 @@ int main() {
         100);
 
     // The thread function runs in the background...
+    // In this test, just run the whole thing
     manager.thread_fn(std::complex{0.5, 0.5}, 100, stop);
 
-    auto orbit2 = manager.lookup({0.1, 0.1}, 100); //
+    auto orbit2 = manager.lookup({0.1, 0.1}, 100);
 
-    // TODO: Compare the orbits
+    compare_orbits(
+        orbit2,
+        mandelbrot::make_basic_orbit<mandelbrot::mandelbrot_calculation<2>>(
+            std::complex{0.6, 0.6}),
+        100);
+
+    auto orbit3 = manager.lookup({-1.0, -1.0}, 100);
+
+    // Let's move the reference orbit
+    manager.new_view({-0.1, -0.2}, {1, 1}, 100);
+
+    auto orbit4 = manager.lookup({0.2, 0.3}, 100);
+    compare_orbits(
+        orbit4,
+        mandelbrot::make_basic_orbit<mandelbrot::mandelbrot_calculation<2>>(
+            std::complex{0.6, 0.6}),
+        100);
+
+    // Optimize the reference orbit
+    manager.thread_fn(std::complex{0.4, 0.3}, 100, stop);
+
+    // Compare the new orbits
+    auto orbit5 = manager.lookup({0.2, 0.3}, 100);
+    compare_orbits(
+        orbit5,
+        mandelbrot::make_basic_orbit<mandelbrot::mandelbrot_calculation<2>>(
+            std::complex{0.6, 0.6}),
+        100);
   }
 
   return 0;
