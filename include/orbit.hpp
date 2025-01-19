@@ -361,7 +361,7 @@ DeltaType evaluate_epsilon(DeltaType delta,
   ReferenceOrbit is the high-precision orbit.
 */
 template <Complex OrbitType, Complex DeltaType, Complex TermType,
-          IteratedOrbit ReferenceOrbit, int Terms, int Precision>
+          IteratedOrbit ReferenceOrbit, int Terms, int TermPrecision>
 class stored_taylor_series_orbit {
 public:
   using value_type = OrbitType;
@@ -518,7 +518,8 @@ private:
       // Each term has a "norm" giving an indication of its size.
       // We need to make sure that each term is sufficiently "small"
       // relative to the previous term.
-      max_delta_norm = convert<delta_norm>(maximum_delta_norm<10, 100>(terms));
+      max_delta_norm =
+          convert<delta_norm>(maximum_delta_norm<1, TermPrecision>(terms));
     }
 
     // Returns the epsilon, if it's accurate.
