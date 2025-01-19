@@ -519,7 +519,7 @@ private:
       // We need to make sure that each term is sufficiently "small"
       // relative to the previous term.
       max_delta_norm =
-          convert<delta_norm>(maximum_delta_norm<1, TermPrecision>(terms));
+          convert<delta_norm>(maximum_delta_norm<10, TermPrecision>(terms));
     }
 
     // Returns the epsilon, if it's accurate.

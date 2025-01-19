@@ -136,7 +136,7 @@ void fractals::PointwiseCalculation::initialize(const view_coords &c, int x,
                                                 int y,
                                                 std::atomic<bool> &stop) {}
 
-template <int N, int P, int T = 4, int Tolerance = 20,
+template <int N, int P, int T = 4, int Tolerance = 50,
           typename DeltaType = std::complex<double>>
 using MB = PerturbatedMandelbrotCalculation<
     std::complex<double>, DeltaType,
@@ -144,7 +144,7 @@ using MB = PerturbatedMandelbrotCalculation<
     std::complex<fractals::high_precision_real<P>>,
     mandelbrot::mandelbrot_calculation<N>, T, Tolerance>;
 
-template <int N, int P, int T = 4, int Tolerance = 20>
+template <int N, int P, int T = 4, int Tolerance = 100>
 using MB_high =
     MB<N, P, T, Tolerance, std::complex<fractals::high_exponent_real<double>>>;
 
