@@ -70,6 +70,9 @@ public:
       // TODO: Calculate the initial series
     }
 
+    orbit_storage.clear();
+    orbit_storage.push_back(primary_series);
+
     auto new_primary_series = std::make_shared<secondary_orbit>(
         primary_series->delta - delta,
         primary_series
