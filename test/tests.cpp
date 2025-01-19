@@ -249,8 +249,7 @@ int main() {
         manager;
 
     std::atomic<bool> stop;
-    manager.initialize(std::complex{0.5, 0.5}, 100, stop);
-    manager.new_view({0, 0}, {1, 1}, 4);
+    manager.new_view({0, 0}, {1, 1}, 4, std::complex{0.5, 0.5}, 100, stop);
 
     auto orbit1 = manager.lookup({0.1, 0.1}, 100);
 
@@ -275,7 +274,8 @@ int main() {
     auto orbit3 = manager.lookup({-1.0, -1.0}, 100);
 
     // Let's move the reference orbit
-    manager.new_view({-0.1, -0.2}, {1, 1}, 100);
+    manager.new_view({-0.1, -0.2}, {1, 1}, 100, std::complex{0.4, 0.3}, 100,
+                     stop);
 
     auto orbit4 = manager.lookup({0.2, 0.3}, 100);
     compare_orbits(

@@ -38,7 +38,7 @@ class orbit_manager {
   using secondary_reference_type =
       typename cluster_type::secondary_reference_type;
 
-public:
+private:
   // Seeds the orbit_manager completely from scratch.
   // In this case, the entire reference orbit needs to be computed
   // and the series for this orbit. This could be a bit slow.
@@ -62,16 +62,20 @@ public:
     primary_series = std::move(series);
   }
 
+public:
   // Starts the orbit manager by reusing the current reference orbit. This
   // is fast. delta is the delta from the previous center. Not threadsafe
-  void new_view(DeltaType delta, DeltaType maxDelta, int maxSecondaryOrbits) {
+  void new_view(DeltaType delta, DeltaType maxDelta, int maxSecondaryOrbits,
+                const HighPrecisionReferenceOrbit &init, int max_iterations,
+                std::atomic<bool> &stop) {
 
     if (!primary_series || fractals::norm(primary_series->delta - delta) >
                                fractals::norm(maxDelta)) {
-      std::cout << "TODO: Need to recalculate reference orbit completely\n";
-      // TODO: Calculate the initial series
-      // TODO: Check if the delta exceeds maxDelta, and then force recalculation
-      // of primary orbit in this thread
+      std::cout << "Debug: synchronously recalculating primary orbit\n";
+      initialize(init, max_iterations, stop);
+      if (stop)
+        return;
+      delta = DeltaType{0};
     }
 
     orbit_storage.clear();

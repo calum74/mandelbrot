@@ -45,19 +45,17 @@ public:
     if (stop)
       return;
 
-    try_stop_orbits_thread();
-
-    orbits.new_view(
-        delta, DeltaType{DeltaReal(0.5) * coords.w, DeltaReal(0.5) * coords.h},
-        4);
-
-    // In a thread:
-
     reference_orbit_type init(HighPrecisionType{
         coords.x0 + fractals::convert<HighPrecisionReal>(coords.dx) *
                         fractals::convert<HighPrecisionReal>(ref_x),
         coords.y0 + fractals::convert<HighPrecisionReal>(coords.dy) *
                         fractals::convert<HighPrecisionReal>(ref_y)});
+
+    try_stop_orbits_thread();
+
+    orbits.new_view(
+        delta, DeltaType{DeltaReal(0.5) * coords.w, DeltaReal(0.5) * coords.h},
+        4, init, max_iterations, stop);
 
     // TODO: Move the async logic into orbit_manager.hpp
     orbits_thread = std::async([init, this] {
@@ -84,25 +82,7 @@ public:
   // we provide a "stop" flag which is used to exit the calculation early if the
   // view changes, to keep the UI responsive.
   PerturbatedMandelbrotCalculation(const view_coords &c, int w, int h,
-                                   std::atomic<bool> &stop) {
-
-    max_iterations = c.max_iterations;
-    coords = {c, w, h};
-    ref_x = w / 2;
-    ref_y = h / 2;
-    center = HighPrecisionType{c.x, c.y};
-
-    // For now, synchronously create a reference orbit
-    reference_orbit_type init(HighPrecisionType{
-        coords.x0 + fractals::convert<HighPrecisionReal>(coords.dx) *
-                        fractals::convert<HighPrecisionReal>(ref_x),
-        coords.y0 + fractals::convert<HighPrecisionReal>(coords.dy) *
-                        fractals::convert<HighPrecisionReal>(ref_y)});
-
-    orbits.initialize(init, max_iterations, stop);
-
-    initialize(c, w, h, stop);
-  }
+                                   std::atomic<bool> &stop) {}
 
   // Are the given coordinates valid. Use this to prevent zooming out too far
   // or to select a different implementation for different resolutions.
