@@ -74,7 +74,7 @@ public:
 
     if (!primary_series || fractals::norm(primary_series->delta - delta) >
                                fractals::norm(maxDelta)) {
-      std::cout << "Info: synchronously recalculating primary orbit\n";
+      // std::cout << "Info: synchronously recalculating primary orbit\n";
       initialize(init, max_iterations, stop);
       if (stop)
         return;
