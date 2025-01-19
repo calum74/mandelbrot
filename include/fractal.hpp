@@ -62,24 +62,20 @@ template <typename T, typename... Ts>
 class MultiPrecisionFactory<T, Ts...> : public PointwiseFractal {
 public:
   MultiPrecisionFactory(const char *name, const char *family)
-      : n{name}, f{family}, tail{name, family} {}
+      : n{name}, f{family}, tail{name, family}, value(std::make_shared<T>()) {}
 
   view_coords initial_coords() const override { return T::initial_coords(); }
   const char *name() const override { return n; }
 
   const char *family() const override { return f; }
 
-  mutable std::shared_ptr<PointwiseCalculation> previous;
-
   std::shared_ptr<PointwiseCalculation>
   create(const view_coords &c, int x, int y,
          std::atomic<bool> &stop) const override {
 
     if (T::valid_for(c)) {
-      if (!previous)
-        previous = std::make_shared<T>();
-      previous->initialize(c, x, y, stop);
-      return previous;
+      value->initialize(c, x, y, stop);
+      return value;
     }
     return tail.create(c, x, y, stop);
   }
@@ -93,22 +89,19 @@ private:
 
   const char *n;
   const char *f;
+  std::shared_ptr<PointwiseCalculation> value;
 };
 
 template <typename T> class MultiPrecisionFactory<T> : public PointwiseFractal {
 public:
   MultiPrecisionFactory(const char *name, const char *family)
-      : n{name}, f{family} {}
-
-  mutable std::shared_ptr<PointwiseCalculation> previous;
+      : n{name}, f{family}, value(std::make_shared<T>()) {}
 
   std::shared_ptr<PointwiseCalculation>
   create(const view_coords &c, int x, int y,
          std::atomic<bool> &stop) const override {
-    if (!previous)
-      previous = std::make_shared<T>();
-    previous->initialize(c, x, y, stop);
-    return previous;
+    value->initialize(c, x, y, stop);
+    return value;
   }
 
   view_coords initial_coords() const override { return T::initial_coords(); }
@@ -124,6 +117,7 @@ public:
 private:
   const char *n;
   const char *f;
+  std::shared_ptr<PointwiseCalculation> value;
 };
 } // namespace detail
 
