@@ -136,7 +136,7 @@ void fractals::PointwiseCalculation::initialize(const view_coords &c, int x,
                                                 int y,
                                                 std::atomic<bool> &stop) {}
 
-template <int N, int P, int T = 4, int Tolerance = 50,
+template <int N, int P, int T = 4, int Tolerance = 100,
           typename DeltaType = std::complex<double>>
 using MB = PerturbatedMandelbrotCalculation<
     std::complex<double>, DeltaType,
@@ -157,9 +157,10 @@ using MB_high =
 // For the highest precition, we need to increase the precision on the epsilon
 // as well
 const fractals::PointwiseFractal &mandelbrot_fractal =
-    fractals::make_fractal<MB<2, 3, 4, 100>, MB<2, 6>, MB<2, 10>, MB<2, 18>,
-                           MB_high<2, 32>, MB_high<2, 40>, MB_high<2, 64>>(
-        "Mandelbrot (power 2)", "mandelbrot");
+    fractals::make_fractal<MB<2, 3, 4, 100>, MB<2, 6>, MB<2, 10>,
+                           MB_high<2, 18>, MB_high<2, 32>, MB_high<2, 40>,
+                           MB_high<2, 64>>("Mandelbrot (power 2)",
+                                           "mandelbrot");
 
 // Cubic Mandelbrot has no glitches with 3 Taylor series terms, but
 // glitches quite badly with 4 terms. On the other hand, Square mandelbrot works
