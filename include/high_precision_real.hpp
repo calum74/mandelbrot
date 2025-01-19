@@ -193,8 +193,15 @@ template <int N> bool operator<(const high_precision_real<N> &a, int b) {
 template <int N> bool operator<=(const high_precision_real<N> &a, int b) {
   // TODO: Doesn't handle negative cases properly
   if (a.negative)
+    return true;
+  if (a.fraction[0] < b)
+    return true;
+  if (a.fraction[0] > b)
     return false;
-  return a.fraction[0] <= b;
+  for (int i = 1; i < N; i++)
+    if (a.fraction[i])
+      return false;
+  return true;
 }
 
 template <int N> high_precision_real<N> operator-(high_precision_real<N> b) {
