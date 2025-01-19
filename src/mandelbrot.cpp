@@ -59,6 +59,7 @@ public:
         coords.y0 + fractals::convert<HighPrecisionReal>(coords.dy) *
                         fractals::convert<HighPrecisionReal>(ref_y)});
 
+    // TODO: Move the async logic into orbit_manager.hpp
     orbits_thread = std::async([init, this] {
       orbits.thread_fn(init, max_iterations, stop_orbits_thread);
       // std::cout << "Finished orbits\n";

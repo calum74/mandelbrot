@@ -1,7 +1,7 @@
 #pragma once
 #include "orbit.hpp"
+#include "rendering_sequence.hpp"
 #include <memory>
-#include <mutex>
 
 namespace mandelbrot {
 
@@ -32,7 +32,7 @@ class orbit_manager {
   struct secondary_orbit {
     DeltaType delta;
     secondary_orbit_type orbit;
-    int iterations_skipped_cache = 0;
+    std::atomic<int> iterations_skipped_cache = 0;
   };
 
   using secondary_reference_type =
@@ -66,7 +66,9 @@ public:
   // is fast. delta is the delta from the previous center. Not threadsafe
   void new_view(DeltaType delta, DeltaType maxDelta, int maxSecondaryOrbits) {
 
-    if (!primary_series) {
+    if (!primary_series || fractals::norm(primary_series->delta - delta) >
+                               fractals::norm(maxDelta)) {
+      std::cout << "TODO: Need to recalculate reference orbit completely\n";
       // TODO: Calculate the initial series
       // TODO: Check if the delta exceeds maxDelta, and then force recalculation
       // of primary orbit in this thread
@@ -108,9 +110,9 @@ public:
                  std::atomic<bool> &stop) {
 
     // 1) Compute new primary reference orbit
+    primary_orbit_type new_primary(init, max_iterations, stop);
 
     if (primary_series->delta != DeltaType{0, 0}) {
-      primary_orbit_type new_primary(init, max_iterations, stop);
       if (stop)
         return;
 
@@ -129,6 +131,29 @@ public:
     // 2) Populate secondary reference orbits
 
     // !! We should do this using the rendering sequence
+    rendering_sequence rs(lookup_width, lookup_height, 16);
+    int x, y, stride;
+    bool stride_changed;
+    while (!stop && rs.next(x, y, stride, stride_changed)) {
+      // Construct a new orbit
+      using DeltaReal = typename DeltaType::value_type;
+      DeltaType orbit_delta{
+          max_delta.real() *
+              convert<DeltaReal>(double(x) / double(lookup_width) - 0.5),
+          max_delta.imag() *
+              convert<DeltaReal>(double(y) / double(lookup_height) - 0.5)};
+
+      auto series = std::make_shared<secondary_orbit>(
+          orbit_delta, secondary_orbit_type{
+                           secondary_reference_type{new_primary, orbit_delta},
+                           max_iterations, stop});
+      orbit_storage.push_back(series);
+
+      for (int j = 0; j < stride && y + j < lookup_height; ++j)
+        for (int i = 0; i < stride && i + x < lookup_width; ++i) {
+          orbit_lookup[x + i + (y + j) * lookup_width] = series.get();
+        }
+    }
   }
 
   // Returns the orbit for the point delta (relative to the center)
@@ -157,9 +182,11 @@ public:
     assert(index < orbit_lookup.size());
     secondary_orbit *local_reference = orbit_lookup.at(x + y * lookup_width);
 
-    return local_reference->orbit.make_relative_orbit(
-        delta - local_reference->delta, max_iterations,
-        local_reference->iterations_skipped_cache);
+    int skipped = local_reference->iterations_skipped_cache;
+    auto result = local_reference->orbit.make_relative_orbit(
+        delta - local_reference->delta, max_iterations, skipped);
+    local_reference->iterations_skipped_cache = skipped;
+    return result;
   }
 
 private:
