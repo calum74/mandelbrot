@@ -68,6 +68,8 @@ public:
 
     if (!primary_series) {
       // TODO: Calculate the initial series
+      // TODO: Check if the delta exceeds maxDelta, and then force recalculation
+      // of primary orbit in this thread
     }
 
     orbit_storage.clear();
@@ -75,8 +77,8 @@ public:
 
     auto new_primary_series = std::make_shared<secondary_orbit>(
         primary_series->delta - delta,
-        primary_series
-            ->orbit); // ?? !! Move the orbit (was this unsafe/unstable?
+        std::move(primary_series->orbit)); // ?? !! Move the orbit (was this
+                                           // unsafe/unstable?
     orbit_storage.push_back(new_primary_series);
 
     std::vector<std::atomic<secondary_orbit *>> new_lookup(maxSecondaryOrbits *
