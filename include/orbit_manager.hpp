@@ -90,20 +90,20 @@ public:
                                            // unsafe/unstable?
     orbit_storage.push_back(new_primary_series);
 
-    std::vector<std::atomic<secondary_orbit *>> new_lookup(maxSecondaryOrbits *
-                                                           maxSecondaryOrbits);
+    std::vector<std::atomic<secondary_orbit *>> new_lookup(
+        maxSecondaryOrbits == 0 ? 1 : maxSecondaryOrbits * maxSecondaryOrbits);
+
     primary_series = new_primary_series;
     std::fill(new_lookup.begin(), new_lookup.end(), new_primary_series.get());
+
     orbit_lookup.swap(new_lookup);
 
     this->max_delta = maxDelta;
     lookup_width = maxSecondaryOrbits;
     lookup_height = maxSecondaryOrbits;
 
-    // TODO: Move the async logic into orbit_manager.hpp
     orbits_thread = std::async([init, max_iterations, this] {
       thread_fn(init, max_iterations, stop_orbits_thread);
-      // std::cout << "Finished orbits\n";
     });
   }
 
@@ -157,6 +157,9 @@ private:
 
     // 2) Populate secondary reference orbits
 
+    if (lookup_width == 0 || lookup_height == 0)
+      return;
+
     // !! We should do this using the rendering sequence
     rendering_sequence rs(lookup_width, lookup_height, 16);
     int x, y, stride;
@@ -166,9 +169,10 @@ private:
       using DeltaReal = typename DeltaType::value_type;
       DeltaType orbit_delta{
           max_delta.real() *
-              convert<DeltaReal>(double(x) / double(lookup_width) - 0.5),
+              convert<DeltaReal>(double(x + 0.5) / double(lookup_width) - 0.5),
           max_delta.imag() *
-              convert<DeltaReal>(double(y) / double(lookup_height) - 0.5)};
+              convert<DeltaReal>(double(y + 0.5) / double(lookup_height) -
+                                 0.5)};
 
       auto series = std::make_shared<secondary_orbit>(
           orbit_delta, secondary_orbit_type{
@@ -194,14 +198,14 @@ public:
     int y = 0.5 * lookup_height *
             (1.0 + convert<double>(delta.imag() / max_delta.imag()));
 
-    if (x < 0)
-      x = 0;
     if (x >= lookup_width)
       x = lookup_width - 1;
-    if (y < 0)
-      y = 0;
+    if (x < 0)
+      x = 0;
     if (y >= lookup_height)
       y = lookup_height - 1;
+    if (y < 0)
+      y = 0;
 
     // Threadsafe because we are doing an atomic read of the orbit_lookup.
     // The underlying objects are guaranteed to be valid.

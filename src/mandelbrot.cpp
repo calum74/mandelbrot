@@ -52,7 +52,7 @@ public:
 
     orbits.new_view(
         delta, DeltaType{DeltaReal(0.5) * coords.w, DeltaReal(0.5) * coords.h},
-        4, init, max_iterations, stop);
+        3, init, max_iterations, stop);
   }
 
   // Initialize the fractal. We calculate the high precision reference orbit
