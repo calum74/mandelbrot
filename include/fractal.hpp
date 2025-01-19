@@ -62,12 +62,13 @@ template <typename T, typename... Ts>
 class MultiPrecisionFactory<T, Ts...> : public PointwiseFractal {
 public:
   MultiPrecisionFactory(const char *name, const char *family)
-      : n{name}, f{family}, tail{name, family}, value(std::make_shared<T>()) {}
+      : name_{name}, family_{family}, tail{name, family},
+        value(std::make_shared<T>()) {}
 
   view_coords initial_coords() const override { return T::initial_coords(); }
-  const char *name() const override { return n; }
+  const char *name() const override { return name_; }
 
-  const char *family() const override { return f; }
+  const char *family() const override { return family_; }
 
   std::shared_ptr<PointwiseCalculation>
   create(const view_coords &c, int x, int y,
@@ -87,15 +88,15 @@ public:
 private:
   MultiPrecisionFactory<Ts...> tail;
 
-  const char *n;
-  const char *f;
+  const char *name_;
+  const char *family_;
   std::shared_ptr<PointwiseCalculation> value;
 };
 
 template <typename T> class MultiPrecisionFactory<T> : public PointwiseFractal {
 public:
   MultiPrecisionFactory(const char *name, const char *family)
-      : n{name}, f{family}, value(std::make_shared<T>()) {}
+      : name_{name}, family_{family}, value(std::make_shared<T>()) {}
 
   std::shared_ptr<PointwiseCalculation>
   create(const view_coords &c, int x, int y,
@@ -106,17 +107,17 @@ public:
 
   view_coords initial_coords() const override { return T::initial_coords(); }
 
-  const char *name() const override { return n; }
+  const char *name() const override { return name_; }
 
-  const char *family() const override { return f; }
+  const char *family() const override { return family_; }
 
   bool valid_for(const view_coords &c) const override {
     return T::valid_for(c);
   }
 
 private:
-  const char *n;
-  const char *f;
+  const char *name_;
+  const char *family_;
   std::shared_ptr<PointwiseCalculation> value;
 };
 } // namespace detail
