@@ -12,6 +12,7 @@
 #pragma once
 #include "mandelbrot_calculation.hpp"
 #include <atomic>
+#include <optional>
 #include <vector>
 
 namespace mandelbrot {
