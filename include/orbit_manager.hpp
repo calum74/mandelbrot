@@ -1,6 +1,7 @@
 #pragma once
 #include "orbit.hpp"
 #include "rendering_sequence.hpp"
+#include <future>
 #include <memory>
 
 namespace mandelbrot {
@@ -69,9 +70,11 @@ public:
                 const HighPrecisionReferenceOrbit &init, int max_iterations,
                 std::atomic<bool> &stop) {
 
+    try_stop_orbits_thread();
+
     if (!primary_series || fractals::norm(primary_series->delta - delta) >
                                fractals::norm(maxDelta)) {
-      std::cout << "Debug: synchronously recalculating primary orbit\n";
+      std::cout << "Info: synchronously recalculating primary orbit\n";
       initialize(init, max_iterations, stop);
       if (stop)
         return;
@@ -96,7 +99,27 @@ public:
     this->max_delta = maxDelta;
     lookup_width = maxSecondaryOrbits;
     lookup_height = maxSecondaryOrbits;
+
+    // TODO: Move the async logic into orbit_manager.hpp
+    orbits_thread = std::async([init, max_iterations, this] {
+      thread_fn(init, max_iterations, stop_orbits_thread);
+      // std::cout << "Finished orbits\n";
+    });
   }
+
+  ~orbit_manager() { try_stop_orbits_thread(); }
+
+private:
+  void try_stop_orbits_thread() {
+    if (orbits_thread.valid()) {
+      stop_orbits_thread = true;
+      orbits_thread.wait();
+      stop_orbits_thread = false;
+    }
+  }
+
+  std::atomic<bool> stop_orbits_thread;
+  std::future<void> orbits_thread;
 
   // This is a "slow" function that is intended to be in a thread and
   // gradually populates the orbits. In the meantime, the orbit manager is
@@ -160,6 +183,7 @@ public:
     }
   }
 
+public:
   // Returns the orbit for the point delta (relative to the center)
   // The orbit has already been fast-forwarded.
   // Threadsafe

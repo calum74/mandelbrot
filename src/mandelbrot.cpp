@@ -5,7 +5,6 @@
 #include "high_exponent_real.hpp"
 #include "orbit.hpp"
 #include "orbit_manager.hpp"
-#include <future>
 
 // Calculate the Mandelbrot set using perturbations and
 // Taylor series to skip iterations. The algorithms are implemented in
@@ -51,31 +50,10 @@ public:
         coords.y0 + fractals::convert<HighPrecisionReal>(coords.dy) *
                         fractals::convert<HighPrecisionReal>(ref_y)});
 
-    try_stop_orbits_thread();
-
     orbits.new_view(
         delta, DeltaType{DeltaReal(0.5) * coords.w, DeltaReal(0.5) * coords.h},
         4, init, max_iterations, stop);
-
-    // TODO: Move the async logic into orbit_manager.hpp
-    orbits_thread = std::async([init, this] {
-      orbits.thread_fn(init, max_iterations, stop_orbits_thread);
-      // std::cout << "Finished orbits\n";
-    });
   }
-
-  ~PerturbatedMandelbrotCalculation() { try_stop_orbits_thread(); }
-
-  void try_stop_orbits_thread() {
-    if (orbits_thread.valid()) {
-      stop_orbits_thread = true;
-      orbits_thread.wait();
-      stop_orbits_thread = false;
-    }
-  }
-
-  std::atomic<bool> stop_orbits_thread;
-  std::future<void> orbits_thread;
 
   // Initialize the fractal. We calculate the high precision reference orbit
   // at the center of the view. Because this calculation can be time-consuming,
