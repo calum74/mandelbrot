@@ -1,4 +1,5 @@
 #include "mandelbrot.hpp"
+#include <atomic>
 #include <chrono>
 #include <sstream>
 
