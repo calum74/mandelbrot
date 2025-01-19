@@ -160,7 +160,6 @@ private:
     if (lookup_width == 0 || lookup_height == 0)
       return;
 
-    // !! We should do this using the rendering sequence
     rendering_sequence rs(lookup_width, lookup_height, 16);
     int x, y, stride;
     bool stride_changed;

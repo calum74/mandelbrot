@@ -55,13 +55,6 @@ public:
         3, init, max_iterations, stop);
   }
 
-  // Initialize the fractal. We calculate the high precision reference orbit
-  // at the center of the view. Because this calculation can be time-consuming,
-  // we provide a "stop" flag which is used to exit the calculation early if the
-  // view changes, to keep the UI responsive.
-  PerturbatedMandelbrotCalculation(const view_coords &c, int w, int h,
-                                   std::atomic<bool> &stop) {}
-
   // Are the given coordinates valid. Use this to prevent zooming out too far
   // or to select a different implementation for different resolutions.
   // The call to `valid_precision` checks the size of the radius relative to

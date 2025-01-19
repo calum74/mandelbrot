@@ -13,15 +13,10 @@ public:
   // Real specifies how you're going to store your coordinates.
   fractals::plane<Real> coords;
 
-  // The constructor sets the viewing plane.
-  // view_coords contains high-precision coordinates, so you'll want to
-  // translate this into your local coordinate system. We can do some
-  // initialization at this point, such as calculating reference orbits.
-  // Initialization can be time-consuming, so we'll provide a `stop`
-  // cancellation token. The constructor should regularly check `stop` and exit
-  // early to keep the UI responsive.
-  Circle(const view_coords &c, int w, int h, std::atomic<bool> &stop)
-      : coords(c, w, h) {}
+  void initialize(const view_coords &c, int w, int h,
+                  std::atomic<bool> &stop) override {
+    coords = {c, w, h};
+  }
 
   // Returns whether the given fractal
   static bool valid_for(const view_coords &c) { return true; }

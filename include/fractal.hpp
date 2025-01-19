@@ -30,7 +30,7 @@ public:
   virtual double average_skipped() const;
 
   virtual void initialize(const view_coords &c, int x, int y,
-                          std::atomic<bool> &stop);
+                          std::atomic<bool> &stop) = 0;
 };
 
 /*
@@ -77,7 +77,7 @@ public:
 
     if (T::valid_for(c)) {
       if (!previous)
-        previous = std::make_shared<T>(c, x, y, stop);
+        previous = std::make_shared<T>();
       previous->initialize(c, x, y, stop);
       return previous;
     }
@@ -106,7 +106,7 @@ public:
   create(const view_coords &c, int x, int y,
          std::atomic<bool> &stop) const override {
     if (!previous)
-      previous = std::make_shared<T>(c, x, y, stop);
+      previous = std::make_shared<T>();
     previous->initialize(c, x, y, stop);
     return previous;
   }

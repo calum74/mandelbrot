@@ -14,8 +14,11 @@ public:
 
   static view_coords initial_coords() { return {0, -1, 3, 500}; }
 
-  SimpleMandeldrop(const view_coords &c, int w, int h, std::atomic<bool> &stop)
-      : max_iterations(c.max_iterations), coords(c, w, h) {}
+  void initialize(const view_coords &c, int w, int h,
+                  std::atomic<bool> &stop) override {
+    max_iterations = c.max_iterations;
+    coords = {c, w, h};
+  }
 
   double calculate(int x, int y) const override {
     auto p = coords(x, y);
@@ -36,8 +39,8 @@ public:
   }
 
 private:
-  const int max_iterations;
-  const fractals::plane<Real> coords;
+  int max_iterations;
+  fractals::plane<Real> coords;
 };
 
 const fractals::PointwiseFractal &naiveMandeldrop =
@@ -88,22 +91,21 @@ public:
     return DeltaType{0, 1} * d / (c0 * (c0 + d));
   }
 
-  // Initialize the fractal. We calculate the high precision reference orbit
-  // at the center of the view. Because this calculation can be time-consuming,
-  // we provide a "stop" flag which is used to exit the calculation early if the
-  // view changes, to keep the UI responsive.
-  PerturbatedMandeldropCalculation(const view_coords &c, int w, int h,
-                                   std::atomic<bool> &stop)
-      : max_iterations(c.max_iterations), coords(c, w, h), ref_x(w / 2),
-        ref_y(h / 2), c0{convert<SmallReal>(coords.x0) + (coords.dx * ref_x),
-                         convert<SmallReal>(coords.y0) + (coords.dy * ref_y)},
-        reference_orbit{
-            mandelbrot::make_basic_orbit<Calculation>(map(HighPrecisionType{
-                coords.x0 +
-                    fractals::convert<HighPrecisionReal>(coords.dx * ref_x),
-                coords.y0 +
-                    fractals::convert<HighPrecisionReal>(coords.dy * ref_y)})),
-            max_iterations, stop} {}
+  void initialize(const view_coords &c, int w, int h,
+                  std::atomic<bool> &stop) override {
+    max_iterations = c.max_iterations;
+    coords = {c, w, h};
+    ref_x = (w / 2);
+    ref_y = (h / 2);
+    c0 = {convert<SmallReal>(coords.x0) + (coords.dx * ref_x),
+          convert<SmallReal>(coords.y0) + (coords.dy * ref_y)};
+    reference_orbit = {
+        mandelbrot::make_basic_orbit<Calculation>(map(HighPrecisionType{
+            coords.x0 + fractals::convert<HighPrecisionReal>(coords.dx * ref_x),
+            coords.y0 +
+                fractals::convert<HighPrecisionReal>(coords.dy * ref_y)})),
+        max_iterations, stop};
+  }
 
   // Are the given coordinates valid. Use this to prevent zooming out too far
   // or to select a different implementation for different resolutions.
@@ -148,17 +150,17 @@ public:
 
 private:
   // The maxumum number of iterations / bailout value.
-  const int max_iterations;
+  int max_iterations;
 
   // A mapping from points in the image to points in the complex plane.
-  const fractals::plane<HighPrecisionReal, DeltaReal> coords;
+  fractals::plane<HighPrecisionReal, DeltaReal> coords;
 
   // Where in the image the reference orbit is.
   // Currently always at the center of the image.
-  const int ref_x, ref_y;
+  int ref_x, ref_y;
 
   // The position of the reference orbit.
-  const LowPrecisionType c0;
+  LowPrecisionType c0;
 
   // The calculated reference orbit, together with Taylor series terms for the
   // epsilon/dz for each iteration.
@@ -180,40 +182,3 @@ using MD = PerturbatedMandeldropCalculation<
 const fractals::PointwiseFractal &mandeldrop_fractal =
     fractals::make_fractal<SimpleMandeldrop, MD<2, 4>, MD<2, 6>, MD<2, 10>,
                            MD<2, 16> /*, MB<20> */>("Mandeldrop");
-
-// Not used
-class SimpleCubicMandelbrot : public fractals::PointwiseCalculation {
-public:
-  using Real = double;
-  using Complex = std::complex<Real>;
-
-  static bool valid_for(const view_coords &c) { return c.r < 2; }
-
-  static view_coords initial_coords() { return {0, 0, 2, 500}; }
-
-  SimpleCubicMandelbrot(const view_coords &c, int w, int h,
-                        std::atomic<bool> &stop)
-      : max_iterations(c.max_iterations), coords(c, w, h) {}
-
-  double calculate(int x, int y) const override {
-    auto p = coords(x, y);
-    Complex c{p.x, p.y};
-    Complex z = 0;
-    int i = 0;
-    while (!mandelbrot::escaped(z)) {
-      if (i++ >= max_iterations)
-        return 0;
-      z = z * z * z + c;
-    }
-
-    return i;
-  }
-
-private:
-  const int max_iterations;
-  const fractals::plane<Real> coords;
-};
-
-const fractals::PointwiseFractal &simple_cubic_mandelbrot_fractal =
-    fractals::make_fractal<SimpleCubicMandelbrot>(
-        "Cubic Mandelbrot (low precision)");
