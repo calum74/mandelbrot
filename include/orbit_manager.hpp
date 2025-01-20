@@ -31,6 +31,8 @@ class orbit_manager {
   using relative_orbit = typename cluster_type::relative_orbit;
 
   struct secondary_orbit {
+    secondary_orbit(DeltaType delta, secondary_orbit_type &&orbit)
+        : delta(delta), orbit(std::move(orbit)) {}
     DeltaType delta;
     secondary_orbit_type orbit;
     std::atomic<int> iterations_skipped_cache = 0;
