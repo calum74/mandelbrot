@@ -43,7 +43,33 @@ public:
   void layer_complete(int stride) override { ++layers; }
 };
 
+void test_sequence(int w, int h) {
+  std::vector<bool> visited(w * h);
+  for (int i = 0; i < w * h; ++i) {
+    multi_resolution_sequence p(w, h, i);
+    visited.at(p.x + p.y * w) = true;
+  }
+  for (bool b : visited) {
+    if (!b) {
+      for (int i = 0; i < w * h; ++i) {
+        multi_resolution_sequence p(w, h, i);
+        std::cout << i << " (" << p.x << "," << p.y << ")\n";
+      }
+    }
+    assert(b);
+  }
+}
+
 int main() {
+  {
+    // Basic rendering sequence
+    test_sequence(3, 4);
+    test_sequence(4, 4);
+    for (int w = 0; w < 9; ++w)
+      for (int h = 0; h < 9; ++h)
+        test_sequence(w, h);
+  }
+
   using MB2 = mandelbrot_calculation<2>;
   using C = std::complex<double>;
 

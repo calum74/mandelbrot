@@ -98,7 +98,7 @@ template <typename Complex, int N> struct calculate_delta_terms<Complex, 3, N> {
   }
 };
 
-// Specialisation of the previous case for N=3 (might be a bit faster?)
+// Specialisation of the previous case for N=4 (might be a bit faster?)
 template <typename Complex, int N> struct calculate_delta_terms<Complex, 4, N> {
   static std::array<Complex, 4>
   calculate(Complex z, const std::array<Complex, 4> &previous) {
@@ -179,7 +179,8 @@ template <int N> struct mandelbrot_calculation {
   // compute the terms of
   //
   //    epsilon' = A'∂ + B'∂^2 + C'∂^3 ...
-  //             = ∂ + sum(j=0..n-1)( C(n,j).z^j.(A∂ + B∂^2 + C∂^3 ...)^(n-j) )
+  //             = ∂ + sum(j=0..n-1)( choose(n,j).z^j.(A∂ + B∂^2 + C∂^3
+  //             ...)^(n-j) )
   //
   // for the next iteration. We equate terms in ∂^n.
   template <Complex OrbitType, Complex TermType, unsigned long Terms>

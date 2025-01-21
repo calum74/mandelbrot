@@ -31,6 +31,30 @@ private:
   int stride;
 };
 
+// Calculates a point in a rendering sequence.
+// Organizes each point into a square region
+// Renders largest regions first, then progressively renders smaller and smaller
+// regions
+//
+// Input:
+// - width: the width of the image to render in pixels
+// - height: the height of the image to render in pixels
+// - index: the index of the point to render in the range 0..(width*height)-1.
+//
+// Output:
+// - x: the pixel x position of the point to render
+// - y: the pixel y position of the point to render
+// - block_size: the size of the block to render (may exceeed width and height)
+struct multi_resolution_sequence {
+  multi_resolution_sequence(int width, int height, int index);
+  int x, y, block_size;
+};
+
+// Note that asking for a block_size of 0 gives the end of the array
+// (width*height)
+int get_first_index_in_multi_resolution_sequence(int width, int height,
+                                                 int block_size);
+
 /*
   Compute all points in threads, writing the results to an array of type T.
 */

@@ -71,6 +71,56 @@ void fractals::rendering_sequence::start_at_stride(int s) {
   y = 0;
 }
 
+fractals::multi_resolution_sequence::multi_resolution_sequence(int width,
+                                                               int height,
+                                                               int index) {
+  // Calculate the initial block size
+  block_size = 1;
+  while (block_size < width && block_size < height)
+    block_size = block_size * 2;
+  int points_in_previous_layer = 0;
+
+  for (; block_size > 0; block_size = block_size / 2) {
+    int layer_columns = ((width + block_size - 1) / block_size);
+    int layer_rows = ((height + block_size - 1) / block_size);
+    int layer_points = layer_rows * layer_columns;
+
+    if (index < layer_points) {
+      // We are definitely in this layer, but we don't want to return a
+      // point that's already been returned in a previous layer
+      bool first_layer = points_in_previous_layer == 0;
+
+      int points_per_even_row = first_layer ? layer_columns : layer_columns / 2;
+      int points_per_odd_row = layer_columns;
+      int points_per_two_rows = points_per_even_row + points_per_odd_row;
+
+      int layer_index = index - points_in_previous_layer;
+
+      int skip_div = layer_index / points_per_two_rows;
+      int skip_mod = layer_index % points_per_two_rows;
+
+      if (skip_mod < points_per_even_row) {
+        // We're on an even row
+        x = first_layer ? skip_mod * block_size
+                        : (1 + 2 * skip_mod) * block_size;
+        y = skip_div * block_size * 2;
+
+      } else {
+        // We're on an odd row
+        x = (skip_mod - points_per_even_row) * block_size;
+        y = (skip_div * 2 + 1) * block_size;
+      }
+      return;
+    }
+
+    // Is index in this layer?
+    points_in_previous_layer = layer_points;
+  }
+  // block_size = 0
+  x = 0;
+  y = 0;
+}
+
 fractals::async_rendering_sequence::async_rendering_sequence(int w, int h,
                                                              int initial_stride)
     : width(w), height(h), stride(initial_stride) {}
