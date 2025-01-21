@@ -87,9 +87,7 @@ public:
     orbit_storage.push_back(primary_series);
 
     auto new_primary_series = std::make_shared<secondary_orbit>(
-        primary_series->delta - delta,
-        std::move(primary_series->orbit)); // ?? !! Move the orbit (was this
-                                           // unsafe/unstable?
+        primary_series->delta - delta, std::move(primary_series->orbit));
     orbit_storage.push_back(new_primary_series);
 
     std::vector<std::atomic<secondary_orbit *>> new_lookup(
