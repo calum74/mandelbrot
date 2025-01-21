@@ -21,6 +21,9 @@ struct view_coords {
   view_coords zoom(double ratio, int w, int h, int cx, int cy,
                    const value_type &CX, const value_type &CY) const;
 
+  // Zoom in on the center
+  view_coords zoom(double ratio) const;
+
   double point_size(int w, int h) const;
   value_type point_size_full(int w, int h) const;
   value_type top(int w, int h) const;

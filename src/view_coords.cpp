@@ -20,6 +20,12 @@ fractals::view_coords fractals::view_coords::zoom(double ratio, int w, int h,
   return zoom(ratio, w, h, cx, cy, C.first, C.second);
 }
 
+fractals::view_coords fractals::view_coords::zoom(double ratio) const {
+  auto c = *this;
+  c.r = c.r * ratio;
+  return c;
+}
+
 std::pair<fractals::view_coords::value_type, fractals::view_coords::value_type>
 fractals::view_coords::map_point(int w, int h, int cx, int cy) const {
   double pw = w;
