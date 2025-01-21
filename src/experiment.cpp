@@ -105,6 +105,6 @@ using MBX = ExperimentalMandelbrotCalculation<
     mandelbrot::mandelbrot_calculation<N>, T, Tolerance>;
 
 // Nothing here now
-const fractals::PointwiseCalculationFactory &experimental_fractal =
+const fractals::PointwiseFractal &experimental_fractal =
     fractals::make_fractal<MBX<2, 3, 4, 1000>, MBX<2, 6>, MBX<2, 10>,
                            MBX<2, 18>>("Experiment", "mandelbrot");

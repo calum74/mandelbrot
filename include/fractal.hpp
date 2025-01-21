@@ -38,6 +38,8 @@ public:
 */
 class PointwiseCalculationFactory {
 public:
+  virtual ~PointwiseCalculationFactory() = default;
+
   virtual const char *name() const = 0;
 
   virtual const char *family() const = 0; //
@@ -52,6 +54,14 @@ public:
 
   // Queries whether the given coordinates are valid for this fractal type.
   virtual bool valid_for(const view_coords &c) const = 0;
+};
+
+class PointwiseFractal {
+public:
+  virtual ~PointwiseFractal() = default;
+  virtual std::shared_ptr<PointwiseCalculationFactory> create() const = 0;
+  virtual const char *name() const = 0;
+  virtual const char *family() const = 0;
 };
 
 namespace detail {
@@ -121,6 +131,23 @@ private:
   const char *family_;
   std::shared_ptr<PointwiseCalculation> value;
 };
+
+template <typename... Ts>
+class MultiPrecisionFractal : public PointwiseFractal {
+public:
+  MultiPrecisionFractal(const char *name, const char *family)
+      : name_(name), family_(family) {}
+
+  std::shared_ptr<PointwiseCalculationFactory> create() const override {
+    return std::make_shared<MultiPrecisionFactory<Ts...>>(name_, family_);
+  }
+
+  const char *name() const override { return name_; };
+  const char *family() const override { return family_; }
+
+private:
+  const char *name_, *family_;
+};
 } // namespace detail
 
 /*
@@ -128,13 +155,13 @@ private:
   can be run at different levels of precision.
 */
 template <typename... Ts>
-detail::MultiPrecisionFactory<Ts...> make_fractal(const char *name,
+detail::MultiPrecisionFractal<Ts...> make_fractal(const char *name,
                                                   const char *family) {
   return {name, family};
 }
 
 template <typename... Ts>
-detail::MultiPrecisionFactory<Ts...> make_fractal(const char *name) {
+detail::MultiPrecisionFractal<Ts...> make_fractal(const char *name) {
   return {name, name};
 }
 

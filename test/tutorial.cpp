@@ -17,13 +17,14 @@ int main() {
 
   // Get the initial coordinates for this fractal.
   // This also specifies the maximum number of iterations.
-  auto coords = mandelbrot_fractal.initial_coords();
+  auto mb = mandelbrot_fractal.create();
+  auto coords = mb->initial_coords();
 
   // Create a "calculation" for the fractal, supplying the dimensions to
   // calculate and also a `stop` token (a cancellation token) in case we want to
   // cancel the calculation at any time.
   std::atomic<bool> stop;
-  auto view = mandelbrot_fractal.create(coords, 100, 100, stop);
+  auto view = mb->create(coords, 100, 100, stop);
 
   // We can then calculate any point we like.
   // It's up to the caller to decide on the evaluation order and

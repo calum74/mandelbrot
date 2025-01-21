@@ -156,7 +156,7 @@ using MB_high =
 // use a slower algorithm than necessary.
 // For the highest precition, we need to increase the precision on the epsilon
 // as well
-const fractals::PointwiseCalculationFactory &mandelbrot_fractal =
+const fractals::PointwiseFractal &mandelbrot_fractal =
     fractals::make_fractal<MB<2, 3, 4, 100>, MB<2, 6>, MB<2, 10>,
                            MB_high<2, 18>, MB_high<2, 32>, MB_high<2, 40>,
                            MB_high<2, 64>>("Mandelbrot (power 2)",
@@ -165,23 +165,23 @@ const fractals::PointwiseCalculationFactory &mandelbrot_fractal =
 // Cubic Mandelbrot has no glitches with 3 Taylor series terms, but
 // glitches quite badly with 4 terms. On the other hand, Square mandelbrot works
 // better with 4 terms.
-const fractals::PointwiseCalculationFactory &mandelbrot3_fractal =
+const fractals::PointwiseFractal &mandelbrot3_fractal =
     fractals::make_fractal<MB<3, 4, 3, 10000>, MB<3, 6, 3, 10000>,
                            MB<3, 10, 3, 10000>, MB<3, 18, 3, 10000>>(
         "Cubic Mandelbrot (power 3)");
 
-const fractals::PointwiseCalculationFactory &mandelbrot4_fractal =
+const fractals::PointwiseFractal &mandelbrot4_fractal =
     fractals::make_fractal<MB<4, 4>, MB<4, 6>, MB<4, 10>, MB<4, 18>>(
         "Mandelbrot (power 4)");
 
-const fractals::PointwiseCalculationFactory &mandelbrot5_fractal =
+const fractals::PointwiseFractal &mandelbrot5_fractal =
     fractals::make_fractal<MB<5, 4>, MB<5, 6>, MB<5, 10>, MB<5, 18>>(
         "Mandelbox (power 5)");
 
-const fractals::PointwiseCalculationFactory &mandelbrot6_fractal =
+const fractals::PointwiseFractal &mandelbrot6_fractal =
     fractals::make_fractal<MB<6, 4>, MB<6, 6>, MB<6, 10>, MB<6, 18>>(
         "Mandelbrot (power 6)");
 
-const fractals::PointwiseCalculationFactory &mandelbrot7_fractal =
+const fractals::PointwiseFractal &mandelbrot7_fractal =
     fractals::make_fractal<MB<7, 4>, MB<7, 6>, MB<7, 10>, MB<7, 18>>(
         "Mandelflake (power 7)");

@@ -43,7 +43,7 @@ private:
   fractals::plane<Real> coords;
 };
 
-const fractals::PointwiseCalculationFactory &naiveMandeldrop =
+const fractals::PointwiseFractal &naiveMandeldrop =
     fractals::make_fractal<SimpleMandeldrop>("Mandeldrop (low precision)");
 
 template <mandelbrot::Complex LowPrecisionType, mandelbrot::Complex DeltaType,
@@ -179,6 +179,6 @@ using MD = PerturbatedMandeldropCalculation<
     std::complex<fractals::high_precision_real<P>>,
     mandelbrot::mandelbrot_calculation<2>, Terms, Tolerance>;
 
-const fractals::PointwiseCalculationFactory &mandeldrop_fractal =
+const fractals::PointwiseFractal &mandeldrop_fractal =
     fractals::make_fractal<SimpleMandeldrop, MD<2, 4>, MD<2, 6>, MD<2, 10>,
                            MD<2, 16> /*, MB<20> */>("Mandeldrop");

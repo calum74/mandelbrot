@@ -4,8 +4,7 @@
 #include <sstream>
 
 void benchmark(const char *x, const char *y, const char *r, int iterations,
-               int w, int h,
-               const fractals::PointwiseCalculationFactory &fractal) {
+               int w, int h, const fractals::PointwiseFractal &fractal) {
   auto t1 = std::chrono::high_resolution_clock::now();
   fractals::view_coords coords;
   std::stringstream(x) >> coords.x;
@@ -14,7 +13,7 @@ void benchmark(const char *x, const char *y, const char *r, int iterations,
   coords.max_iterations = iterations;
 
   std::atomic<bool> stop;
-  auto calculation = fractal.create(coords, w, h, stop);
+  auto calculation = fractal.create()->create(coords, w, h, stop);
   auto t2 = std::chrono::high_resolution_clock::now();
   std::cout << "Setup in " << std::chrono::duration<double>(t2 - t1) << "\n";
   for (int j = 0; j < h; j++)
