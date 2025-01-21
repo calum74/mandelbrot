@@ -36,7 +36,7 @@ public:
 /*
   A fractal that can be calculated in a point-wise fashion.
 */
-class PointwiseFractal {
+class PointwiseCalculationFactory {
 public:
   virtual const char *name() const = 0;
 
@@ -59,7 +59,7 @@ namespace detail {
 template <typename... Ts> class MultiPrecisionFactory;
 
 template <typename T, typename... Ts>
-class MultiPrecisionFactory<T, Ts...> : public PointwiseFractal {
+class MultiPrecisionFactory<T, Ts...> : public PointwiseCalculationFactory {
 public:
   MultiPrecisionFactory(const char *name, const char *family)
       : name_{name}, family_{family}, tail{name, family},
@@ -93,7 +93,8 @@ private:
   std::shared_ptr<PointwiseCalculation> value;
 };
 
-template <typename T> class MultiPrecisionFactory<T> : public PointwiseFractal {
+template <typename T>
+class MultiPrecisionFactory<T> : public PointwiseCalculationFactory {
 public:
   MultiPrecisionFactory(const char *name, const char *family)
       : name_{name}, family_{family}, value(std::make_shared<T>()) {}
