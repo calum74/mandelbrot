@@ -139,21 +139,19 @@ private:
     // 1) Compute new primary reference orbit
     primary_orbit_type new_primary(init, max_iterations, stop);
 
-    if (primary_series->delta != DeltaType{0, 0}) {
-      if (stop)
-        return;
+    if (stop)
+      return;
 
-      auto series = std::make_shared<secondary_orbit>(
-          DeltaType{}, secondary_orbit_type{
-                           secondary_reference_type{new_primary, DeltaType{}},
-                           max_iterations, stop});
-      if (stop)
-        return;
+    auto series = std::make_shared<secondary_orbit>(
+        DeltaType{},
+        secondary_orbit_type{secondary_reference_type{new_primary, DeltaType{}},
+                             max_iterations, stop});
+    if (stop)
+      return;
 
-      primary_series = series;
-      orbit_storage.push_back(series);
-      std::fill(orbit_lookup.begin(), orbit_lookup.end(), primary_series.get());
-    }
+    primary_series = series;
+    orbit_storage.push_back(series);
+    std::fill(orbit_lookup.begin(), orbit_lookup.end(), primary_series.get());
 
     // 2) Populate secondary reference orbits
 
