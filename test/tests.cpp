@@ -215,7 +215,7 @@ int main() {
         std::complex<R1>, std::complex<R1>, std::complex<R1>,
         mandelbrot::basic_orbit<std::complex<R1>,
                                 mandelbrot::mandelbrot_calculation<2>>,
-        3, 100>
+        3, 20, 100>
         taylor_series{reference_orbit, 100, stop};
 
     auto relative =
@@ -239,7 +239,7 @@ int main() {
     mandelbrot::orbit_manager<
         std::complex<double>,
         std::complex<fractals::high_exponent_real<double>>,
-        std::complex<fractals::high_exponent_real<double>>, 4, 100,
+        std::complex<fractals::high_exponent_real<double>>, 4, 20, 100,
         mandelbrot::basic_orbit<std::complex<double>,
                                 mandelbrot::mandelbrot_calculation<2>>>
         manager;

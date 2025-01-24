@@ -12,7 +12,8 @@
 // for higher resolution rendering if required.
 template <mandelbrot::Complex LowPrecisionType, mandelbrot::Complex DeltaType,
           mandelbrot::Complex TermType, mandelbrot::Complex HighPrecisionType,
-          mandelbrot::Calculation Calculation, int Terms, int TermPrecision>
+          mandelbrot::Calculation Calculation, int Terms, int TermPrecision1,
+          int TermPrecision2>
 class PerturbatedMandelbrotCalculation : public fractals::PointwiseCalculation {
 public:
   using SmallReal = typename LowPrecisionType::value_type;
@@ -124,7 +125,8 @@ private:
   // The calculated reference orbit, together with Taylor series terms for the
   // epsilon/dz for each iteration.
   mandelbrot::orbit_manager<LowPrecisionType, DeltaType, TermType, Terms,
-                            TermPrecision, reference_orbit_type>
+                            TermPrecision1, TermPrecision2,
+                            reference_orbit_type>
       orbits;
 };
 
@@ -136,17 +138,18 @@ void fractals::PointwiseCalculation::initialize(const view_coords &c, int x,
                                                 int y,
                                                 std::atomic<bool> &stop) {}
 
-template <int N, int P, int T = 4, int Tolerance = 100,
-          typename DeltaType = std::complex<double>>
+template <int N, int P, int T = 4, int TermPrecision1 = 25,
+          int TermPrecision2 = 100, typename DeltaType = std::complex<double>>
 using MB = PerturbatedMandelbrotCalculation<
     std::complex<double>, DeltaType,
     std::complex<fractals::high_exponent_real<double>>,
     std::complex<fractals::high_precision_real<P>>,
-    mandelbrot::mandelbrot_calculation<N>, T, Tolerance>;
+    mandelbrot::mandelbrot_calculation<N>, T, TermPrecision1, TermPrecision2>;
 
-template <int N, int P, int T = 4, int Tolerance = 100>
-using MB_high =
-    MB<N, P, T, Tolerance, std::complex<fractals::high_exponent_real<double>>>;
+template <int N, int P, int T = 4, int TermPrecision1 = 25,
+          int TermPrecision2 = 100>
+using MB_high = MB<N, P, T, TermPrecision1, TermPrecision2,
+                   std::complex<fractals::high_exponent_real<double>>>;
 
 // TODO: a more elegant way to choose parameters
 

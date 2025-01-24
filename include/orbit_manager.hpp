@@ -17,13 +17,13 @@ A "better" reference orbit is closer to the point being computed, so is likely
 to be able to skip more iterations.
 */
 template <Complex OrbitType, Complex DeltaType, Complex TermType,
-          unsigned long Terms, int TermPrecision,
+          unsigned long Terms, int TermPrecision1, int TermPrecision2,
           IteratedOrbit HighPrecisionReferenceOrbit>
 class orbit_manager {
 
-  using cluster_type =
-      taylor_series_cluster<OrbitType, DeltaType, TermType,
-                            HighPrecisionReferenceOrbit, Terms, TermPrecision>;
+  using cluster_type = taylor_series_cluster<OrbitType, DeltaType, TermType,
+                                             HighPrecisionReferenceOrbit, Terms,
+                                             TermPrecision1, TermPrecision2>;
 
   using primary_orbit_type = typename cluster_type::primary_orbit_type;
 

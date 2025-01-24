@@ -101,7 +101,7 @@ int main() {
       std::complex<double>, std::complex<double>, std::complex<double>,
       mandelbrot::basic_orbit<std::complex<R>,
                               mandelbrot::mandelbrot_calculation<2>>,
-      3, 100>
+      3, 20, 100>
       taylor_series{reference_orbit, 100, stop};
 
   // Construct a relative orbit to the reference orbit.
@@ -135,7 +135,7 @@ int main() {
       std::complex<double>, std::complex<double>, std::complex<double>,
       mandelbrot::basic_orbit<std::complex<R>,
                               mandelbrot::mandelbrot_calculation<2>>,
-      3, 100>
+      3, 20, 100>
       cluster1{reference_orbit, 100, stop};
 
   // The constructor has evaluated the reference orbit to the
