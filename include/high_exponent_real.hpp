@@ -35,12 +35,12 @@ public:
       e = e0 + e1;
     }
   }
-  high_exponent_real(int i) : high_exponent_real(i, 0) {}
+  // explicit high_exponent_real(int i) : high_exponent_real(i, 0) {}
 
   Double d;
   Exponent e;
 
-  double to_double() const { return std::ldexp(d, e); }
+  Double to_double() const { return std::ldexp(d, e); }
 
   high_exponent_real &operator+=(high_exponent_real a) {
     return *this = (*this + a);
@@ -78,10 +78,10 @@ high_exponent_real<D, E> operator+(high_exponent_real<D, E> a,
   // Need to figure out a sensible exponent
   if (a.e > b.e) {
     // Convert b to a's exponent
-    return {a.d + b.d * std::exp2(b.e - a.e), a.e, skip_normalization()};
+    return {a.d + b.d * (D)std::exp2(b.e - a.e), a.e, skip_normalization()};
   } else if (a.e < b.e) {
     // Convert a to b's exponent
-    return {a.d * std::exp2(a.e - b.e) + b.d, b.e, skip_normalization()};
+    return {a.d * (D)std::exp2(a.e - b.e) + b.d, b.e, skip_normalization()};
   } else {
     return {a.d + b.d, a.e, skip_normalization()};
   }
@@ -162,14 +162,14 @@ bool operator<=(high_exponent_real<D, E> a, high_exponent_real<D, E> b) {
   return cmp(a, b) <= 0;
 }
 
-template <typename D, typename E>
-struct convert_to<double, high_exponent_real<D, E>> {
-  static double get(const high_exponent_real<D, E> &x) { return x.to_double(); }
+template <std::floating_point D1, std::floating_point D2, typename E>
+struct convert_to<D1, high_exponent_real<D2, E>> {
+  static D1 get(const high_exponent_real<D2, E> &x) { return x.to_double(); }
 };
 
-template <typename D, typename E>
-struct convert_to<high_exponent_real<D, E>, double> {
-  static high_exponent_real<D, E> get(double x) { return {x}; }
+template <std::floating_point D1, std::floating_point D2, typename E>
+struct convert_to<high_exponent_real<D1, E>, D2> {
+  static high_exponent_real<D1, E> get(D2 x) { return {(D1)x}; }
 };
 
 template <typename D, typename E>
@@ -184,12 +184,12 @@ struct convert_to<high_precision_real<N>, high_exponent_real<D, E>> {
   }
 };
 
-template <int N, typename D, typename E>
+template <int N, std::floating_point D, typename E>
 struct convert_to<high_exponent_real<D, E>, high_precision_real<N>> {
   static high_exponent_real<D, E> get(const high_precision_real<N> &x) {
     if (x.fraction[0] == 0) {
       int e = count_fractional_zeros(x);
-      return {(x << e).to_double(), -e};
+      return {(D)(x << e).to_double(), -e};
     } else {
       return x.to_double();
     }

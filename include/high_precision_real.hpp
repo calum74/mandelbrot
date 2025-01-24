@@ -135,12 +135,20 @@ template <int M> struct convert_to<double, high_precision_real<M>> {
   static double get(const high_precision_real<M> &x) { return x.to_double(); }
 };
 
+template <int M> struct convert_to<float, high_precision_real<M>> {
+  static float get(const high_precision_real<M> &x) { return x.to_double(); }
+};
+
 template <int N> struct convert_to<high_precision_real<N>, int> {
   static high_precision_real<N> get(int x) { return {x}; }
 };
 
 template <int M> struct convert_to<high_precision_real<M>, double> {
   static high_precision_real<M> get(double x) { return {x}; }
+};
+
+template <int M> struct convert_to<high_precision_real<M>, float> {
+  static high_precision_real<M> get(float x) { return {x}; }
 };
 
 template <int N>

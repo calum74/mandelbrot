@@ -160,10 +160,23 @@ using MB_high = MB<N, P, T, TermPrecision1, TermPrecision2,
 // For the highest precition, we need to increase the precision on the epsilon
 // as well
 const fractals::PointwiseFractal &mandelbrot_fractal =
-    fractals::make_fractal<MB<2, 3, 4, 100>, MB<2, 6>, MB<2, 10>,
-                           MB_high<2, 18>, MB_high<2, 32>, MB_high<2, 40>,
-                           MB_high<2, 64>>("Mandelbrot (power 2)",
-                                           "mandelbrot");
+    fractals::make_fractal<MB<2, 3>, MB<2, 6>, MB<2, 10>, MB_high<2, 18>,
+                           MB_high<2, 32>, MB_high<2, 40>, MB_high<2, 64>>(
+        "Mandelbrot (power 2)", "mandelbrot");
+
+template <int N, int P, int T = 2, int TermPrecision1 = 1,
+          int TermPrecision2 = 100>
+using FastMB = PerturbatedMandelbrotCalculation<
+    std::complex<double>, std::complex<double>,
+    std::complex<fractals::high_exponent_real<double>>,
+    std::complex<fractals::high_precision_real<P>>,
+    mandelbrot::mandelbrot_calculation<N>, T, TermPrecision1, TermPrecision2>;
+
+const fractals::PointwiseFractal &mandelbrot_imprecise =
+    fractals::make_fractal<FastMB<2, 3>, FastMB<2, 6>, FastMB<2, 10, 3>,
+                           FastMB<2, 18, 3>, MB_high<2, 32, 3>,
+                           MB_high<2, 40, 3>, MB_high<2, 64, 3>>(
+        "Mandelbrot set (faster/imprecise)", "mandelbrot");
 
 // Cubic Mandelbrot has no glitches with 3 Taylor series terms, but
 // glitches quite badly with 4 terms. On the other hand, Square mandelbrot works
@@ -188,3 +201,5 @@ const fractals::PointwiseFractal &mandelbrot6_fractal =
 const fractals::PointwiseFractal &mandelbrot7_fractal =
     fractals::make_fractal<MB<7, 4>, MB<7, 6>, MB<7, 10>, MB<7, 18>>(
         "Mandelflake (power 7)");
+
+static_assert(sizeof(long) == 8);
