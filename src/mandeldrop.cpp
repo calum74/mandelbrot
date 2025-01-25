@@ -1,6 +1,7 @@
 #include "fractal.hpp"
 #include "high_exponent_real.hpp"
 #include "mandelbrot.hpp"
+#include "mandelbrot_adaptor.hpp"
 #include "orbit.hpp"
 
 class SimpleMandeldrop : public fractals::PointwiseCalculation {
@@ -46,8 +47,9 @@ private:
 const fractals::PointwiseFractal &naiveMandeldrop =
     fractals::make_fractal<SimpleMandeldrop>("Mandeldrop (low precision)");
 
-template <mandelbrot::Complex LowPrecisionType, mandelbrot::Complex DeltaType,
-          mandelbrot::Complex TermType, mandelbrot::Complex HighPrecisionType,
+template <typename Adaptor, mandelbrot::Complex LowPrecisionType,
+          mandelbrot::Complex DeltaType, mandelbrot::Complex TermType,
+          mandelbrot::Complex HighPrecisionType,
           mandelbrot::Calculation Calculation, int Terms, int TermPrecision1,
           int TermPrecision2>
 class PerturbatedMandeldropCalculation : public fractals::PointwiseCalculation {
@@ -80,18 +82,6 @@ public:
   using DeltaReal = typename DeltaType::value_type;
   using HighPrecisionReal = typename HighPrecisionType::value_type;
 
-  static HighPrecisionType map(const HighPrecisionType &z) {
-    auto n = inverse(fractals::norm(z));
-    return {-imag(z) * n, -real(z) * n};
-  }
-
-  DeltaType map_delta(const DeltaType &d) const {
-    // Note that we can calculate deltas using low precision (`double`) complex
-    // numbers. We just need to rearrange our calculation of the delta to avoid
-    // loss of precision.
-    return DeltaType{0, 1} * d / (c0 * (c0 + d));
-  }
-
   void initialize(const view_coords &c, int w, int h,
                   std::atomic<bool> &stop) override {
     max_iterations = c.max_iterations;
@@ -101,10 +91,11 @@ public:
     c0 = {convert<SmallReal>(coords.x0) + (coords.dx * ref_x),
           convert<SmallReal>(coords.y0) + (coords.dy * ref_y)};
     reference_orbit = {
-        mandelbrot::make_basic_orbit<Calculation>(map(HighPrecisionType{
-            coords.x0 + fractals::convert<HighPrecisionReal>(coords.dx * ref_x),
-            coords.y0 +
-                fractals::convert<HighPrecisionReal>(coords.dy * ref_y)})),
+        mandelbrot::make_basic_orbit<Calculation>(Adaptor::map(
+            HighPrecisionType{coords.x0 + fractals::convert<HighPrecisionReal>(
+                                              coords.dx * ref_x),
+                              coords.y0 + fractals::convert<HighPrecisionReal>(
+                                              coords.dy * ref_y)})),
         max_iterations, stop};
   }
 
@@ -126,8 +117,8 @@ public:
   // Look up the actual coordinates (or in this case, the delta from the center
   // (ref_x, ref_y)) from the plane.
   double calculate(int x, int y) const override {
-    DeltaType delta =
-        map_delta({coords.dx * (x - ref_x), coords.dy * (y - ref_y)});
+    DeltaType delta = Adaptor::map_delta(
+        DeltaType{coords.dx * (x - ref_x), coords.dy * (y - ref_y)}, c0);
 
     int skipped = iterations_skipped;
     // The function `make_relative_orbit` will skip some iterations,
@@ -175,11 +166,11 @@ private:
 template <int N, int P, int Terms = 4, int TP1 = 20, int TP2 = 100,
           typename DeltaType = std::complex<double>>
 using MD = PerturbatedMandeldropCalculation<
-    std::complex<double>, DeltaType,
+    mandelbrot::mandeldrop_adaptor, std::complex<double>, DeltaType,
     std::complex<fractals::high_exponent_real<double>>,
     std::complex<fractals::high_precision_real<P>>,
     mandelbrot::mandelbrot_calculation<2>, Terms, TP1, TP2>;
 
 const fractals::PointwiseFractal &mandeldrop_fractal =
-    fractals::make_fractal<SimpleMandeldrop, MD<2, 4>, MD<2, 6>, MD<2, 10>,
+    fractals::make_fractal<MD<2, 4>, MD<2, 6>, MD<2, 10>,
                            MD<2, 16> /*, MB<20> */>("Mandeldrop");
