@@ -202,5 +202,3 @@ const fractals::PointwiseFractal &mandelbrot6_fractal =
 const fractals::PointwiseFractal &mandelbrot7_fractal =
     fractals::make_fractal<MB<7, 4>, MB<7, 6>, MB<7, 10>, MB<7, 18>>(
         "Mandelflake (power 7)");
-
-static_assert(sizeof(long) == 8);
