@@ -10,7 +10,7 @@ public:
   using Complex = std::complex<Real>;
 
   static bool valid_for(const view_coords &c) {
-    return c.r <= 3 && convert<double>(c.r) > 1e-2; // 10;
+    return c.r <= 4 && convert<double>(c.r) > 1e-2; // 10;
   }
 
   static view_coords initial_coords() { return {0, -1, 3, 500}; }
@@ -104,7 +104,7 @@ public:
   // The call to `valid_precision` checks the size of the radius relative to
   // the size of a BigReal to make sure we have sufficient accuracy.
   static bool valid_for(const view_coords &c) {
-    return c.r < 2 && valid_precision_for_inverse(HighPrecisionReal{c.r});
+    return c.r <= 3 && valid_precision_for_inverse(HighPrecisionReal{c.r});
   }
 
   // The initial coordinates to view the Mandelbrot set.
