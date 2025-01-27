@@ -74,10 +74,21 @@ public:
 
     try_stop_orbits_thread();
 
-    if (!primary_series || fractals::norm(primary_series->delta - delta) >
-                               fractals::norm(maxDelta)) {
+    // Determine whether the previous reference orbit is suitable as a temporary
+    // reference orbit. Heuristically, the orbit
+    // - must be within the current view
+    // - has escaped, or
+    // - has not escaped, and is sufficiently long
+    if (!primary_series ||
+        fractals::norm(primary_series->delta - delta) >
+            fractals::norm(maxDelta) ||
+        (!escaped(primary_series->orbit[primary_series->orbit.size() - 1]) &&
+         primary_series->orbit.size() < max_iterations)) {
+      // Unfortunately, recycling the primary orbit isn't always feasible if
       // std::cout << "Info: synchronously recalculating primary orbit\n";
-      initialize(init, max_iterations, stop);
+      // Actually calculate the primary orbit extra long to increase probability
+      // of reuse
+      initialize(init, 2 * max_iterations, stop);
       if (stop)
         return;
       delta = DeltaType{0};
@@ -137,7 +148,8 @@ private:
                  std::atomic<bool> &stop) {
 
     // 1) Compute new primary reference orbit
-    primary_orbit_type new_primary(init, max_iterations, stop);
+    // Make it extra long (*2) so we can recycle it in the next view
+    primary_orbit_type new_primary(init, max_iterations * 2, stop);
 
     if (stop)
       return;
