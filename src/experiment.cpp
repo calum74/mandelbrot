@@ -1,10 +1,7 @@
 
-#include "fractal.hpp"
 #include "high_exponent_real.hpp"
-#include "magic_algorithm.hpp"
 #include "mandelbrot.hpp"
-#include "orbit.hpp"
-#include "reference_orbit_manager.hpp"
+#include "orbit_tree.hpp"
 
 // Calculate the Mandelbrot set using perturbations and
 // Taylor series to skip iterations. The algorithms are implemented in
@@ -20,36 +17,14 @@ public:
   using DeltaReal = typename DeltaType::value_type;
   using HighPrecisionReal = typename HighPrecisionType::value_type;
 
-  // Initialize the fractal. We calculate the high precision reference orbit
-  // at the center of the view. Because this calculation can be time-consuming,
-  // we provide a "stop" flag which is used to exit the calculation early if the
-  // view changes, to keep the UI responsive.
-  ExperimentalMandelbrotCalculation(const view_coords &c, int w, int h,
-                                    std::atomic<bool> &stop)
-      : coords(c, w, h) {
+  void initialize(const view_coords &c, int w, int h,
+                  std::atomic<bool> &stop) override {
+    coords = {c, w, h};
     auto diagonal_size = DeltaType(coords.dx * fractals::convert<DeltaReal>(w),
                                    coords.dy * fractals::convert<DeltaReal>(h));
 
     pw = w;
     experiment.resize(w * h);
-
-    mandelbrot::basic_orbit<HighPrecisionType, Calculation> orbit1(
-        HighPrecisionType{
-            coords.x0 + fractals::convert<HighPrecisionReal>(coords.dx) *
-                            fractals::convert<HighPrecisionReal>(w / 2),
-            coords.y0 + fractals::convert<HighPrecisionReal>(coords.dy) *
-                            fractals::convert<HighPrecisionReal>(h / 2)});
-    mandelbrot::stored_orbit<
-        LowPrecisionType,
-        mandelbrot::basic_orbit<HighPrecisionType, Calculation>>
-        stored(orbit1, c.max_iterations, stop);
-
-    mandelbrot::magic<LowPrecisionType, DeltaType, TermType, 4>(
-        c.max_iterations, 0, 0, w, h, diagonal_size, stored, stop,
-        [&](int x, int y, double it, int reference_it) {
-          // std::cout << "(" << x << "," << y << "," << it << ")";
-          experiment.at(x + y * w) = it;
-        });
   }
 
   int pw;
@@ -93,7 +68,7 @@ public:
 
 private:
   // A mapping from points in the image to points in the complex plane.
-  const fractals::plane<HighPrecisionReal, DeltaReal> coords;
+  fractals::plane<HighPrecisionReal, DeltaReal> coords;
 };
 
 template <int N, int P, int T = 4, int Tolerance = 100,
