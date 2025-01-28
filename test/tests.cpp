@@ -5,6 +5,7 @@
 #include "mandelbrot.hpp"
 #include "orbit.hpp"
 #include "orbit_manager.hpp"
+#include "orbit_tree.hpp"
 #include "rendering_sequence.hpp"
 #include "view_parameters.hpp"
 
@@ -283,6 +284,46 @@ int main() {
         mandelbrot::make_basic_orbit<mandelbrot::mandelbrot_calculation<2>>(
             std::complex{0.6, 0.6}),
         100);
+  }
+
+  // Orbit-trees
+  {
+    using ref_type =
+        mandelbrot::basic_orbit<std::complex<double>,
+                                mandelbrot::mandelbrot_calculation<2>>;
+    using stored_type = stored_orbit<std::complex<double>, ref_type>;
+    using tree_type =
+        mandelbrot::orbit_branch<std::complex<double>, std::complex<double>,
+                                 std::complex<double>, stored_type, 4, 10, 10>;
+    ref_type r0({-1.248193761, 0.089224601});
+    std::atomic<bool> stop;
+    stored_type stored(r0, 500, stop);
+
+    std::cout << stored.size() << " iterations in the reference orbit\n";
+
+    std::complex<double> radius = {0.000001275, 0.000001275};
+    auto root = std::make_shared<tree_type>(stored, radius, 500, stop);
+    std::cout << root->size() << " iterations in the root branch\n";
+
+    auto branch1 = std::make_shared<tree_type>(
+        root, mandelbrot::topleft(radius), 500, stop);
+    auto branch2 = std::make_shared<tree_type>(
+        root, mandelbrot::topright(radius), 500, stop);
+    auto branch3 = std::make_shared<tree_type>(
+        root, mandelbrot::bottomleft(radius), 500, stop);
+    auto branch4 = std::make_shared<tree_type>(
+        root, mandelbrot::bottomright(radius), 500, stop);
+    std::cout << branch1->size() << " iterations in branch1\n";
+    std::cout << branch2->size() << " iterations in branch2\n";
+    std::cout << branch3->size() << " iterations in branch3\n";
+    std::cout << branch4->size() << " iterations in branch4\n";
+
+    auto x = branch2->get_escape_iterations({0, 0}, 500);
+    x = branch2->get_escape_iterations(radius * 0.1, 500);
+    std::cout << x << std::endl;
+
+    // orbit_tree<std::complex<double>, std::complex<double>,
+    // std::complex < double >> X;
   }
 
   return 0;
