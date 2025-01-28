@@ -22,13 +22,14 @@ template <Complex DeltaType> DeltaType bottomright(DeltaType radius) {
 template <Complex DeltaType, Complex TermType>
 std::array<TermType, 4> translate_terms(DeltaType delta,
                                         const std::array<TermType, 4> &terms) {
+  auto delta1 = convert<TermType>(delta);
   // See orbit_tree.md for explanation
-  auto delta_squared = fractals::square(delta);
-  auto delta_cubed = delta_squared * delta;
-  return {terms[0] + 2.0 * terms[1] * delta + 3.0 * terms[2] * delta_squared +
-              4.0 * terms[3] * delta_cubed,
-          terms[1] + 3.0 * terms[2] * delta + 6.0 * terms[3] * delta_squared,
-          terms[2] + 4.0 * terms[3] * delta, terms[3]};
+  auto delta2 = fractals::square(delta1);
+  auto delta3 = delta2 * delta1;
+  return {terms[0] + 2.0 * terms[1] * delta1 + 3.0 * terms[2] * delta2 +
+              4.0 * terms[3] * delta3,
+          terms[1] + 3.0 * terms[2] * delta1 + 6.0 * terms[3] * delta2,
+          terms[2] + 4.0 * terms[3] * delta1, terms[3]};
 }
 
 template <Complex LowPrecisionComplex, Complex DeltaType, Complex TermType,
@@ -78,7 +79,7 @@ public:
     // Case 1: The result is higher than the current branch
     if (!escaped(get_z(delta, size()))) {
       // The end hasn't escaped, so we need to keep iterating beyond the final
-      // orbit Return the orbit with a delta
+      // orbit
       auto orbit2 = orbit.split_relative(
           delta, evaluate_epsilon(delta, entries[size()].terms));
       while (orbit2.iteration() <= max_iterations && !escaped(*orbit2)) {
@@ -86,6 +87,7 @@ public:
       }
       return orbit2.iteration();
     }
+    return 20;
 
     // Case 2: The result is lower than the current branch
     if (escaped(get_z(delta, 0))) {
@@ -96,6 +98,7 @@ public:
       }
       return 0;
     }
+    return 10;
 
     // Case 3: The result is within the current branch
     int min = 0;
@@ -147,19 +150,45 @@ void compute_tree(int x0, int y0, int x1, int y1,
                   const std::shared_ptr<Branch> &branch,
                   DeltaType branch_radius, int max_iterations,
                   std::atomic<bool> &stop, Fn fn) {
-  const int min = 32;
+  if (stop)
+    return;
+  const int min = 32; // TODO: 8 probably
 
   if (x1 - x0 < min || y1 - y0 < min) {
+    for (int j = y0; j < y1; ++j)
+      for (int i = x0; i < x1; ++i) {
+        DeltaType delta{
+            (double(i - x0) / double(x1 - x0) - 0.5) * branch_radius.real(),
+            (double(j - y0) / double(y1 - y0) - 0.5) * branch_radius.imag()};
+        fn(i, j, branch->get_escape_iterations(delta, max_iterations));
+      }
+
     // Compute each pixel individually
   } else {
     // Call recursively with 4 more branches
     int mx = (x0 + x1) / 2;
     int my = (y0 + y1) / 2;
+    auto new_radius = branch_radius * 0.5;
 
-    auto branch1 = std::make_shared<Branch>(branch, topleft(branch_radius),
-                                            max_iterations, stop);
-    compute_tree(x0, y0, mx, my, branch1, branch_radius * 0.5, max_iterations,
-                 stop, fn);
+    compute_tree(x0, y0, mx, my,
+                 std::make_shared<Branch>(branch, topleft(branch_radius),
+                                          max_iterations, stop),
+                 new_radius, max_iterations, stop, fn);
+
+    compute_tree(mx, y0, x1, my,
+                 std::make_shared<Branch>(branch, topright(branch_radius),
+                                          max_iterations, stop),
+                 new_radius, max_iterations, stop, fn);
+
+    compute_tree(x0, my, mx, y1,
+                 std::make_shared<Branch>(branch, bottomleft(branch_radius),
+                                          max_iterations, stop),
+                 new_radius, max_iterations, stop, fn);
+
+    compute_tree(mx, my, x1, y1,
+                 std::make_shared<Branch>(branch, bottomright(branch_radius),
+                                          max_iterations, stop),
+                 new_radius, max_iterations, stop, fn);
   }
 }
 } // namespace mandelbrot

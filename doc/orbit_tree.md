@@ -50,8 +50,6 @@ $D'_i = D_i$
 
 $\Epsilon_i = A_i\Delta + B_i\Delta^2 + C_i\Delta^3 + D_i\Delta^4 + O(\Delta^5)$
 
-because $\Epsilon_i$ is the distance to the reference orbit from $z'$ at $\Delta$.
-
 $\epsilon'_i = A'_i\delta' + B'_i\delta'^2 + C'_i\delta'^3 + D'_i\delta'^4 + O(\delta'^5)$ (from Definition 6)
 
 $= \epsilon_i - \Epsilon_i$ (from Definition 4)

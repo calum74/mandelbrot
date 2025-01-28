@@ -20,8 +20,8 @@ public:
   void initialize(const view_coords &c, int w, int h,
                   std::atomic<bool> &stop) override {
     coords = {c, w, h};
-    auto radius = DeltaType(coords.dx * fractals::convert<DeltaReal>(w / 2),
-                            coords.dy * fractals::convert<DeltaReal>(h / 2));
+    auto radius = DeltaType(coords.dx * fractals::convert<DeltaReal>(w * 0.5),
+                            coords.dy * fractals::convert<DeltaReal>(h * 0.5));
 
     pw = w;
     experiment.resize(w * h);
@@ -41,7 +41,10 @@ public:
                                               c.max_iterations, stop);
 
     // Let's compute something!
-    // mandelbrot::compute_tree(0,0,w,h,
+
+    auto fn = [&](int x, int y, int i) { experiment[x + y * w] = i; };
+    mandelbrot::compute_tree(0, 0, w, h, root, radius, c.max_iterations, stop,
+                             fn);
   }
 
   int pw;
