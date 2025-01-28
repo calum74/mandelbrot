@@ -16,7 +16,7 @@ template <Complex DeltaType> DeltaType bottomleft(DeltaType radius) {
 }
 
 template <Complex DeltaType> DeltaType bottomright(DeltaType radius) {
-  return -topleft(radius);
+  return radius * 0.5;
 }
 
 template <Complex DeltaType, Complex TermType>
@@ -117,7 +117,8 @@ private:
 
   void calculate_terms(DeltaType radius, int max_iterations,
                        std::atomic<bool> &stop) {
-    auto radius_norm = fractals::norm(radius);
+    auto radius_norm = fractals::convert<typename TermType::value_type>(
+        fractals::norm(radius));
     do {
       ++orbit;
       entries.push_back(
@@ -126,7 +127,7 @@ private:
         t = normalize(t);
     } while (!stop && base_iteration + entries.size() <= max_iterations &&
              !escaped(*orbit) &&
-             radius_norm < maximum_delta_norm(entries.back().terms));
+             radius_norm < maximum_delta_norm<P1, P2>(entries.back().terms));
   }
 
   int base_iteration;
@@ -141,6 +142,24 @@ private:
   std::vector<entry> entries;
 };
 
-// template<typename Fn>
-// void compute_tree(int x0, int y0,
+template <typename Branch, Complex DeltaType, typename Fn>
+void compute_tree(int x0, int y0, int x1, int y1,
+                  const std::shared_ptr<Branch> &branch,
+                  DeltaType branch_radius, int max_iterations,
+                  std::atomic<bool> &stop, Fn fn) {
+  const int min = 32;
+
+  if (x1 - x0 < min || y1 - y0 < min) {
+    // Compute each pixel individually
+  } else {
+    // Call recursively with 4 more branches
+    int mx = (x0 + x1) / 2;
+    int my = (y0 + y1) / 2;
+
+    auto branch1 = std::make_shared<Branch>(branch, topleft(branch_radius),
+                                            max_iterations, stop);
+    compute_tree(x0, y0, mx, my, branch1, branch_radius * 0.5, max_iterations,
+                 stop, fn);
+  }
+}
 } // namespace mandelbrot

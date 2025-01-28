@@ -20,13 +20,28 @@ public:
   void initialize(const view_coords &c, int w, int h,
                   std::atomic<bool> &stop) override {
     coords = {c, w, h};
-    auto diagonal_size = DeltaType(coords.dx * fractals::convert<DeltaReal>(w),
-                                   coords.dy * fractals::convert<DeltaReal>(h));
+    auto radius = DeltaType(coords.dx * fractals::convert<DeltaReal>(w / 2),
+                            coords.dy * fractals::convert<DeltaReal>(h / 2));
 
     pw = w;
     experiment.resize(w * h);
 
+    using reference_type =
+        mandelbrot::basic_orbit<HighPrecisionType, Calculation>;
+    using stored_type =
+        mandelbrot::stored_orbit<LowPrecisionType, reference_type>;
+    using branch_type =
+        mandelbrot::orbit_branch<LowPrecisionType, DeltaType, TermType,
+                                 stored_type, 4, 10, 1000>;
+
+    reference_type reference_orbit(HighPrecisionType{c.x, c.y});
+    stored_type stored_orbit(reference_orbit, c.max_iterations, stop);
+
+    auto root = std::make_shared<branch_type>(stored_orbit, radius,
+                                              c.max_iterations, stop);
+
     // Let's compute something!
+    // mandelbrot::compute_tree(0,0,w,h,
   }
 
   int pw;
