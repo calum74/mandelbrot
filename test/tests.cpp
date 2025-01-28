@@ -16,6 +16,27 @@
 using namespace fractals;
 using namespace mandelbrot;
 
+template <typename Tree>
+void dump_tree(std::shared_ptr<Tree> tree, std::complex<double> radius,
+               int depth, int max_depth) {
+  if (depth < max_depth) {
+    std::cout << std::string(depth, ' ') << tree->size() << std::endl;
+    std::atomic<bool> stop;
+    dump_tree(
+        std::make_shared<Tree>(tree, mandelbrot::topleft(radius), 500, stop),
+        radius * 0.5, depth + 1, max_depth);
+    dump_tree(
+        std::make_shared<Tree>(tree, mandelbrot::topright(radius), 500, stop),
+        radius * 0.5, depth + 1, max_depth);
+    dump_tree(
+        std::make_shared<Tree>(tree, mandelbrot::bottomleft(radius), 500, stop),
+        radius * 0.5, depth + 1, max_depth);
+    dump_tree(std::make_shared<Tree>(tree, mandelbrot::bottomright(radius), 500,
+                                     stop),
+              radius * 0.5, depth + 1, max_depth);
+  }
+}
+
 template <typename Orbit1, typename Orbit2>
 void compare_orbits(Orbit1 o1, Orbit2 o2, int n) {
   for (int i = 0; i < n; ++i) {
@@ -305,22 +326,7 @@ int main() {
     auto root = std::make_shared<tree_type>(stored, radius, 500, stop);
     std::cout << root->size() << " iterations in the root branch\n";
 
-    auto branch1 = std::make_shared<tree_type>(
-        root, mandelbrot::topleft(radius), 500, stop);
-    auto branch2 = std::make_shared<tree_type>(
-        root, mandelbrot::topright(radius), 500, stop);
-    auto branch3 = std::make_shared<tree_type>(
-        root, mandelbrot::bottomleft(radius), 500, stop);
-    auto branch4 = std::make_shared<tree_type>(
-        root, mandelbrot::bottomright(radius), 500, stop);
-    std::cout << branch1->size() << " iterations in branch1\n";
-    std::cout << branch2->size() << " iterations in branch2\n";
-    std::cout << branch3->size() << " iterations in branch3\n";
-    std::cout << branch4->size() << " iterations in branch4\n";
-
-    auto x = branch2->get_escape_iterations({0, 0}, 500);
-    x = branch2->get_escape_iterations(radius * 0.1, 500);
-    std::cout << x << std::endl;
+    dump_tree(root, radius, 0, 3);
 
     // orbit_tree<std::complex<double>, std::complex<double>,
     // std::complex < double >> X;

@@ -25,6 +25,8 @@ public:
 
     pw = w;
     experiment.resize(w * h);
+
+    // Let's compute something!
   }
 
   int pw;

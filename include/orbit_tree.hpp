@@ -76,10 +76,11 @@ public:
   int get_escape_iterations(DeltaType delta, int max_iterations) const {
 
     // Case 1: The result is higher than the current branch
-    if (!escaped(get(delta, size()))) {
+    if (!escaped(get_z(delta, size()))) {
       // The end hasn't escaped, so we need to keep iterating beyond the final
       // orbit Return the orbit with a delta
-      auto orbit2 = orbit.split_relative(delta, get(delta, size()));
+      auto orbit2 = orbit.split_relative(
+          delta, evaluate_epsilon(delta, entries[size()].terms));
       while (orbit2.iteration() <= max_iterations && !escaped(*orbit2)) {
         ++orbit2;
       }
@@ -87,7 +88,7 @@ public:
     }
 
     // Case 2: The result is lower than the current branch
-    if (escaped(get(delta, 0))) {
+    if (escaped(get_z(delta, 0))) {
       // Look in the parent
       if (parent) {
         return parent->get_escape_iterations(delta - delta_from_parent,
@@ -101,7 +102,7 @@ public:
     int max = entries.size() - 1;
     while (min < max) {
       int mid = (min + max) / 2;
-      if (escaped(get(delta, mid)))
+      if (escaped(get_z(delta, mid)))
         max = mid;
       else
         mid = mid;
@@ -110,8 +111,8 @@ public:
   }
 
 private:
-  LowPrecisionComplex get(DeltaType delta, int i) const {
-    return evaluate_epsilon(delta, entries[i].terms);
+  LowPrecisionComplex get_z(DeltaType delta, int i) const {
+    return entries[i].z + evaluate_epsilon(delta, entries[i].terms);
   }
 
   void calculate_terms(DeltaType radius, int max_iterations,
@@ -121,6 +122,8 @@ private:
       ++orbit;
       entries.push_back(
           {*orbit, calculation::delta_terms(*orbit, entries.back().terms)});
+      for (auto &t : entries.back().terms)
+        t = normalize(t);
     } while (!stop && base_iteration + entries.size() <= max_iterations &&
              !escaped(*orbit) &&
              radius_norm < maximum_delta_norm(entries.back().terms));
@@ -137,4 +140,7 @@ private:
 
   std::vector<entry> entries;
 };
+
+// template<typename Fn>
+// void compute_tree(int x0, int y0,
 } // namespace mandelbrot
