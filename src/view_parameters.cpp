@@ -44,3 +44,7 @@ std::istream &fractals::operator>>(std::istream &is,
   }
   return is;
 }
+
+bool fractals::try_import(std::istream &is, fractals::view_parameters &vp) {
+  return false;
+}

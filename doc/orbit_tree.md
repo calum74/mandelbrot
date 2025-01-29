@@ -63,9 +63,9 @@ $= A_i(\delta'+\Delta) + B_i(\delta'+\Delta)^2 + C_i(\delta'+\Delta)^3 + D_i(\de
 
 $= A_i\delta'+A_i\Delta + B_i(\delta'^2 + 2\delta'\Delta + \Delta^2) + C_i(\delta'^3+3\delta^2\Delta + 3\delta'\Delta^2 + \Delta^3) + D_i(\delta'^4+4\delta'\Delta^3 + 6\delta'^2\Delta^2 + 4\delta'\Delta^3 + \Delta^4) + O((\delta'+\Delta)^5) - (A_i\Delta + B_i\Delta^2 + C_i\Delta^3 + D_i\Delta^4 + O(\Delta^5))$
 
-$= A_i\delta'+A_i\Delta + B_i\delta'^2 + 2B_i\delta\Delta + B_i\Delta^2 + C_i\delta^3+3\delta^2\Delta + 3C_i\delta'\Delta^2 + C_i\Delta^3 + D_i\delta'^4+4D_i\delta'\Delta^3 + 6D_i\delta'^2\Delta^2 + 4D_i\delta'\Delta^3 + D_i\Delta^4 + O((\delta'+\Delta)^5) - A_i\Delta - B_i\Delta^2 - C_i\Delta^3 - D_i\Delta^4 - O(\Delta^5)$
+$= A_i\delta'+A_i\Delta + B_i\delta'^2 + 2B_i\delta\Delta + B_i\Delta^2 + C_i\delta^3 + 3C_i\delta^2\Delta + 3C_i\delta'\Delta^2 + C_i\Delta^3 + D_i\delta'^4+4D_i\delta'\Delta^3 + 6D_i\delta'^2\Delta^2 + 4D_i\delta'\Delta^3 + D_i\Delta^4 + O((\delta'+\Delta)^5) - A_i\Delta - B_i\Delta^2 - C_i\Delta^3 - D_i\Delta^4 - O(\Delta^5)$
 
-$= A_i\delta'+A_i\Delta + B_i\delta'^2 + 2B_i\delta'\Delta + B_i\Delta^2 + C_i\delta^3+3\delta'^2\Delta + 3C_i\delta\Delta^2 + C_i\Delta^3 + D_i\delta'^4+4D_i\delta'\Delta^3 + 6D_i\delta'^2\Delta^2 + 4D_i\delta'\Delta^3 + D_i\Delta^4 + O((\delta'+\Delta)^5) - A_i\Delta - B_i\Delta^2 - C_i\Delta^3 - D_i\Delta^4 - O(\Delta^5)$
+$= A_i\delta'+A_i\Delta + B_i\delta'^2 + 2B_i\delta'\Delta + B_i\Delta^2 + C_i\delta^3 + 3C_i\delta'^2\Delta + 3C_i\delta\Delta^2 + C_i\Delta^3 + D_i\delta'^4+4D_i\delta'\Delta^3 + 6D_i\delta'^2\Delta^2 + 4D_i\delta'\Delta^3 + D_i\Delta^4 + O((\delta'+\Delta)^5) - A_i\Delta - B_i\Delta^2 - C_i\Delta^3 - D_i\Delta^4 - O(\Delta^5)$
 
 $= (A_i+ 2B_i\Delta + 3C_i\Delta^2+ 4D_i\Delta^3)\delta' + (B_i + 3C_i\Delta+ 6D_i\Delta^2)\delta'^2  + (C_i +4D_i\Delta)\delta'^3 + D_i\delta'^4 + O((\delta'+\Delta)^5)$
 

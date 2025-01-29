@@ -13,4 +13,6 @@ struct view_parameters {
 
 std::istream &operator>>(std::istream &is, view_parameters &params);
 std::ostream &operator<<(std::ostream &is, const view_parameters &params);
+
+bool try_import(std::istream &is, view_parameters &params);
 } // namespace fractals

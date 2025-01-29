@@ -38,5 +38,4 @@ struct view_coords {
 
 std::ostream &operator<<(std::ostream &os, const view_coords &coords);
 std::istream &operator>>(std::istream &is, view_coords &coords);
-
 } // namespace fractals

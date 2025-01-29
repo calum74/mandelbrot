@@ -526,6 +526,22 @@ std::istream &operator>>(std::istream &is, high_precision_real<N> &n) {
       mult = mult * tenth;
     }
   } while (std::isdigit(ch));
+
+  if (ch == 'e') {
+    int power = 0;
+    is >> ch >> power;
+
+    // This is super-inefficient
+    while (power < 0) {
+      n = n * tenth;
+      power++;
+    }
+    while (power > 0) {
+      n = n * 10;
+      power--;
+    }
+  }
+
   n.negative = negative; // Set last because we're adding in the loop
   return is;
 }

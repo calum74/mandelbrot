@@ -32,7 +32,7 @@ public:
         mandelbrot::stored_orbit<LowPrecisionType, reference_type>;
     using branch_type =
         mandelbrot::orbit_branch<LowPrecisionType, DeltaType, TermType,
-                                 stored_type, 4, 10, 1000>;
+                                 stored_type, 4, 100, 100000>;
 
     reference_type reference_orbit(HighPrecisionType{c.x, c.y});
     stored_type stored_orbit(reference_orbit, c.max_iterations, stop);
@@ -101,5 +101,5 @@ using MBX = ExperimentalMandelbrotCalculation<
 
 // Nothing here now
 const fractals::PointwiseFractal &experimental_fractal =
-    fractals::make_fractal<MBX<2, 3, 4, 1000>, MBX<2, 6>, MBX<2, 10>,
-                           MBX<2, 18>>("Experiment", "mandelbrot");
+    fractals::make_fractal<MBX<2, 3>, MBX<2, 6>, MBX<2, 10>, MBX<2, 18>>(
+        "Experiment", "mandelbrot");

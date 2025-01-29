@@ -108,6 +108,36 @@ std::ostream &operator<<(std::ostream &os, high_exponent_real<D, E> a) {
 }
 
 template <typename D, typename E>
+std::istream &operator>>(std::istream &is, high_exponent_real<D, E> &a) {
+  // Read up to the 'e'.
+  bool negative;
+  bool hexadecimal;
+
+  // Read sign
+  char p = is.peek();
+  if (p == '-') {
+    negative = true;
+    is.get(p);
+  } else {
+    negative = false;
+  }
+
+  if (p == '0') {
+    is.get(p);
+    p = is.peek();
+    if (p == 'x')
+      hexadecimal = true;
+    else
+      hexadecimal = false;
+  } else
+    hexadecimal = false;
+
+  // Keep reading until the '.'
+
+  return is;
+}
+
+template <typename D, typename E>
 int cmp(high_exponent_real<D, E> a, high_exponent_real<D, E> b) {
   a = normalize(a);
   b = normalize(b);

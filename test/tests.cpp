@@ -351,7 +351,8 @@ int main() {
     using stored_type = stored_orbit<std::complex<double>, ref_type>;
     using tree_type =
         mandelbrot::orbit_branch<std::complex<double>, std::complex<double>,
-                                 std::complex<double>, stored_type, 4, 10, 100>;
+                                 std::complex<double>, stored_type, 4, 100,
+                                 10000>;
     ref_type r0({-1.248193761, 0.089224601});
     std::atomic<bool> stop;
     stored_type stored(r0, 500, stop);
