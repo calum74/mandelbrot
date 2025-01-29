@@ -10,9 +10,12 @@ Cite as https://github.com/calum74/mandelbrot
 
 The main problem with the Taylor series expansion is that if the reference orbit is too far away from the point being calculated, then the terms of the Taylor series diverge. This is particularly a problem for very complex images that have a very large range of iterations.
 
-The orbit-tree algorithm makes it efficient to create reference orbits arbitarily close to any point in the image, which means that the Taylor series is always available.
+The orbit-tree algorithm makes it efficient to create reference orbits arbitarily close to any point in the image, which means that the Taylor series is always optimal. 
 
-In order to create new reference orbits, we can *branch* a reference orbit to create nearby orbits, without recomputing all of the terms in each orbit. This means that we can carry on iterating one reference orbit, and as soon as it begins to diverge, we can branch the orbit into 4 parts. We continue this branching process until we have nearby reference orbits for all pixels in the image. Surprisingly, branching is an O(1) operation, independent of the length of the orbit.
+The innovation is that we can branch a reference orbit as soon as it loses precision for its region. This creates 4 sub-orbits of higher precision, and we carry on branching reference orbits until we reach a minimum size.
+The contribution is that we can branch not just the relative orbit, but also the terms in the Taylor series, in O(1) time without needing to recompute the entire series.
+
+Once constructed, the orbit-tree ensures that all Taylor series are valid for all points in the region.
 
 ## Mathematical foundations
 
@@ -36,7 +39,7 @@ $\epsilon_i$ represents the distance of orbit $z''$ from the reference orbit $z$
 
 These are the familiar Taylor series expansions for $\epsilon_i, \epsilon'_i$ which we can use to skip iterations when computing the escape iteration in a Mandelbrot set.
 
-**Theorem 1:**
+**Theorem 1:** (Translating a Taylor series by $\Delta$)
 
 $A'_i = A_i + 2B_i\Delta + 3C_i\Delta^2 + 4D_i\Delta^3$
 
@@ -70,7 +73,17 @@ Equating terms in $\delta'$, $\delta'^2$, $\delta'^3$ and $\delta'^4$, we get Th
 
 What this means is that we can translate any Taylor series expansion of $\epsilon_i$ to a new orbit without recomputing the entire series. If we have $A_i,B_i,C_i,D_i$ from one reference orbit, we can compute $A'_i,B'_i,C'_i,D'_i$ for a second reference orbit at a distance $\Delta$.
 
-We can generalise Theorem 1 to any power of $\delta$, and the terms are from Pascal's triangle.
+We can generalise Theorem 1 to any power of $\delta$, and the terms are from Pascal's triangle. (Exercise for the reader.)
+
+**Theorem 2:** (Translating a relative orbit by $\Delta$ and $\Epsilon_i$)
+
+For a relative orbit $z' = z + \delta, z'_i = z_i + \epsilon_i$, an orbit $z'' = z'+\Delta, z''_i = z'_i+\Epsilon_i$, then $z'' = z+(\delta+\Delta), z''_i = z_i + (\epsilon_i + \Epsilon_i)$.
+
+Proof: $z'' = z'+\Delta = (z + \delta)+\Delta = z+(\delta+\Delta)$. $z''_i = z'_i+\Epsilon_i = (z_i + \epsilon_i) + \Epsilon_i = z_i + (\epsilon_i + \Epsilon_i)$. $\square$
+
+This just says that relative orbits can be easily translated simply by adding $\Delta$ and $\Epsilon_i$.
+
+Theorem 1 and Theorem 2 together allow us to translate a Taylor series reference orbit by $\Delta$ and $\Epsilon_i$, assuming we can accurately calculate $\Epsilon_i$, which we do by checking that the terms in the Taylor series don't diverge too much.
 
 ## Algorithm outline
 

@@ -296,9 +296,9 @@ public:
 private:
   int n, j;
   delta_type delta;
-  epsilon_type epsilon;
 
 public:
+  epsilon_type epsilon; // !! Bad encapsulation
   const ReferenceOrbit *reference = 0;
 };
 

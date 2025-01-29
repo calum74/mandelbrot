@@ -39,6 +39,8 @@ public:
   using orbit_type =
       perturbation_orbit<LowPrecisionComplex, DeltaType, ReferenceOrbit>;
   using calculation = typename ReferenceOrbit::calculation;
+  using term_type = TermType;
+  static constexpr int term_count = Terms;
 
   orbit_type orbit;
 
@@ -50,7 +52,9 @@ public:
 
     base_iteration = 0;
     delta_from_reference_orbit = {0, 0};
-    entries.push_back(entry()); // First iteration is zero
+    std::array<TermType, Terms> terms;
+    terms[0] = 1;
+    entries.push_back(entry({{0}, terms})); // First iteration is zero
     orbit = orbit_type(reference_orbit, {});
     calculate_terms(radius, max_iterations, stop);
   }
@@ -67,8 +71,13 @@ public:
 
     auto epsilon =
         evaluate_epsilon(delta_from_parent, parent->entries.back().terms);
+
+    // orbit = orbit_type(*parent->orbit.reference, delta_from_reference_orbit,
+    //                    base_iteration, base_iteration,
+    //                    epsilon + parent->orbit.epsilon);
     orbit = parent->orbit.split_relative(delta_from_parent, epsilon);
-    entries.push_back({*orbit, translate_terms(delta_from_parent,
+
+    entries.push_back({*orbit, translate_terms(-delta_from_parent,
                                                parent->entries.back().terms)});
     calculate_terms(delta_from_parent, max_iterations, stop);
   }
@@ -87,7 +96,6 @@ public:
       }
       return orbit2.iteration();
     }
-    return 20;
 
     // Case 2: The result is lower than the current branch
     if (escaped(get_z(delta, 0))) {
@@ -98,17 +106,16 @@ public:
       }
       return 0;
     }
-    return 10;
 
     // Case 3: The result is within the current branch
     int min = 0;
     int max = entries.size() - 1;
-    while (min < max) {
+    while (min + 1 < max) {
       int mid = (min + max) / 2;
       if (escaped(get_z(delta, mid)))
         max = mid;
       else
-        mid = mid;
+        min = mid;
     }
     return min;
   }
@@ -133,6 +140,7 @@ private:
              radius_norm < maximum_delta_norm<P1, P2>(entries.back().terms));
   }
 
+public: // !! private
   int base_iteration;
   std::shared_ptr<const orbit_branch> parent;
   DeltaType delta_from_parent, delta_from_reference_orbit;

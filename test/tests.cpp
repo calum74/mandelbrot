@@ -16,9 +16,57 @@
 using namespace fractals;
 using namespace mandelbrot;
 
+template <Complex C> void assert_equal(const C &c1, const C &c2) {
+  assert(norm(c1 - c2) < 0.0001);
+}
+
+template <IteratedOrbit Orbit1, IteratedOrbit Orbit2>
+void compare_remaining_orbits(Orbit1 &o1, Orbit2 &o2, int n) {
+  for (int i = 0; i < n; ++i) {
+    assert_equal(*o1, *o2);
+    if (escaped(*o1))
+      return;
+    ++o1;
+    ++o2;
+  }
+}
+
+template <IteratedOrbit Orbit1, IteratedOrbit Orbit2>
+void compare_orbits(Orbit1 o1, Orbit2 o2, int n) {
+  compare_remaining_orbits(o1, o2, n);
+}
+
 template <typename Tree>
 void dump_tree(std::shared_ptr<Tree> tree, std::complex<double> radius,
                int depth, int max_depth) {
+  using calculation = typename Tree::calculation;
+  // Validate the tree here
+  // Validate the orbit & compare it
+
+  auto tree_orbit = tree->orbit;
+  decltype(tree_orbit) orbit2{*tree->orbit.reference,
+                              tree->delta_from_reference_orbit};
+
+  std::array<typename Tree::term_type, Tree::term_count> terms;
+  terms[0] = 1;
+  for (int i = 0; i < tree->base_iteration; ++i) {
+    ++orbit2;
+    terms = calculation::delta_terms(*orbit2, terms);
+  }
+
+  for (auto &e : tree->entries) {
+    std::cout << "Correct: " << *orbit2;
+    for (auto &t : terms)
+      std::cout << t;
+    std::cout << " Tree: " << e.z;
+    for (auto &t : e.terms)
+      std::cout << t;
+    std::cout << std::endl;
+    // assert_equal(*orbit2, e.z);
+    ++orbit2;
+    terms = calculation::delta_terms(*orbit2, terms);
+  }
+
   if (depth < max_depth) {
     std::cout << std::string(depth, ' ') << tree->size() << std::endl;
     std::atomic<bool> stop;
@@ -34,18 +82,6 @@ void dump_tree(std::shared_ptr<Tree> tree, std::complex<double> radius,
     dump_tree(std::make_shared<Tree>(tree, mandelbrot::bottomright(radius), 500,
                                      stop),
               radius * 0.5, depth + 1, max_depth);
-  }
-}
-
-template <typename Orbit1, typename Orbit2>
-void compare_orbits(Orbit1 o1, Orbit2 o2, int n) {
-  for (int i = 0; i < n; ++i) {
-    auto d = norm(*o1 - *o2);
-    assert(d < 0.0001);
-    if (escaped(*o1))
-      return;
-    ++o1;
-    ++o2;
   }
 }
 
@@ -315,7 +351,7 @@ int main() {
     using stored_type = stored_orbit<std::complex<double>, ref_type>;
     using tree_type =
         mandelbrot::orbit_branch<std::complex<double>, std::complex<double>,
-                                 std::complex<double>, stored_type, 4, 10, 10>;
+                                 std::complex<double>, stored_type, 4, 10, 100>;
     ref_type r0({-1.248193761, 0.089224601});
     std::atomic<bool> stop;
     stored_type stored(r0, 500, stop);
@@ -326,10 +362,7 @@ int main() {
     auto root = std::make_shared<tree_type>(stored, radius, 500, stop);
     std::cout << root->size() << " iterations in the root branch\n";
 
-    dump_tree(root, radius, 0, 3);
-
-    // orbit_tree<std::complex<double>, std::complex<double>,
-    // std::complex < double >> X;
+    dump_tree(root, radius, 0, 1);
   }
 
   return 0;
