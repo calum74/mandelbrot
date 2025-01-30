@@ -1,5 +1,7 @@
 #include "view_coords.hpp"
+#include "high_exponent_real.hpp"
 #include <iomanip>
+#include <numbers>
 
 fractals::view_coords fractals::view_coords::scroll(int w, int h, int dx,
                                                     int dy) const {
@@ -98,4 +100,21 @@ std::istream &fractals::operator>>(std::istream &is, view_coords &coords) {
 int fractals::view_coords::get_precision(int d) const {
   int zeros = fractals::count_fractional_zeros(r);
   return d + zeros * 0.30103;
+}
+
+void fractals::log_radius(std::ostream &os, double log_base_e) {
+  // Renders a number ln(x) in engineering form
+  auto log_base_10 = log_base_e * std::numbers::log10e;
+
+  double int_part, frac_part = std::pow(10, std::modf(log_base_10, &int_part));
+  while (frac_part < 1) {
+    frac_part *= 10;
+    int_part--;
+  }
+  os << frac_part << "e" << (int)int_part;
+}
+
+double fractals::view_coords::ln_r() const {
+  return fractals::log(
+      fractals::convert<fractals::high_exponent_real<double>>(r));
 }

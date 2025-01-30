@@ -9,6 +9,9 @@ struct view_coords {
   value_type x, y, r;
   int max_iterations;
 
+  // Gets the natural log of r
+  double ln_r() const;
+
   // Scrolls the coordinates by a given number of pixels, returning the
   // resulting coordinates.
   view_coords scroll(int w, int h, int dx, int dy) const;
@@ -38,4 +41,8 @@ struct view_coords {
 
 std::ostream &operator<<(std::ostream &os, const view_coords &coords);
 std::istream &operator>>(std::istream &is, view_coords &coords);
+
+// Helper to output the radius from its log in engineering format
+void log_radius(std::ostream &os, double log_base_e);
+
 } // namespace fractals
