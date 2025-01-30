@@ -8,7 +8,7 @@ struct view_parameters {
   view_coords coords;
   std::string fractal_name;
   int colour_seed = 0;
-  double colour_gradient = 0.1;
+  double colour_gradient = 10;
 };
 
 std::istream &operator>>(std::istream &is, view_parameters &params);
