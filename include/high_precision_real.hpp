@@ -504,28 +504,30 @@ std::istream &operator>>(std::istream &is, high_precision_real<N> &n) {
     }
   } while (std::isdigit(ch));
 
-  if (ch != '.') {
-    n.negative = negative;
-    return is;
-  }
-  is.get(ch); // Skip '.'
-
   // Construct 0.1 in binary
   high_precision_real<N> tenth, mult;
   make_tenth(tenth);
   mult = tenth;
 
-  do {
-    ch = is.peek();
-    if (std::isdigit(ch)) {
-      is.get(ch);
-      high_precision_real<N> i;
-      // Not very optimal algorithm
-      i.fraction[0] = (ch - '0');
-      n = n + (i * mult);
-      mult = mult * tenth;
+  if (ch != 'e') {
+    if (ch != '.') {
+      n.negative = negative;
+      return is;
     }
-  } while (std::isdigit(ch));
+    is.get(ch); // Skip '.'
+
+    do {
+      ch = is.peek();
+      if (std::isdigit(ch)) {
+        is.get(ch);
+        high_precision_real<N> i;
+        // Not very optimal algorithm
+        i.fraction[0] = (ch - '0');
+        n = n + (i * mult);
+        mult = mult * tenth;
+      }
+    } while (std::isdigit(ch));
+  }
 
   if (ch == 'e') {
     int power = 0;
