@@ -167,7 +167,7 @@ int main() {
 
   {
     fractals::view_parameters p1{.coords = {1.5, -0.5, 0.5, 500},
-                                 .fractal_name = "abc def",
+                                 .algorithm = "abc def",
                                  .colour_seed = 99,
                                  .colour_gradient = 0.001},
         p2;
@@ -176,7 +176,7 @@ int main() {
     ss1 >> p2;
     ss2 << p2;
     assert(ss1.str() == ss2.str());
-    assert(p1.fractal_name == p2.fractal_name);
+    assert(p1.algorithm == p2.algorithm);
     assert(p1.colour_seed == p2.colour_seed);
   }
 

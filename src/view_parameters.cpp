@@ -10,7 +10,7 @@ std::ostream &fractals::operator<<(std::ostream &os,
             << std::setprecision(vp.coords.get_precision()) << vp.coords.x
             << "\nY: " << vp.coords.y << "\nR: " << vp.coords.r
             << "\nMax-iterations: " << vp.coords.max_iterations
-            << "\nAlgorithm: " << vp.fractal_name
+            << "\nAlgorithm: " << vp.algorithm
             << "\nColour-scheme: " << vp.colour_seed
             << "\nColour-gradient: " << vp.colour_gradient << "\n";
 }
@@ -34,7 +34,7 @@ std::istream &fractals::operator>>(std::istream &is,
     else if (key == "Max-iterations")
       is >> vp.coords.max_iterations;
     else if (key == "Algorithm")
-      std::getline(is, vp.fractal_name);
+      std::getline(is, vp.algorithm);
     else if (key == "Colour-scheme")
       is >> vp.colour_seed;
     else if (key == "Colour-gradient")
