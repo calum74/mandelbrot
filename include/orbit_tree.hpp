@@ -45,8 +45,8 @@ public:
 
   struct entry {
     // The epsilon of this orbit against the reference orbit
-    DeltaType epsilon_from_reference;
-    TermType A, B;
+    DeltaType epsilon_from_reference; // ?? Unclear if we need this
+    DeltaType A, B;                   // ?? Not TermType
   };
 
   std::vector<entry> entries;
@@ -59,13 +59,22 @@ public:
     if (parent) {
       // Walk the tree from the root, computing the epsilon in the path
       // Get the original delta from the very root
-      return /* entries[i - base_iteration].epsilon_from_reference + */
-          entries[i - base_iteration].A * get_base_epsilon(d) +
-          entries[i - base_iteration].B * d;
+      return entries[i - base_iteration].epsilon_from_reference +
+             entries[i - base_iteration].A * get_base_epsilon(d) +
+             entries[i - base_iteration].B * d;
     } else {
       assert(base_iteration == 0);
       return entries[i].B * d;
     }
+  }
+
+  // d must be in the "radius" of this orbit
+  LowPrecisionType get_z(int i, DeltaType d) const {
+    if (i < base_iteration) {
+      return parent->get_z(i, d + delta_from_parent);
+    }
+
+    return get_epsilon(i, d) + reference_orbit[i]; // !! Should be entry.j
   }
 
   // If we had an orbit starting at d (relative to this orbit),
@@ -75,7 +84,24 @@ public:
                   : 0;
   }
 
-  typename TermType::value_type max_term_value(DeltaType radius) const {
+  int get_escape_iterations(DeltaType d, int max_iterations) const {
+    auto e = get_z(size(), d);
+
+    perturbation_orbit<LowPrecisionType, DeltaType, ReferenceOrbit> orbit(
+        reference_orbit, d + delta_from_reference);
+    int i = 0;
+
+    while (!escaped(*orbit) && i < max_iterations) {
+      ++i;
+      ++orbit;
+    }
+    if (i == max_iterations)
+      i = 0;
+
+    return i;
+  }
+
+  typename DeltaType::value_type max_term_value(DeltaType radius) const {
     return 1e-7 *
            std::numeric_limits<typename DeltaType::value_type>::epsilon() /
            fractals::norm(radius);
@@ -91,15 +117,16 @@ public:
     base_epsilon = 0;
 
     auto max_B = max_term_value(radius);
+    j = 0;
 
-    TermType A{1}, B{0};
+    DeltaType A{1}, B{0};
 
     auto z = reference_orbit[j];
 
     do {
       entries.push_back({{}, A, B});
-      A = 2 * TermType{z} * A;
-      B = 2 * TermType{z} * B + TermType{1, 0};
+      A = 2 * DeltaType{z} * A;
+      B = 2 * DeltaType{z} * B + DeltaType{1, 0};
       z = reference_orbit[j];
       j++;
 
@@ -127,7 +154,7 @@ public:
     final_epsilon = base_epsilon;
     j = parent->j;
 
-#if 1 // Debug code only
+#if 0 // Debug code only
     debug_orbit debug1{reference_orbit, delta_from_reference};
     for (int i = 0; i <= base_iteration; i++)
       ++debug1;
@@ -139,16 +166,16 @@ public:
     auto max_B = max_term_value(delta_from_parent);
 
     LowPrecisionType z = reference_orbit[j] + final_epsilon;
-    TermType A{1}, B{0};
+    DeltaType A{1}, B{0};
 
     do {
       // assert(final_epsilon == debug1.epsilon);
       // assert(final_epsilon == debug2.epsilon);
-      ++debug1;
-      ++debug2;
+      //++debug1;
+      //++debug2;
       entries.push_back({final_epsilon, A, B});
-      A = 2 * TermType{z} * A;
-      B = 2 * TermType{z} * B + TermType{1, 0};
+      A = 2 * DeltaType{z} * A;
+      B = 2 * DeltaType{z} * B + DeltaType{1, 0};
 
       // Shouldn't need the final_epsilon squared term here??
       final_epsilon =
@@ -179,9 +206,10 @@ void compute_tree(int x0, int y0, int x1, int y1,
   if (x1 - x0 < min || y1 - y0 < min) {
     for (int j = y0; j < y1; ++j)
       for (int i = x0; i < x1; ++i) {
-        DeltaType delta{
-            (double(i - x0) / double(x1 - x0) - 0.5) * branch_radius.real(),
-            (double(j - y0) / double(y1 - y0) - 0.5) * branch_radius.imag()};
+        DeltaType delta{(2.0 * double(i - x0) / double(x1 - x0) - 1.0) *
+                            branch_radius.real(),
+                        (2.0 * double(j - y0) / double(y1 - y0) - 1.0) *
+                            branch_radius.imag()};
         fn(i, j, branch->get_escape_iterations(delta, max_iterations));
       }
 

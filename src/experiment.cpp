@@ -42,9 +42,8 @@ public:
     // Let's compute something!
 
     auto fn = [&](int x, int y, int i) { experiment[x + y * w] = i; };
-    // mandelbrot::compute_tree(0, 0, w, h, root, radius, c.max_iterations,
-    // stop,
-    //                          fn);
+    mandelbrot::compute_tree(0, 0, w, h, root, radius, c.max_iterations, stop,
+                             fn);
   }
 
   int pw;

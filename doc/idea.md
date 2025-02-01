@@ -50,7 +50,7 @@ Equating terms in 16 and 18, we get 13 and 14.
 
 $\square$
 
-**Corollary 1:**
+**Theorem 3:**
 
 21. $A_{i+1,m} = z_{i+m}A_{i,m}/z_i$
 22. $B_{i+1,m} = 2z_{i+m}B_{i,m}+1 - A_{i+1,m}$
@@ -69,42 +69,13 @@ Using Theorem 2 with n=1,
 
 Using Theorem 2 with n=1
 
-$B_{i,m+1} = A_{i+1,m}B{i,1}+B{i+1,m} = A_{i+1,m} + B{i+1,m}$
+26. $B_{i,m+1} = A_{i+1,m}B_{i,1}+B_{i+1,m} = A_{i+1,m} + B_{i+1,m}$
 
-$B_{i+1,m} = B_{i,m+1} - A_{i+1,m}$
+27. $B_{i+1,m} = B_{i,m+1} - A_{i+1,m}$
 
-$B_{i,m+1} = 2z_{i+m}B_{i,m}+1$
-
-therefore
-
-$B_{i+1,m} = 2z_{i+m}B_{i,m}+1 - A_{i+1,m}$
-
-$B_{i,1} = 1$
-
-$A_{i+1,m} = A_{i,1}A_{i+1,m} = 2z_i$
-
-
-$B_{i+1,m} = A_{i+1,m}B_{i,1}+B_{i+1,m}$
 $\square$
 
 Corollary 1 gives us a way to calculate a way to jump forward $m$ steps for each iteration.
-
-**Theorem 3:** (Jump forward $n$ steps from any iteration $i$)
-
-19. &nbsp;&nbsp;&nbsp;&nbsp;$A_{i+1,n} = $
-
-20. &nbsp;&nbsp;&nbsp;&nbsp;$B_{i+1,n} = $
-
-Proof:
-
-15. $\epsilon_{i+n+1} = A_{i+1,n}\epsilon_{i+1} + B_{i+1,n}$ from 4
-
-
-
-Equate terms in 12 and 15. to give 13 and 14.
-$\square$
-
-?? Why does this give the same equation as Theorem 1? Surely we should be able to jump forward 3 iterations more economically from a midpoint than from the start?
 
 To estimate the size, we need to ensure $\epsilon_i \lt 2^{-52}$
 
