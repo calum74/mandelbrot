@@ -162,8 +162,7 @@ using MB_high = MB<N, P, T, TermPrecision1, TermPrecision2,
 const fractals::PointwiseFractal &mandelbrot_fractal =
     fractals::make_fractal<MB<2, 3, 4, 10, 1000>, MB<2, 6>, MB<2, 10>,
                            MB_high<2, 18>, MB_high<2, 32>, MB_high<2, 40>,
-                           MB_high<2, 64>>("Mandelbrot (power 2)",
-                                           "mandelbrot");
+                           MB_high<2, 64>>("Mandelbrot set", "mandelbrot");
 
 template <int N, int P, int T = 2, int TermPrecision1 = 1,
           int TermPrecision2 = 100>

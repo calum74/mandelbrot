@@ -39,32 +39,24 @@ void compare_orbits(Orbit1 o1, Orbit2 o2, int n) {
 template <typename Tree>
 void dump_tree(std::shared_ptr<Tree> tree, std::complex<double> radius,
                int depth, int max_depth) {
-  using calculation = typename Tree::calculation;
+  // using calculation = typename Tree::calculation;
   // Validate the tree here
   // Validate the orbit & compare it
 
-  auto tree_orbit = tree->orbit;
-  decltype(tree_orbit) orbit2{*tree->orbit.reference,
-                              tree->delta_from_reference_orbit};
+  // We're testing that the branch is identical to a test orbit
+  using orbit =
+      mandelbrot::perturbation_orbit<std::complex<double>, std::complex<double>,
+                                     typename Tree::reference_orbit_type>;
 
-  std::array<typename Tree::term_type, Tree::term_count> terms;
-  terms[0] = 1;
-  for (int i = 0; i < tree->base_iteration; ++i) {
-    ++orbit2;
-    terms = calculation::delta_terms(*orbit2, terms);
-  }
+  orbit o(tree->reference_orbit, tree->delta_from_reference);
 
-  for (auto &e : tree->entries) {
-    std::cout << "Correct: " << *orbit2;
-    for (auto &t : terms)
-      std::cout << t;
-    std::cout << " Tree: " << e.z;
-    for (auto &t : e.terms)
-      std::cout << t;
-    std::cout << std::endl;
-    // assert_equal(*orbit2, e.z);
-    ++orbit2;
-    terms = calculation::delta_terms(*orbit2, terms);
+  for (int i = 0; i < tree->base_iteration; ++i)
+    ++o;
+
+  for (int i = 0; i < tree->size(); ++i) {
+    auto &e = tree->entries[i];
+    assert_equal(e.epsilon_from_reference, o.epsilon);
+    ++o;
   }
 
   if (depth < max_depth) {
@@ -346,24 +338,30 @@ int main() {
   // Orbit-trees
   {
     using ref_type =
-        mandelbrot::basic_orbit<std::complex<double>,
+        mandelbrot::basic_orbit<std::complex<high_precision_real<10>>,
                                 mandelbrot::mandelbrot_calculation<2>>;
     using stored_type = stored_orbit<std::complex<double>, ref_type>;
     using tree_type =
         mandelbrot::orbit_branch<std::complex<double>, std::complex<double>,
-                                 std::complex<double>, stored_type, 4, 100,
-                                 10000>;
-    ref_type r0({-1.248193761, 0.089224601});
+                                 std::complex<double>, stored_type>;
+    std::stringstream re("-0.7006421481138145");
+    std::stringstream im("-0.3604780481609880");
+    high_precision_real<10> r, i;
+    re >> r;
+    im >> i;
+    auto ra = 6.42e-13;
+    ref_type r0({r, i});
     std::atomic<bool> stop;
-    stored_type stored(r0, 500, stop);
+    int iterations = 10000;
+    stored_type stored(r0, iterations, stop);
 
     std::cout << stored.size() << " iterations in the reference orbit\n";
 
-    std::complex<double> radius = {0.000001275, 0.000001275};
-    auto root = std::make_shared<tree_type>(stored, radius, 500, stop);
+    std::complex<double> radius = {ra, ra};
+    auto root = std::make_shared<tree_type>(stored, radius, iterations, stop);
     std::cout << root->size() << " iterations in the root branch\n";
 
-    dump_tree(root, radius, 0, 1);
+    dump_tree(root, radius, 0, 6);
   }
 
   return 0;

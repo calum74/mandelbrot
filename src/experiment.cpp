@@ -30,9 +30,8 @@ public:
         mandelbrot::basic_orbit<HighPrecisionType, Calculation>;
     using stored_type =
         mandelbrot::stored_orbit<LowPrecisionType, reference_type>;
-    using branch_type =
-        mandelbrot::orbit_branch<LowPrecisionType, DeltaType, TermType,
-                                 stored_type, 4, 100, 100000>;
+    using branch_type = mandelbrot::orbit_branch<LowPrecisionType, DeltaType,
+                                                 TermType, stored_type>;
 
     reference_type reference_orbit(HighPrecisionType{c.x, c.y});
     stored_type stored_orbit(reference_orbit, c.max_iterations, stop);
@@ -43,8 +42,9 @@ public:
     // Let's compute something!
 
     auto fn = [&](int x, int y, int i) { experiment[x + y * w] = i; };
-    mandelbrot::compute_tree(0, 0, w, h, root, radius, c.max_iterations, stop,
-                             fn);
+    // mandelbrot::compute_tree(0, 0, w, h, root, radius, c.max_iterations,
+    // stop,
+    //                          fn);
   }
 
   int pw;

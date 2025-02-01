@@ -19,138 +19,152 @@ template <Complex DeltaType> DeltaType bottomright(DeltaType radius) {
   return radius * 0.5;
 }
 
-template <Complex DeltaType, Complex TermType>
-std::array<TermType, 4> translate_terms(DeltaType delta,
-                                        const std::array<TermType, 4> &terms) {
-  auto delta1 = convert<TermType>(delta);
-  // See orbit_tree.md for explanation
-  auto delta2 = fractals::square(delta1);
-  auto delta3 = delta2 * delta1;
-  return {terms[0] + 2.0 * terms[1] * delta1 + 3.0 * terms[2] * delta2 +
-              4.0 * terms[3] * delta3,
-          terms[1] + 3.0 * terms[2] * delta1 + 6.0 * terms[3] * delta2,
-          terms[2] + 4.0 * terms[3] * delta1, terms[3]};
-}
-
-template <Complex LowPrecisionComplex, Complex DeltaType, Complex TermType,
-          RandomAccessOrbit ReferenceOrbit, int Terms, int P1, int P2>
+// A type of perturbation orbit that supports
+// "jump forward N steps"
+template <Complex LowPrecisionType, Complex DeltaType, Complex TermType,
+          RandomAccessOrbit ReferenceOrbit>
 class orbit_branch {
 public:
-  using orbit_type =
-      perturbation_orbit<LowPrecisionComplex, DeltaType, ReferenceOrbit>;
-  using calculation = typename ReferenceOrbit::calculation;
-  using term_type = TermType;
-  static constexpr int term_count = Terms;
+  /*
+  TODO:
+  Remove TermType and just use DeltaType
+  Don't store final and base epsilon as they are in entries
+  */
 
-  orbit_type orbit;
+  using debug_orbit =
+      perturbation_orbit<LowPrecisionType, DeltaType, ReferenceOrbit>;
+
+  using reference_orbit_type = ReferenceOrbit;
+  const ReferenceOrbit &reference_orbit;
+  // Relative to the reference orbit
+  DeltaType base_epsilon, final_epsilon;
+  DeltaType delta_from_reference, delta_from_parent;
+
+  std::shared_ptr<const orbit_branch> parent;
+  int base_iteration;
+
+  struct entry {
+    // The epsilon of this orbit against the reference orbit
+    DeltaType epsilon_from_reference;
+    TermType A, B;
+  };
+
+  std::vector<entry> entries;
+
+  // i is the absolute iteration number
+  // d is the delta relative to this orbit
+  // the return value is epsilon relative to the reference orbit
+  DeltaType get_epsilon(int i, DeltaType d) const {
+    assert(i >= 0 && i < base_iteration + entries.size());
+    if (parent) {
+      // Walk the tree from the root, computing the epsilon in the path
+      // Get the original delta from the very root
+      return /* entries[i - base_iteration].epsilon_from_reference + */
+          entries[i - base_iteration].A * get_base_epsilon(d) +
+          entries[i - base_iteration].B * d;
+    } else {
+      assert(base_iteration == 0);
+      return entries[i].B * d;
+    }
+  }
+
+  // If we had an orbit starting at d (relative to this orbit),
+  // what epsilon should it have at the base of this branch?
+  DeltaType get_base_epsilon(DeltaType d) const {
+    return parent ? parent->get_epsilon(base_iteration, d + delta_from_parent)
+                  : 0;
+  }
+
+  typename TermType::value_type max_term_value(DeltaType radius) const {
+    return 1e-7 *
+           std::numeric_limits<typename DeltaType::value_type>::epsilon() /
+           fractals::norm(radius);
+  }
 
   int size() const { return entries.size() - 1; }
+  int j = 0;
 
   // Create the root, and populate it as far as it will go
   orbit_branch(const ReferenceOrbit &reference_orbit, DeltaType radius,
-               int max_iterations, std::atomic<bool> &stop) {
+               int max_iterations, std::atomic<bool> &stop)
+      : reference_orbit(reference_orbit), base_iteration(0) {
+    base_epsilon = 0;
 
-    base_iteration = 0;
-    delta_from_reference_orbit = {0, 0};
-    std::array<TermType, Terms> terms;
-    terms[0] = 1;
-    entries.push_back(entry({{0}, terms})); // First iteration is zero
-    orbit = orbit_type(reference_orbit, {});
-    calculate_terms(radius, max_iterations, stop);
+    auto max_B = max_term_value(radius);
+
+    TermType A{1}, B{0};
+
+    auto z = reference_orbit[j];
+
+    do {
+      entries.push_back({{}, A, B});
+      A = 2 * TermType{z} * A;
+      B = 2 * TermType{z} * B + TermType{1, 0};
+      z = reference_orbit[j];
+      j++;
+
+      if (j == reference_orbit.size() - 1 || escaped(reference_orbit[j]) ||
+          fractals::norm(z) < fractals::norm(final_epsilon)) {
+        final_epsilon = z;
+        j = 0;
+      }
+
+    } while (!stop && !escaped(z) && j < reference_orbit.size() &&
+             fractals::norm(B) <= max_B);
   }
 
   // Creates a branch, and populates it as far as it will go
   orbit_branch(const std::shared_ptr<const orbit_branch> &parent,
                DeltaType delta_from_parent, int max_iterations,
                std::atomic<bool> &stop)
-      : parent(parent), delta_from_parent(delta_from_parent) {
-    delta_from_reference_orbit =
-        parent->delta_from_reference_orbit + delta_from_parent;
-    base_iteration = parent->base_iteration + parent->size();
-    auto radius_norm = fractals::norm(delta_from_parent);
+      : reference_orbit(parent->reference_orbit), parent(parent),
+        delta_from_parent(delta_from_parent),
+        base_iteration(parent->base_iteration + parent->size()) {
+    delta_from_reference = parent->delta_from_reference + delta_from_parent;
+    // What is our epsilon at the b
+    // base_epsilon =
+    base_epsilon = parent->get_epsilon(base_iteration, delta_from_parent);
+    final_epsilon = base_epsilon;
+    j = parent->j;
 
-    auto epsilon =
-        evaluate_epsilon(delta_from_parent, parent->entries.back().terms);
+#if 1 // Debug code only
+    debug_orbit debug1{reference_orbit, delta_from_reference};
+    for (int i = 0; i <= base_iteration; i++)
+      ++debug1;
+    debug_orbit debug2{reference_orbit, delta_from_reference, base_iteration, j,
+                       final_epsilon};
 
-    // orbit = orbit_type(*parent->orbit.reference, delta_from_reference_orbit,
-    //                    base_iteration, base_iteration,
-    //                    epsilon + parent->orbit.epsilon);
-    orbit = parent->orbit.split_relative(delta_from_parent, epsilon);
+    // debug1 and debug2 should now be identical to this orbit
+#endif
+    auto max_B = max_term_value(delta_from_parent);
 
-    entries.push_back({*orbit, translate_terms(-delta_from_parent,
-                                               parent->entries.back().terms)});
-    calculate_terms(delta_from_parent, max_iterations, stop);
-  }
+    LowPrecisionType z = reference_orbit[j] + final_epsilon;
+    TermType A{1}, B{0};
 
-  // TODO: Seed with previous value
-  int get_escape_iterations(DeltaType delta, int max_iterations) const {
-
-    // Case 1: The result is higher than the current branch
-    if (!escaped(get_z(delta, size()))) {
-      // The end hasn't escaped, so we need to keep iterating beyond the final
-      // orbit
-      auto orbit2 = orbit.split_relative(
-          delta, evaluate_epsilon(delta, entries[size()].terms));
-      while (orbit2.iteration() <= max_iterations && !escaped(*orbit2)) {
-        ++orbit2;
-      }
-      return orbit2.iteration();
-    }
-
-    // Case 2: The result is lower than the current branch
-    if (escaped(get_z(delta, 0))) {
-      // Look in the parent
-      if (parent) {
-        return parent->get_escape_iterations(delta - delta_from_parent,
-                                             max_iterations);
-      }
-      return 0;
-    }
-
-    // Case 3: The result is within the current branch
-    int min = 0;
-    int max = entries.size() - 1;
-    while (min + 1 < max) {
-      int mid = (min + max) / 2;
-      if (escaped(get_z(delta, mid)))
-        max = mid;
-      else
-        min = mid;
-    }
-    return min;
-  }
-
-private:
-  LowPrecisionComplex get_z(DeltaType delta, int i) const {
-    return entries[i].z + evaluate_epsilon(delta, entries[i].terms);
-  }
-
-  void calculate_terms(DeltaType radius, int max_iterations,
-                       std::atomic<bool> &stop) {
-    auto radius_norm = fractals::convert<typename TermType::value_type>(
-        fractals::norm(radius));
     do {
-      ++orbit;
-      entries.push_back(
-          {*orbit, calculation::delta_terms(*orbit, entries.back().terms)});
-      for (auto &t : entries.back().terms)
-        t = normalize(t);
-    } while (!stop && base_iteration + entries.size() <= max_iterations &&
-             !escaped(*orbit) &&
-             radius_norm < maximum_delta_norm<P1, P2>(entries.back().terms));
+      // assert(final_epsilon == debug1.epsilon);
+      // assert(final_epsilon == debug2.epsilon);
+      ++debug1;
+      ++debug2;
+      entries.push_back({final_epsilon, A, B});
+      A = 2 * TermType{z} * A;
+      B = 2 * TermType{z} * B + TermType{1, 0};
+
+      // Shouldn't need the final_epsilon squared term here??
+      final_epsilon =
+          2 * z * final_epsilon + /* final_epsilon * final_epsilon + */
+          delta_from_reference;
+      j++;
+      z = reference_orbit[j] + final_epsilon;
+
+      if (j == reference_orbit.size() - 1 || escaped(reference_orbit[j]) ||
+          fractals::norm(z) < fractals::norm(final_epsilon)) {
+        final_epsilon = z;
+        j = 0;
+      }
+
+    } while (!stop && !escaped(z) && fractals::norm(B) <= max_B);
   }
-
-public: // !! private
-  int base_iteration;
-  std::shared_ptr<const orbit_branch> parent;
-  DeltaType delta_from_parent, delta_from_reference_orbit;
-
-  struct entry {
-    LowPrecisionComplex z;
-    std::array<TermType, Terms> terms;
-  };
-
-  std::vector<entry> entries;
 };
 
 template <typename Branch, Complex DeltaType, typename Fn>
