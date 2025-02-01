@@ -361,7 +361,7 @@ int main() {
     auto root = std::make_shared<tree_type>(stored, radius, iterations, stop);
     std::cout << root->size() << " iterations in the root branch\n";
 
-    dump_tree(root, radius, 0, 6);
+    dump_tree(root, radius, 0, 4);
   }
 
   return 0;

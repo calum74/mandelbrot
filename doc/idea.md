@@ -11,44 +11,100 @@ If $\epsilon_i$ is "small" (less than $10^{-16}$ or so), then we can drop the $\
 We can then formulate a "jump forward" $n$ steps using linear equations
 
 3. $\epsilon_0 = 0$
-
 4. $\epsilon_{i+n} = A_{i,n}\epsilon_{i} + B_{i,n}\delta$
-
 5. $A_{i, 0} = 1$
-
 6. $B_{i,0} = 0$
 
-**Theorem 1:** (Jump forward any $n$ steps from iteration $i$)
+**Theorem 1:**
 
 7. &nbsp;&nbsp;&nbsp;&nbsp;$A_{i,n+1} = 2z_{i+n}A_{i,n}$
-
 8. &nbsp;&nbsp;&nbsp;&nbsp;$B_{i,n+1} = 2z_{i+n}B_{i,n}+1$
 
 Proof:
 
 9. &nbsp;&nbsp;&nbsp;&nbsp;$\epsilon_{i+n+1} = A_{i,n+1}\epsilon_{i} + B_{i,n+1}$ from 4
-
 10. &nbsp;&nbsp;&nbsp;&nbsp;$ = 2z_{i+n}\epsilon_{i+n} + \delta$ from 2
-
 11. &nbsp;&nbsp;&nbsp;&nbsp;$= 2z_{i+n}(A_{i,n}\epsilon_i + B_{i,n}\delta)+\delta$ from 4.
-
 12. &nbsp;&nbsp;&nbsp;&nbsp;$= (2z_{i+n}A_{i,n})\epsilon_i + (2z_{i+n}B_{i,n}+1)\delta$
 
 Equate terms in 9. and 12. to give 7. and 8.
 $\square$
 
-**Theorem 2:** (Jump forward $n$ steps from any iteration $i$)
+**Theorem 2:** (Composition)
 
-13. &nbsp;&nbsp;&nbsp;&nbsp;$A_{i+1,n} = 2z_{i+n}A_{i,n}$
-
-14. &nbsp;&nbsp;&nbsp;&nbsp;$B_{i+1,n} = 2z_{i+n}B_{i,n}+1$
+13. $A_{i,n+m} = A_{i,n}A_{i+n,m}$
+14. $B_{i,n+m} = A_{i+n,m}B_{i,n}+B_{i+n,m}$
 
 Proof:
 
-15. &nbsp;&nbsp;&nbsp;&nbsp;$\epsilon_{i+n+1} = A_{i+1,n}\epsilon_{i} + B_{i+1,n}$ from 4
+15. $\epsilon_{i+n+m} = A_{i+n,m}\epsilon_{i+n} + B_{i+n,m}\delta$
+16. $= A_{i,n+m}\epsilon_i + B_{i,n+m}\delta$
+17. $= A_{i+n,m}(A_{i,n}\epsilon_i + B_{i,n}\delta) + B_{i+n,m}\delta$ expanding 4 into 15
+18. $= A_{i,n}A_{i+n,m}\epsilon_i + (A_{i+n,m}B_{i,n}+B_{i+n,m})\delta$ expanding 17
+
+Equating terms in 16 and 18, we get 13 and 14.
+
+19. $A_{i,n+m} = A_{i,n}A_{i+n,m}$
+
+20. $B_{i,n+m} = A_{i+n,m}B_{i,n}+B_{i+n,m}$
+
+$\square$
+
+**Corollary 1:**
+
+21. $A_{i+1,m} = z_{i+m}A_{i,m}/z_i$
+22. $B_{i+1,m} = 2z_{i+m}B_{i,m}+1 - A_{i+1,m}$
+
+Proof:
+
+From 7,
+
+23. $A_{i,1} = 2z_i$
+
+Using Theorem 2 with n=1,
+
+24. $A_{i,m+1} = 2z_{i+m}A_{i,m}$
+
+25. $A_{i+1,m} = A_{i,m+1}/A_{i,n} = 2z_{i+m}A_{i,m}/A_{i,1} = 2z_{i+m}A_{i,m}/2z_i = z_{i+m}A_{i,m}/z_i$
+
+Using Theorem 2 with n=1
+
+$B_{i,m+1} = A_{i+1,m}B{i,1}+B{i+1,m} = A_{i+1,m} + B{i+1,m}$
+
+$B_{i+1,m} = B_{i,m+1} - A_{i+1,m}$
+
+$B_{i,m+1} = 2z_{i+m}B_{i,m}+1$
+
+therefore
+
+$B_{i+1,m} = 2z_{i+m}B_{i,m}+1 - A_{i+1,m}$
+
+$B_{i,1} = 1$
+
+$A_{i+1,m} = A_{i,1}A_{i+1,m} = 2z_i$
+
+
+$B_{i+1,m} = A_{i+1,m}B_{i,1}+B_{i+1,m}$
+$\square$
+
+Corollary 1 gives us a way to calculate a way to jump forward $m$ steps for each iteration.
+
+**Theorem 3:** (Jump forward $n$ steps from any iteration $i$)
+
+19. &nbsp;&nbsp;&nbsp;&nbsp;$A_{i+1,n} = $
+
+20. &nbsp;&nbsp;&nbsp;&nbsp;$B_{i+1,n} = $
+
+Proof:
+
+15. $\epsilon_{i+n+1} = A_{i+1,n}\epsilon_{i+1} + B_{i+1,n}$ from 4
+
+
 
 Equate terms in 12 and 15. to give 13 and 14.
 $\square$
+
+?? Why does this give the same equation as Theorem 1? Surely we should be able to jump forward 3 iterations more economically from a midpoint than from the start?
 
 To estimate the size, we need to ensure $\epsilon_i \lt 2^{-52}$
 
