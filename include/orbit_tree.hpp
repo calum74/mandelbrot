@@ -120,14 +120,15 @@ public:
 
   DeltaType get_epsilon(int i, DeltaType delta_to_reference) const {
     // Select which algorithm to use
-    return get_epsilon_3(i, delta_to_reference);
+    return get_epsilon_2(i, delta_to_reference);
   }
 
   typename DeltaType::value_type max_term_value(DeltaType radius) const {
     // return 100 * std::numeric_limits<typename
     // DeltaType::value_type>::epsilon();
 
-    return std::numeric_limits<typename DeltaType::value_type>::epsilon() *
+    return 1e-4 *
+           std::numeric_limits<typename DeltaType::value_type>::epsilon() *
            std::numeric_limits<typename DeltaType::value_type>::epsilon() /
            fractals::norm(radius);
   }
@@ -147,8 +148,8 @@ public:
     // Because the reference orbit should be against *our* z and we are doing a
     // double dereference at all times.
 
-    int j = i;
-    //    int j = entries.back().j; // [size()].j;
+    // int j = i;
+    int j = entries.back().j; // [size()].j;
     auto z = e + entries.back().reference_z;
 
     if (!escaped(z)) { // !! Get an accurate z
@@ -156,7 +157,7 @@ public:
       // it doesn't actually matter what j is
       // The reference orbit is just there to avoid loss of precision
       perturbation_orbit<LowPrecisionType, DeltaType, ReferenceOrbit> orbit(
-          reference_orbit, d, i, j, e); // Could be 0, z
+          reference_orbit, d, i, 0, z); //  j, e); // Could be 0, z
 
       while (!escaped(*orbit) && i < max_iterations) {
         i++;
@@ -192,7 +193,6 @@ public:
   }
 
   int size() const { return entries.size() - 1; }
-  int j = 0; // ?? Private/delete?
 
   // Create the root, and populate it as far as it will go
   orbit_branch(const ReferenceOrbit &reference_orbit, DeltaType radius,
@@ -202,7 +202,7 @@ public:
 
     DeltaType epsilon = 0;
     auto max_B = max_term_value(radius);
-    j = 0;
+    int j = 0;
 
     DeltaType A{1}, B{0};
 
@@ -239,7 +239,7 @@ public:
     DeltaType epsilon =
         parent->get_epsilon(base_iteration, delta_from_reference);
     // j = parent->entries[parent->size()].j;
-    j = parent->j;
+    int j = parent->entries[parent->size()].j; // parent->j;
 
     auto max_B = max_term_value(delta_from_parent);
 
