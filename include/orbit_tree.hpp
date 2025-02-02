@@ -37,7 +37,6 @@ public:
   using reference_orbit_type = ReferenceOrbit;
   const ReferenceOrbit &reference_orbit;
   // Relative to the reference orbit
-  DeltaType base_epsilon, final_epsilon; // !! Deleteme
   DeltaType delta_from_reference, delta_from_parent;
 
   std::shared_ptr<const orbit_branch> parent;
@@ -49,12 +48,21 @@ public:
     DeltaType epsilon_from_reference; // ?? Unclear if we need this
     DeltaType A, B;                   // ?? Not TermType
     int j;                            // ?? Maybe delete
+    LowPrecisionType reference_z;
   };
 
   // ?? Do we even need to store all entries ?? For regions
   // that definitely don't escape, we can just skip this right?
   // We can probably throw this away and recompute it if needed.
   std::vector<entry> entries;
+
+  using primary_orbit =
+      perturbation_orbit<LowPrecisionType, DeltaType, ReferenceOrbit>;
+
+  // A second order reference orbit
+  // Problem: how do we rewind a perturbation orbit that's relative to another
+  // one? using secondary_orbit =
+  //    perturbation_orbit<LowPrecisionType, DeltaType, primary_orbit>;
 
   /*
     Gets the epsilon of point d relative to the reference orbit.
@@ -102,8 +110,7 @@ public:
 
   // Fully precise version of the previous, for reference
   DeltaType get_epsilon_3(int i, DeltaType delta_to_reference) const {
-    perturbation_orbit<LowPrecisionType, DeltaType, ReferenceOrbit> orbit(
-        reference_orbit, delta_from_reference);
+    primary_orbit orbit(reference_orbit, delta_from_reference);
     while (i > 0) {
       i--;
       ++orbit;
@@ -113,14 +120,14 @@ public:
 
   DeltaType get_epsilon(int i, DeltaType delta_to_reference) const {
     // Select which algorithm to use
-    return get_epsilon_1(i, delta_to_reference);
+    return get_epsilon_3(i, delta_to_reference);
   }
 
   typename DeltaType::value_type max_term_value(DeltaType radius) const {
     // return 100 * std::numeric_limits<typename
     // DeltaType::value_type>::epsilon();
 
-    return 1e-35 *
+    return std::numeric_limits<typename DeltaType::value_type>::epsilon() *
            std::numeric_limits<typename DeltaType::value_type>::epsilon() /
            fractals::norm(radius);
   }
@@ -132,16 +139,24 @@ public:
     skipped = i;
     auto e = get_epsilon(i, d);
 
-    int j = i;
-    if (j >= reference_orbit.size() - 1)
-      return 0;
+    // int j = i;
+    // if (j >= reference_orbit.size() - 1)
+    //   return 0;
 
     // Unfortunately it looks like we can't just reuse `j` from anywhere
-    // int j = entries[size()].j;
+    // Because the reference orbit should be against *our* z and we are doing a
+    // double dereference at all times.
 
-    if (!escaped(e + reference_orbit[j])) {
+    int j = i;
+    //    int j = entries.back().j; // [size()].j;
+    auto z = e + entries.back().reference_z;
+
+    if (!escaped(z)) { // !! Get an accurate z
+      // Amazingly, we can restart the reference orbit at iteration 0 (j=0)
+      // it doesn't actually matter what j is
+      // The reference orbit is just there to avoid loss of precision
       perturbation_orbit<LowPrecisionType, DeltaType, ReferenceOrbit> orbit(
-          reference_orbit, d, i, j, e);
+          reference_orbit, d, i, j, e); // Could be 0, z
 
       while (!escaped(*orbit) && i < max_iterations) {
         i++;
@@ -150,6 +165,8 @@ public:
       if (i == max_iterations)
         i = 0;
       return i;
+    } else {
+      // We'll need
     }
 
     return 0;
@@ -181,26 +198,27 @@ public:
   orbit_branch(const ReferenceOrbit &reference_orbit, DeltaType radius,
                int max_iterations, std::atomic<bool> &stop)
       : reference_orbit(reference_orbit), base_iteration(0) {
-    base_epsilon = 0;
     delta_from_reference = 0;
 
+    DeltaType epsilon = 0;
     auto max_B = max_term_value(radius);
     j = 0;
 
     DeltaType A{1}, B{0};
 
-    auto z = reference_orbit[j];
+    LowPrecisionType z;
 
     do {
-      entries.push_back({z, {}, A, B, j});
+      z = reference_orbit[j];
+      entries.push_back({z, epsilon, A, B, j, z});
+
       A = 2 * DeltaType{z} * A;
       B = 2 * DeltaType{z} * B + DeltaType{1, 0};
-      z = reference_orbit[j];
       j++;
 
-      if (j == reference_orbit.size() - 1 || escaped(reference_orbit[j]) ||
-          fractals::norm(z) < fractals::norm(final_epsilon)) {
-        final_epsilon = z;
+      if (j >= reference_orbit.size() - 1 || escaped(reference_orbit[j]) ||
+          fractals::norm(z) < fractals::norm(epsilon)) {
+        epsilon = z;
         j = 0;
       }
 
@@ -218,44 +236,31 @@ public:
     delta_from_reference = parent->delta_from_reference + delta_from_parent;
     // What is our epsilon at the b
     // base_epsilon =
-    base_epsilon = parent->get_epsilon(base_iteration, delta_from_parent);
-    final_epsilon = base_epsilon;
+    DeltaType epsilon =
+        parent->get_epsilon(base_iteration, delta_from_reference);
     // j = parent->entries[parent->size()].j;
     j = parent->j;
 
-#if 0 // Debug code only
-    debug_orbit debug1{reference_orbit, delta_from_reference};
-    for (int i = 0; i <= base_iteration; i++)
-      ++debug1;
-    debug_orbit debug2{reference_orbit, delta_from_reference, base_iteration, j,
-                       final_epsilon};
-
-    // debug1 and debug2 should now be identical to this orbit
-#endif
     auto max_B = max_term_value(delta_from_parent);
 
-    LowPrecisionType z = reference_orbit[j] + final_epsilon;
+    LowPrecisionType z;
     DeltaType A{1}, B{0};
 
     do {
-      // assert(final_epsilon == debug1.epsilon);
-      // assert(final_epsilon == debug2.epsilon);
-      //++debug1;
-      //++debug2;
-      entries.push_back({z, final_epsilon, A, B, j});
+      z = reference_orbit[j] + epsilon;
+      entries.push_back({z, epsilon, A, B, j, reference_orbit[j]});
+
       A = 2 * DeltaType{z} * A;
       B = 2 * DeltaType{z} * B + DeltaType{1, 0};
 
       // Shouldn't need the final_epsilon squared term here??
-      final_epsilon =
-          2 * z * final_epsilon + /* final_epsilon * final_epsilon + */
-          delta_from_reference;
+      epsilon = 2 * z * epsilon + /* final_epsilon * final_epsilon + */
+                delta_from_reference;
       j++;
-      z = reference_orbit[j] + final_epsilon;
 
       if (j == reference_orbit.size() - 1 || escaped(reference_orbit[j]) ||
-          fractals::norm(z) < fractals::norm(final_epsilon)) {
-        final_epsilon = z;
+          fractals::norm(z) < fractals::norm(epsilon)) {
+        epsilon = z;
         j = 0;
       }
 
