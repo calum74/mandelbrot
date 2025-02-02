@@ -112,19 +112,36 @@ public:
   }
 
   DeltaType get_epsilon(int i, DeltaType delta_to_reference) const {
-    return get_epsilon_3(i, delta_to_reference);
+    // Select which algorithm to use
+    return get_epsilon_1(i, delta_to_reference);
   }
 
-  int get_escape_iterations(DeltaType d, int max_iterations) const {
+  typename DeltaType::value_type max_term_value(DeltaType radius) const {
+    // return 100 * std::numeric_limits<typename
+    // DeltaType::value_type>::epsilon();
 
-    return get_escape_iterations_naive(d, max_iterations);
+    return 1e-35 *
+           std::numeric_limits<typename DeltaType::value_type>::epsilon() /
+           fractals::norm(radius);
+  }
+
+  int get_escape_iterations(DeltaType d, int max_iterations,
+                            int &skipped) const {
+
     auto i = size() + base_iteration;
+    skipped = i;
     auto e = get_epsilon(i, d);
-    int j = entries[size()].j;
+
+    int j = i;
+    if (j >= reference_orbit.size() - 1)
+      return 0;
+
+    // Unfortunately it looks like we can't just reuse `j` from anywhere
+    // int j = entries[size()].j;
 
     if (!escaped(e + reference_orbit[j])) {
       perturbation_orbit<LowPrecisionType, DeltaType, ReferenceOrbit> orbit(
-          reference_orbit, d + delta_from_reference, i, j, e);
+          reference_orbit, d, i, j, e);
 
       while (!escaped(*orbit) && i < max_iterations) {
         i++;
@@ -157,14 +174,8 @@ public:
     return i;
   }
 
-  typename DeltaType::value_type max_term_value(DeltaType radius) const {
-    return 1e-6 *
-           std::numeric_limits<typename DeltaType::value_type>::epsilon() /
-           fractals::norm(radius);
-  }
-
   int size() const { return entries.size() - 1; }
-  int j = 0;
+  int j = 0; // ?? Private/delete?
 
   // Create the root, and populate it as far as it will go
   orbit_branch(const ReferenceOrbit &reference_orbit, DeltaType radius,
@@ -209,6 +220,7 @@ public:
     // base_epsilon =
     base_epsilon = parent->get_epsilon(base_iteration, delta_from_parent);
     final_epsilon = base_epsilon;
+    // j = parent->entries[parent->size()].j;
     j = parent->j;
 
 #if 0 // Debug code only
@@ -267,9 +279,10 @@ void compute_tree(int x0, int y0, int x1, int y1,
                             branch_radius.real(),
                         (2.0 * double(j - y0) / double(y1 - y0) - 1.0) *
                             branch_radius.imag()};
-        fn(i, j,
-           branch->get_escape_iterations(delta + branch->delta_from_reference,
-                                         max_iterations));
+        int skipped;
+        auto iterations = branch->get_escape_iterations(
+            delta + branch->delta_from_reference, max_iterations, skipped);
+        fn(i, j, iterations, skipped);
       }
 
     // Compute each pixel individually

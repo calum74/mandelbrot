@@ -40,10 +40,18 @@ public:
                                               c.max_iterations, stop);
 
     // Let's compute something!
+    int total_skipped = 0;
+    int total_points = 0;
 
-    auto fn = [&](int x, int y, int i) { experiment[x + y * w] = i; };
+    auto fn = [&](int x, int y, int i, int skipped) {
+      experiment[x + y * w] = i;
+      ++total_points;
+      total_skipped += skipped;
+    };
     mandelbrot::compute_tree(0, 0, w, h, root, radius, c.max_iterations, stop,
                              fn);
+    std::cout << "Skipped " << (total_skipped / total_points)
+              << " iterations on average\n";
   }
 
   int pw;
