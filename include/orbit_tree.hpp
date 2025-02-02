@@ -37,7 +37,7 @@ public:
   using reference_orbit_type = ReferenceOrbit;
   const ReferenceOrbit &reference_orbit;
   // Relative to the reference orbit
-  DeltaType base_epsilon, final_epsilon;
+  DeltaType base_epsilon, final_epsilon; // !! Deleteme
   DeltaType delta_from_reference, delta_from_parent;
 
   std::shared_ptr<const orbit_branch> parent;
@@ -45,50 +45,106 @@ public:
 
   struct entry {
     // The epsilon of this orbit against the reference orbit
+    LowPrecisionType z;               // Of this orbit
     DeltaType epsilon_from_reference; // ?? Unclear if we need this
     DeltaType A, B;                   // ?? Not TermType
+    int j;                            // ?? Maybe delete
   };
 
+  // ?? Do we even need to store all entries ?? For regions
+  // that definitely don't escape, we can just skip this right?
+  // We can probably throw this away and recompute it if needed.
   std::vector<entry> entries;
 
-  // i is the absolute iteration number
-  // d is the delta relative to this orbit
-  // the return value is epsilon relative to the reference orbit
-  DeltaType get_epsilon(int i, DeltaType d) const {
-    assert(i >= 0 && i < base_iteration + entries.size());
-    if (parent) {
-      // Walk the tree from the root, computing the epsilon in the path
-      // Get the original delta from the very root
+  /*
+    Gets the epsilon of point d relative to the reference orbit.
+
+    Input:
+    d - delta relative to this branch
+    i - the absolute iteration number
+
+    return - epsilon (dz) from the central orbit
+  */
+  DeltaType get_epsilon_1(int i, DeltaType delta_to_reference) const {
+
+    if (i < base_iteration) {
+      return parent->get_epsilon_1(i, delta_to_reference);
+    } else if (parent) {
       return entries[i - base_iteration].epsilon_from_reference +
-             entries[i - base_iteration].A * get_base_epsilon(d) +
-             entries[i - base_iteration].B * d;
+             entries[i - base_iteration].B *
+                 (delta_to_reference - delta_from_reference);
+    } else {
+
+      // Optimization of previous case
+      assert(base_iteration == 0);
+      return entries[i].B * delta_to_reference;
+    }
+  }
+
+  /*
+    Same idea as get_epsilon_1, except that we'll recompute epsilon at each
+    step.
+  */
+  DeltaType get_epsilon_2(int i, DeltaType delta_to_reference) const {
+
+    if (i < base_iteration) {
+      return parent->get_epsilon_2(i, delta_to_reference);
+    } else if (parent) {
+      auto e = parent->get_epsilon_2(base_iteration, delta_to_reference);
+      return entries[i - base_iteration].A * e +
+             entries[i - base_iteration].B *
+                 (delta_to_reference - delta_from_reference);
     } else {
       assert(base_iteration == 0);
-      return entries[i].B * d;
+      return entries[i].B * delta_to_reference;
     }
   }
 
-  // d must be in the "radius" of this orbit
-  LowPrecisionType get_z(int i, DeltaType d) const {
-    if (i < base_iteration) {
-      return parent->get_z(i, d + delta_from_parent);
+  // Fully precise version of the previous, for reference
+  DeltaType get_epsilon_3(int i, DeltaType delta_to_reference) const {
+    perturbation_orbit<LowPrecisionType, DeltaType, ReferenceOrbit> orbit(
+        reference_orbit, delta_from_reference);
+    while (i > 0) {
+      i--;
+      ++orbit;
     }
-
-    return get_epsilon(i, d) + reference_orbit[i]; // !! Should be entry.j
+    return orbit.epsilon;
   }
 
-  // If we had an orbit starting at d (relative to this orbit),
-  // what epsilon should it have at the base of this branch?
-  DeltaType get_base_epsilon(DeltaType d) const {
-    return parent ? parent->get_epsilon(base_iteration, d + delta_from_parent)
-                  : 0;
+  DeltaType get_epsilon(int i, DeltaType delta_to_reference) const {
+    return get_epsilon_3(i, delta_to_reference);
   }
 
   int get_escape_iterations(DeltaType d, int max_iterations) const {
-    auto e = get_z(size(), d);
+
+    return get_escape_iterations_naive(d, max_iterations);
+    auto i = size() + base_iteration;
+    auto e = get_epsilon(i, d);
+    int j = entries[size()].j;
+
+    if (!escaped(e + reference_orbit[j])) {
+      perturbation_orbit<LowPrecisionType, DeltaType, ReferenceOrbit> orbit(
+          reference_orbit, d + delta_from_reference, i, j, e);
+
+      while (!escaped(*orbit) && i < max_iterations) {
+        i++;
+        ++orbit;
+      }
+      if (i == max_iterations)
+        i = 0;
+      return i;
+    }
+
+    return 0;
+
+    //    return get_escape_iterations_naive(d, max_iterations);
+  }
+
+  // Keep this here for testing/debugging
+  int get_escape_iterations_naive(DeltaType d, int max_iterations) const {
 
     perturbation_orbit<LowPrecisionType, DeltaType, ReferenceOrbit> orbit(
-        reference_orbit, d + delta_from_reference);
+        reference_orbit, d);
     int i = 0;
 
     while (!escaped(*orbit) && i < max_iterations) {
@@ -102,7 +158,7 @@ public:
   }
 
   typename DeltaType::value_type max_term_value(DeltaType radius) const {
-    return 1e-7 *
+    return 1e-6 *
            std::numeric_limits<typename DeltaType::value_type>::epsilon() /
            fractals::norm(radius);
   }
@@ -115,6 +171,7 @@ public:
                int max_iterations, std::atomic<bool> &stop)
       : reference_orbit(reference_orbit), base_iteration(0) {
     base_epsilon = 0;
+    delta_from_reference = 0;
 
     auto max_B = max_term_value(radius);
     j = 0;
@@ -124,7 +181,7 @@ public:
     auto z = reference_orbit[j];
 
     do {
-      entries.push_back({{}, A, B});
+      entries.push_back({z, {}, A, B, j});
       A = 2 * DeltaType{z} * A;
       B = 2 * DeltaType{z} * B + DeltaType{1, 0};
       z = reference_orbit[j];
@@ -173,7 +230,7 @@ public:
       // assert(final_epsilon == debug2.epsilon);
       //++debug1;
       //++debug2;
-      entries.push_back({final_epsilon, A, B});
+      entries.push_back({z, final_epsilon, A, B, j});
       A = 2 * DeltaType{z} * A;
       B = 2 * DeltaType{z} * B + DeltaType{1, 0};
 
@@ -210,7 +267,9 @@ void compute_tree(int x0, int y0, int x1, int y1,
                             branch_radius.real(),
                         (2.0 * double(j - y0) / double(y1 - y0) - 1.0) *
                             branch_radius.imag()};
-        fn(i, j, branch->get_escape_iterations(delta, max_iterations));
+        fn(i, j,
+           branch->get_escape_iterations(delta + branch->delta_from_reference,
+                                         max_iterations));
       }
 
     // Compute each pixel individually
