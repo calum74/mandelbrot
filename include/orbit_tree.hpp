@@ -44,11 +44,12 @@ public:
 
   struct entry {
     // The epsilon of this orbit against the reference orbit
-    LowPrecisionType z;               // Of this orbit
+    LowPrecisionType z; // Of this orbit. Always equal to reference[j] +
+                        // epsilon_from_reference. Delete??
     DeltaType epsilon_from_reference; // ?? Unclear if we need this
     DeltaType A, B;                   // ?? Not TermType
     int j;                            // ?? Maybe delete
-    LowPrecisionType reference_z;
+    LowPrecisionType reference_z; // !! Delete this as is always reference[j]
   };
 
   // ?? Do we even need to store all entries ?? For regions
@@ -110,7 +111,7 @@ public:
 
   // Fully precise version of the previous, for reference
   DeltaType get_epsilon_3(int i, DeltaType delta_to_reference) const {
-    primary_orbit orbit(reference_orbit, delta_from_reference);
+    primary_orbit orbit(reference_orbit, delta_to_reference);
     while (i > 0) {
       i--;
       ++orbit;
@@ -120,7 +121,7 @@ public:
 
   DeltaType get_epsilon(int i, DeltaType delta_to_reference) const {
     // Select which algorithm to use
-    return get_epsilon_2(i, delta_to_reference);
+    return get_epsilon_3(i, delta_to_reference);
   }
 
   typename DeltaType::value_type max_term_value(DeltaType radius) const {
@@ -150,14 +151,14 @@ public:
 
     // int j = i;
     int j = entries.back().j; // [size()].j;
-    auto z = e + entries.back().reference_z;
+    auto z = e + reference_orbit[j];
 
     if (!escaped(z)) { // !! Get an accurate z
       // Amazingly, we can restart the reference orbit at iteration 0 (j=0)
       // it doesn't actually matter what j is
       // The reference orbit is just there to avoid loss of precision
       perturbation_orbit<LowPrecisionType, DeltaType, ReferenceOrbit> orbit(
-          reference_orbit, d, i, 0, z); //  j, e); // Could be 0, z
+          reference_orbit, d, i, j, e); //  j, e); // Could be 0, z
 
       while (!escaped(*orbit) && i < max_iterations) {
         i++;
@@ -204,18 +205,29 @@ public:
     auto max_B = max_term_value(radius);
     int j = 0;
 
+    extend_series(j, epsilon, max_B, stop);
+  }
+
+  void extend_series(int j, DeltaType epsilon, auto max_B,
+                     std::atomic<bool> &stop) {
+
     DeltaType A{1}, B{0};
 
     LowPrecisionType z;
 
     do {
-      z = reference_orbit[j];
+      z = reference_orbit[j] + epsilon;
       entries.push_back({z, epsilon, A, B, j, z});
 
       A = 2 * DeltaType{z} * A;
       B = 2 * DeltaType{z} * B + DeltaType{1, 0};
+      epsilon = 2 * z * epsilon +
+                epsilon * epsilon + /* ?? Delete this term surely final_epsilon
+                                     * final_epsilon + */
+                delta_from_reference;
       j++;
 
+      // Zhuoran's device
       if (j >= reference_orbit.size() - 1 || escaped(reference_orbit[j]) ||
           fractals::norm(z) < fractals::norm(epsilon)) {
         epsilon = z;
@@ -238,33 +250,13 @@ public:
     // base_epsilon =
     DeltaType epsilon =
         parent->get_epsilon(base_iteration, delta_from_reference);
-    // j = parent->entries[parent->size()].j;
-    int j = parent->entries[parent->size()].j; // parent->j;
+    // The first iteration of this branch is the size() iteration from the
+    // parent branch
+    int j = parent->entries[parent->size()].j;
 
     auto max_B = max_term_value(delta_from_parent);
 
-    LowPrecisionType z;
-    DeltaType A{1}, B{0};
-
-    do {
-      z = reference_orbit[j] + epsilon;
-      entries.push_back({z, epsilon, A, B, j, reference_orbit[j]});
-
-      A = 2 * DeltaType{z} * A;
-      B = 2 * DeltaType{z} * B + DeltaType{1, 0};
-
-      // Shouldn't need the final_epsilon squared term here??
-      epsilon = 2 * z * epsilon + /* final_epsilon * final_epsilon + */
-                delta_from_reference;
-      j++;
-
-      if (j == reference_orbit.size() - 1 || escaped(reference_orbit[j]) ||
-          fractals::norm(z) < fractals::norm(epsilon)) {
-        epsilon = z;
-        j = 0;
-      }
-
-    } while (!stop && !escaped(z) && fractals::norm(B) <= max_B);
+    extend_series(j, epsilon, max_B, stop);
   }
 };
 
