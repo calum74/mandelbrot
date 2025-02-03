@@ -43,13 +43,9 @@ public:
   int base_iteration;
 
   struct entry {
-    // The epsilon of this orbit against the reference orbit
-    LowPrecisionType z; // Of this orbit. Always equal to reference[j] +
-                        // epsilon_from_reference. Delete??
-    DeltaType epsilon_from_reference; // ?? Unclear if we need this
-    DeltaType A, B;                   // ?? Not TermType
-    int j;                            // ?? Maybe delete
-    LowPrecisionType reference_z; // !! Delete this as is always reference[j]
+    DeltaType epsilon_from_reference; // dz from the reference orbit
+    DeltaType A, B;                   // Bilinear coefficeints
+    int j; // The index of the reference orbit (wrapped using Zhouran's device)
   };
 
   // ?? Do we even need to store all entries ?? For regions
@@ -141,24 +137,12 @@ public:
     skipped = i;
     auto e = get_epsilon(i, d);
 
-    // int j = i;
-    // if (j >= reference_orbit.size() - 1)
-    //   return 0;
-
-    // Unfortunately it looks like we can't just reuse `j` from anywhere
-    // Because the reference orbit should be against *our* z and we are doing a
-    // double dereference at all times.
-
-    // int j = i;
-    int j = entries.back().j; // [size()].j;
+    int j = entries.back().j;
     auto z = e + reference_orbit[j];
 
-    if (!escaped(z)) { // !! Get an accurate z
-      // Amazingly, we can restart the reference orbit at iteration 0 (j=0)
-      // it doesn't actually matter what j is
-      // The reference orbit is just there to avoid loss of precision
+    if (!escaped(z)) {
       perturbation_orbit<LowPrecisionType, DeltaType, ReferenceOrbit> orbit(
-          reference_orbit, d, i, j, e); //  j, e); // Could be 0, z
+          reference_orbit, d, i, j, e);
 
       while (!escaped(*orbit) && i < max_iterations) {
         i++;
@@ -205,10 +189,10 @@ public:
     auto max_B = max_term_value(radius);
     int j = 0;
 
-    extend_series(j, epsilon, max_B, stop);
+    extend_series(j, epsilon, max_B, max_iterations, stop);
   }
 
-  void extend_series(int j, DeltaType epsilon, auto max_B,
+  void extend_series(int j, DeltaType epsilon, auto max_B, int max_iterations,
                      std::atomic<bool> &stop) {
 
     DeltaType A{1}, B{0};
@@ -217,7 +201,7 @@ public:
 
     do {
       z = reference_orbit[j] + epsilon;
-      entries.push_back({z, epsilon, A, B, j, z});
+      entries.push_back({epsilon, A, B, j});
 
       A = 2 * DeltaType{z} * A;
       B = 2 * DeltaType{z} * B + DeltaType{1, 0};
@@ -234,7 +218,8 @@ public:
         j = 0;
       }
 
-    } while (!stop && !escaped(z) && j < reference_orbit.size() &&
+    } while (!stop && !escaped(z) &&
+             entries.size() + base_iteration < max_iterations &&
              fractals::norm(B) <= max_B);
   }
 
@@ -256,7 +241,7 @@ public:
 
     auto max_B = max_term_value(delta_from_parent);
 
-    extend_series(j, epsilon, max_B, stop);
+    extend_series(j, epsilon, max_B, max_iterations, stop);
   }
 };
 
