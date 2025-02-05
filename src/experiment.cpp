@@ -40,8 +40,8 @@ public:
                                               c.max_iterations, stop);
 
     // Let's compute something!
-    int total_skipped = 0;
-    int total_points = 0;
+    std::uint64_t total_skipped = 0;
+    std::uint64_t total_points = 0;
 
     auto fn = [&](int x, int y, int i, int skipped) {
       experiment[x + y * w] = i;

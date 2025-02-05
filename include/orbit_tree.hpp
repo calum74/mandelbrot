@@ -43,8 +43,8 @@ public:
   int base_iteration;
 
   struct entry {
-    DeltaType epsilon_from_reference; // dz from the reference orbit
-    DeltaType A, B;                   // Bilinear coefficeints
+    DeltaType epsilon_from_reference; // dz from the primary reference orbit
+    DeltaType A, B; // Bilinear coefficients from the secondary orbit
     int j; // The index of the reference orbit (wrapped using Zhouran's device)
   };
 
@@ -57,32 +57,31 @@ public:
       perturbation_orbit<LowPrecisionType, DeltaType, ReferenceOrbit>;
 
   // A second order reference orbit
-  // Problem: how do we rewind a perturbation orbit that's relative to another
-  // one? using secondary_orbit =
-  //    perturbation_orbit<LowPrecisionType, DeltaType, primary_orbit>;
 
   /*
     Gets the epsilon of point d relative to the reference orbit.
 
     Input:
-    d - delta relative to this branch
+    dc relative to the reference orbit
     i - the absolute iteration number
 
     return - epsilon (dz) from the central orbit
   */
-  DeltaType get_epsilon_1(int i, DeltaType delta_to_reference) const {
+  std::pair<DeltaType, int> get_epsilon_1(int i,
+                                          DeltaType delta_reference) const {
 
     if (i < base_iteration) {
-      return parent->get_epsilon_1(i, delta_to_reference);
+      return parent->get_epsilon_1(i, delta_reference);
     } else if (parent) {
-      return entries[i - base_iteration].epsilon_from_reference +
-             entries[i - base_iteration].B *
-                 (delta_to_reference - delta_from_reference);
+      return std::make_pair(entries[i - base_iteration].epsilon_from_reference +
+                                entries[i - base_iteration].local_B *
+                                    (delta_reference - delta_from_reference),
+                            entries[i - base_iteration].j);
     } else {
 
       // Optimization of previous case
       assert(base_iteration == 0);
-      return entries[i].B * delta_to_reference;
+      return std::make_pair(entries[i].local_B * delta_reference, entries[i].j);
     }
   }
 
@@ -90,18 +89,28 @@ public:
     Same idea as get_epsilon_1, except that we'll recompute epsilon at each
     step.
   */
-  DeltaType get_epsilon_2(int i, DeltaType delta_to_reference) const {
+  std::pair<DeltaType, int> get_epsilon_2(int i,
+                                          DeltaType delta_reference) const {
 
     if (i < base_iteration) {
-      return parent->get_epsilon_2(i, delta_to_reference);
+      return parent->get_epsilon_2(i, delta_reference);
     } else if (parent) {
-      auto e = parent->get_epsilon_2(base_iteration, delta_to_reference);
-      return entries[i - base_iteration].A * e +
-             entries[i - base_iteration].B *
-                 (delta_to_reference - delta_from_reference);
+
+      if (size() == 0)
+        return parent->get_epsilon_2(i, delta_reference);
+
+      auto &entry = entries[i - base_iteration];
+      auto epsilon = parent->get_epsilon_2(base_iteration, delta_reference);
+      return std::make_pair(
+          entry.A * (epsilon.first - entries[0].epsilon_from_reference) +
+              entry.B * (delta_reference - delta_from_reference) +
+              entry.epsilon_from_reference,
+          entry.j);
     } else {
       assert(base_iteration == 0);
-      return entries[i].B * delta_to_reference;
+      auto &entry = entries[i - base_iteration];
+      return std::make_pair(
+          entry.B * delta_reference + entry.epsilon_from_reference, entry.j);
     }
   }
 
@@ -112,22 +121,13 @@ public:
       i--;
       ++orbit;
     }
-    return orbit.epsilon;
+    return std::make_pair(orbit.epsilon, i);
   }
 
-  DeltaType get_epsilon(int i, DeltaType delta_to_reference) const {
+  std::pair<DeltaType, int> get_epsilon(int i,
+                                        DeltaType delta_reference) const {
     // Select which algorithm to use
-    return get_epsilon_3(i, delta_to_reference);
-  }
-
-  typename DeltaType::value_type max_term_value(DeltaType radius) const {
-    // return 100 * std::numeric_limits<typename
-    // DeltaType::value_type>::epsilon();
-
-    return 1e-4 *
-           std::numeric_limits<typename DeltaType::value_type>::epsilon() *
-           std::numeric_limits<typename DeltaType::value_type>::epsilon() /
-           fractals::norm(radius);
+    return get_epsilon_2(i, delta_reference);
   }
 
   int get_escape_iterations(DeltaType d, int max_iterations,
@@ -137,12 +137,12 @@ public:
     skipped = i;
     auto e = get_epsilon(i, d);
 
-    int j = entries.back().j;
-    auto z = e + reference_orbit[j];
+    int j = e.second;
+    auto z = e.first + reference_orbit[j];
 
     if (!escaped(z)) {
       perturbation_orbit<LowPrecisionType, DeltaType, ReferenceOrbit> orbit(
-          reference_orbit, d, i, j, e);
+          reference_orbit, d, i, e.second, e.first);
 
       while (!escaped(*orbit) && i < max_iterations) {
         i++;
@@ -152,12 +152,21 @@ public:
         i = 0;
       return i;
     } else {
-      // We'll need
+      int min = 0;
+      int max = i;
+      while (min < max) {
+        int mid = (min + max) / 2;
+        auto e = get_epsilon(mid, d);
+        auto z = e.first + reference_orbit[e.second];
+        if (escaped(z))
+          max = mid;
+        else
+          min = mid + 1;
+      }
+      return min;
     }
 
     return 0;
-
-    //    return get_escape_iterations_naive(d, max_iterations);
   }
 
   // Keep this here for testing/debugging
@@ -186,42 +195,86 @@ public:
     delta_from_reference = 0;
 
     DeltaType epsilon = 0;
-    auto max_B = max_term_value(radius);
     int j = 0;
 
-    extend_series(j, epsilon, max_B, max_iterations, stop);
+    extend_series(j, epsilon, fractals::norm(radius), max_iterations, stop);
   }
 
-  void extend_series(int j, DeltaType epsilon, auto max_B, int max_iterations,
-                     std::atomic<bool> &stop) {
+  using delta_size = typename DeltaType::value_type;
+
+  void extend_series(int j, DeltaType epsilon, auto norm_delta,
+                     int max_iterations, std::atomic<bool> &stop) {
 
     DeltaType A{1}, B{0};
 
+    DeltaType local_epsilon{0}, local_A{1}, local_B{0};
+    LowPrecisionType local_z;
+
     LowPrecisionType z;
 
+    // Tweak to add extra inaccuracy
+    constexpr auto system_epsilon = // 1e-6;
+        std::numeric_limits<typename DeltaType::value_type>::epsilon();
+    constexpr auto system_epsilon_squared = system_epsilon * system_epsilon;
+
+    using size_type = typename DeltaType::value_type;
+    delta_size max_norm_A, max_norm_B;
+    delta_size max_parent_epsilon = parent ? parent->max_epsilon : size_type{0};
+    // auto modulus_delta = std::sqrt(norm_delta);
+
     do {
-      z = reference_orbit[j] + epsilon;
+      z = reference_orbit[j];
+      local_z = z + epsilon;
+
       entries.push_back({epsilon, A, B, j});
 
-      A = 2 * DeltaType{z} * A;
-      B = 2 * DeltaType{z} * B + DeltaType{1, 0};
+      // The A and B terms are for linearization around this orbit
+      // Meanwhile, we're also computing our own orbit using perturbation theory
+      A = 2 * DeltaType{local_z} * A;
+      B = 2 * DeltaType{local_z} * B + DeltaType{1, 0};
+
       epsilon = 2 * z * epsilon +
                 epsilon * epsilon + /* ?? Delete this term surely final_epsilon
                                      * final_epsilon + */
                 delta_from_reference;
       j++;
 
+      auto norm_z = fractals::norm(local_z);
+
+      if (norm_z == 0)
+        norm_z = 1;
+
       // Zhuoran's device
       if (j >= reference_orbit.size() - 1 || escaped(reference_orbit[j]) ||
-          fractals::norm(z) < fractals::norm(epsilon)) {
+          norm_z < fractals::norm(epsilon)) {
         epsilon = z;
         j = 0;
       }
 
-    } while (!stop && !escaped(z) &&
+      max_norm_A = system_epsilon_squared * norm_z /
+                   (max_parent_epsilon * max_parent_epsilon);
+
+      max_norm_B = system_epsilon_squared * norm_z / norm_delta;
+
+    } while (!stop && !escaped(local_z) &&
              entries.size() + base_iteration < max_iterations &&
-             fractals::norm(B) <= max_B);
+             norm(A) < max_norm_A && norm(B) < max_norm_B);
+
+    max_epsilon = std::sqrt(norm_delta) * std::sqrt(fractals::norm(B));
+
+    if (!parent || !parent->parent) {
+      std::cout << "||∂|| = " << norm_delta;
+      std::cout << ", Size = " << size() << ", Norm A = " << norm(A)
+                << ", max norm A = " << max_norm_A << ", Norm B = " << norm(B)
+                << ", max norm B = " << max_norm_B << std::endl;
+    }
+    // std::cout << max_epsilon << std::endl;
+
+    if (parent)
+      max_epsilon += std::sqrt(norm(A)) * parent->max_epsilon;
   }
+
+  delta_size max_epsilon;
 
   // Creates a branch, and populates it as far as it will go
   orbit_branch(const std::shared_ptr<const orbit_branch> &parent,
@@ -234,14 +287,13 @@ public:
     // What is our epsilon at the b
     // base_epsilon =
     DeltaType epsilon =
-        parent->get_epsilon(base_iteration, delta_from_reference);
+        parent->get_epsilon(base_iteration, delta_from_reference).first;
     // The first iteration of this branch is the size() iteration from the
     // parent branch
     int j = parent->entries[parent->size()].j;
 
-    auto max_B = max_term_value(delta_from_parent);
-
-    extend_series(j, epsilon, max_B, max_iterations, stop);
+    extend_series(j, epsilon, fractals::norm(delta_from_parent), max_iterations,
+                  stop);
   }
 };
 
@@ -261,7 +313,7 @@ void compute_tree(int x0, int y0, int x1, int y1,
                             branch_radius.real(),
                         (2.0 * double(j - y0) / double(y1 - y0) - 1.0) *
                             branch_radius.imag()};
-        int skipped;
+        int skipped = 0;
         auto iterations = branch->get_escape_iterations(
             delta + branch->delta_from_reference, max_iterations, skipped);
         fn(i, j, iterations, skipped);
