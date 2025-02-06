@@ -56,35 +56,6 @@ public:
   using primary_orbit =
       perturbation_orbit<LowPrecisionType, DeltaType, ReferenceOrbit>;
 
-  // A second order reference orbit
-
-  /*
-    Gets the epsilon of point d relative to the reference orbit.
-
-    Input:
-    dc relative to the reference orbit
-    i - the absolute iteration number
-
-    return - epsilon (dz) from the central orbit
-  */
-  std::pair<DeltaType, int> get_epsilon_1(int i,
-                                          DeltaType delta_reference) const {
-
-    if (i < base_iteration) {
-      return parent->get_epsilon_1(i, delta_reference);
-    } else if (parent) {
-      return std::make_pair(entries[i - base_iteration].epsilon_from_reference +
-                                entries[i - base_iteration].local_B *
-                                    (delta_reference - delta_from_reference),
-                            entries[i - base_iteration].j);
-    } else {
-
-      // Optimization of previous case
-      assert(base_iteration == 0);
-      return std::make_pair(entries[i].local_B * delta_reference, entries[i].j);
-    }
-  }
-
   /*
     Same idea as get_epsilon_1, except that we'll recompute epsilon at each
     step.
@@ -152,6 +123,8 @@ public:
         i = 0;
       return i;
     } else {
+      // Conclusion: We probably don't need to store all the vectors after all
+      return 0;
       int min = 0;
       int max = i;
       while (min < max) {
@@ -251,7 +224,7 @@ public:
         j = 0;
       }
 
-      max_norm_A = system_epsilon_squared * norm_z /
+      max_norm_A = 2 * system_epsilon_squared * norm_z /
                    (max_parent_epsilon * max_parent_epsilon);
 
       max_norm_B = system_epsilon_squared * norm_z / norm_delta;
@@ -274,6 +247,7 @@ public:
       max_epsilon += std::sqrt(norm(A)) * parent->max_epsilon;
   }
 
+  // Note our calculation for this is bogus !!
   delta_size max_epsilon;
 
   // Creates a branch, and populates it as far as it will go

@@ -148,6 +148,28 @@ $|A| < \epsilon|z||\epsilon_j|^{-1}$ and $|B| < \epsilon|z||\delta|^{-1}$
 
 $\square$
 
+## Translating bilinear terms
+
+Suppose you wanted to calculate a series from a different starting point? This would give you much tighter bounds on $A$ which means that you could potentially extend the series much further.
+
+If you have 2 series, $z$ and $z'$, we approximate $\epsilon_{j+n} = A_{i,n}\epsilon_i + B_{i,n}\delta$. We want to find terms $\epsilon'_{j+n} = A'_{i,n}\epsilon'_{j} + B'_{i,n}\delta'$.
+
+Define $E_j = \epsilon'_j - \epsilon_j$ and $\Delta = \delta' - \delta$.
+
+We can calculate $z_i$, $z_j$, $z'_i$ and $z'_j$ using BLA.
+
+Imagine 
+
+
+Imagine a point $z''$ relative to $z$ and $z'$.  
+
+$z''_i = z'_i+\epsilon_j = z''_i+\epsilon'_j$
+
+$\epsilon_i = A_{j,n}\epsilon_j + B_{j,n}\delta$
+
+
+Let $\Delta$ be the distance between the orbits, such that $\Delta = \delta - \delta'$, and $\Epsilon_i$ be the distance between orbits at iteration $i$.
+
 ## Quadratic approximation
 
 What if we instead created a quadratic approximation for skip-forward:

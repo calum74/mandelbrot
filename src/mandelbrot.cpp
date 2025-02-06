@@ -13,7 +13,7 @@
 template <mandelbrot::Complex LowPrecisionType, mandelbrot::Complex DeltaType,
           mandelbrot::Complex TermType, mandelbrot::Complex HighPrecisionType,
           mandelbrot::Calculation Calculation, int Terms, int TermPrecision1,
-          int TermPrecision2>
+          int TermPrecision2, int NumOrbits>
 class PerturbatedMandelbrotCalculation : public fractals::PointwiseCalculation {
 public:
   using SmallReal = typename LowPrecisionType::value_type;
@@ -53,7 +53,7 @@ public:
 
     orbits.new_view(
         delta, DeltaType{DeltaReal(0.5) * coords.w, DeltaReal(0.5) * coords.h},
-        3, init, max_iterations, stop);
+        NumOrbits, init, max_iterations, stop);
   }
 
   // Are the given coordinates valid. Use this to prevent zooming out too far
@@ -139,16 +139,18 @@ void fractals::PointwiseCalculation::initialize(const view_coords &c, int x,
                                                 std::atomic<bool> &stop) {}
 
 template <int N, int P, int T = 4, int TermPrecision1 = 25,
-          int TermPrecision2 = 100, typename DeltaType = std::complex<double>>
+          int TermPrecision2 = 100, int Orbits = 3,
+          typename DeltaType = std::complex<double>>
 using MB = PerturbatedMandelbrotCalculation<
     std::complex<double>, DeltaType,
     std::complex<fractals::high_exponent_real<double>>,
     std::complex<fractals::high_precision_real<P>>,
-    mandelbrot::mandelbrot_calculation<N>, T, TermPrecision1, TermPrecision2>;
+    mandelbrot::mandelbrot_calculation<N>, T, TermPrecision1, TermPrecision2,
+    Orbits>;
 
 template <int N, int P, int T = 4, int TermPrecision1 = 25,
-          int TermPrecision2 = 100>
-using MB_high = MB<N, P, T, TermPrecision1, TermPrecision2,
+          int TermPrecision2 = 100, int Orbits = 3>
+using MB_high = MB<N, P, T, TermPrecision1, TermPrecision2, Orbits,
                    std::complex<fractals::high_exponent_real<double>>>;
 
 // TODO: a more elegant way to choose parameters
@@ -162,21 +164,8 @@ using MB_high = MB<N, P, T, TermPrecision1, TermPrecision2,
 const fractals::PointwiseFractal &mandelbrot_fractal =
     fractals::make_fractal<MB<2, 3, 4, 10, 1000>, MB<2, 6>, MB<2, 10>,
                            MB_high<2, 18>, MB_high<2, 32>, MB_high<2, 40>,
-                           MB_high<2, 64>>("Mandelbrot set", "mandelbrot");
-
-template <int N, int P, int T = 2, int TermPrecision1 = 1,
-          int TermPrecision2 = 100>
-using FastMB = PerturbatedMandelbrotCalculation<
-    std::complex<double>, std::complex<double>,
-    std::complex<fractals::high_exponent_real<double>>,
-    std::complex<fractals::high_precision_real<P>>,
-    mandelbrot::mandelbrot_calculation<N>, T, TermPrecision1, TermPrecision2>;
-
-const fractals::PointwiseFractal &mandelbrot_imprecise =
-    fractals::make_fractal<FastMB<2, 3>, FastMB<2, 6>, FastMB<2, 10, 3>,
-                           FastMB<2, 18, 3>, MB_high<2, 32, 3>,
-                           MB_high<2, 40, 3>, MB_high<2, 64, 3>>(
-        "Mandelbrot set (faster/imprecise)", "mandelbrot");
+                           MB_high<2, 64, 3, 100, 1000, 1>>("Mandelbrot set",
+                                                            "mandelbrot");
 
 // Cubic Mandelbrot has no glitches with 3 Taylor series terms, but
 // glitches quite badly with 4 terms. On the other hand, Square mandelbrot works
