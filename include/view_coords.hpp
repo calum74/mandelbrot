@@ -3,6 +3,12 @@
 
 namespace fractals {
 
+struct mapped_point {
+  // The coordinates of a point (x,y) within a viewport, together with
+  // the log of the distance log(r1/r2).
+  double x, y, log_distance;
+};
+
 // The coordinates of the current view, specified in high_precision numbers.
 struct view_coords {
   using value_type = real_number<4096, 0, 0>; // 4096 with no exponent
@@ -35,7 +41,7 @@ struct view_coords {
   std::pair<value_type, value_type> map_point(int w, int h, int cx,
                                               int cy) const;
 
-  std::pair<double, double> map_point(int w, int h, const view_coords &p) const;
+  mapped_point map_point(int w, int h, const view_coords &p) const;
 
   // Gets the desired precision
   int get_precision(int dps = 4) const;

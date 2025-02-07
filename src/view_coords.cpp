@@ -119,7 +119,7 @@ double fractals::view_coords::ln_r() const {
       fractals::convert<fractals::high_exponent_real<double>>(r));
 }
 
-std::pair<double, double>
+fractals::mapped_point
 fractals::view_coords::map_point(int w, int h, const view_coords &p) const {
 
   // !! Use exponents here
@@ -128,5 +128,5 @@ fractals::view_coords::map_point(int w, int h, const view_coords &p) const {
   auto dr = r.to_double();
   auto point_size = (w > h ? double(h) / (2.0 * dr) : double(w) / (2.0 * dr));
 
-  return {w / 2 + point_size * dx, h / 2 + point_size * dy};
+  return {w / 2 + point_size * dx, h / 2 + point_size * dy, ln_r() - p.ln_r()};
 }

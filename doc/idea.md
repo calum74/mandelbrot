@@ -249,6 +249,11 @@ Think of the whole thing as an orbit-cache. If we calculate one orbit, we'll als
 
 Why do we get such bad term utilisation in the secondary branches?
 
+Next idea: Each time we calculate an orbit, also calculate jump-forward terms. When we render an adjacent pixel, there's a good chance we can reuse the last orbit calculated.
+
+Naive algorithm: 
+Calculate an orbit normally (using series approximation etc). Also create a list of jump-forward coefficients. When rendering the adjacant point, reuse this list.
+
 
 
 
