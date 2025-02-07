@@ -1,4 +1,4 @@
-*This is a work in progress*
+*This is a work in progress, and should be viewed as rough notes*
 
 Next idea: When is it reasonable to drop quadratic terms completely?
 
@@ -10,7 +10,7 @@ Recall the basic recurrence relation to calculate the distance $\epsilon_i$ from
 
 If $\epsilon_i$ is "small" (less than $10^{-16}$ or so), then we can drop the $\epsilon_i^2$ term entirely, since it cannot affect the calculation. This gives
 
-2. $\epsilon_{i+1} = 2z_i\epsilon_i + \delta$
+2. $\epsilon_{i+1} \approxeq 2z_i\epsilon_i + \delta$
 
 We can then formulate a "jump forward" $n$ steps from iteration $i$ using linear equations
 
@@ -78,7 +78,7 @@ Corollary 1 gives us a way to calculate a way to jump forward $m$ steps for each
 
 ## Precision of bilinear approximation
 
-Define $\epsilon \in R$ to be the smallest number representable using a floating point number such that if $b<\epsilon a$ then $a \equiv a+b$.
+Define $\epsilon \in R$ to be the smallest number representable using a floating point number such that if $b<\epsilon a$ then $a \approxeq a+b$.
 
 Note we are using $\epsilon$ to indicate floating point precision, whereas $\epsilon_i$ is the distance from the reference orbit. Confusing!
 
@@ -150,25 +150,38 @@ $\square$
 
 ## Translating bilinear terms
 
-Suppose you wanted to calculate a series from a different starting point? This would give you much tighter bounds on $A$ which means that you could potentially extend the series much further.
+Suppose you wanted to calculate a series from a different starting point?
 
-If you have 2 series, $z$ and $z'$, we approximate $\epsilon_{j+n} = A_{i,n}\epsilon_i + B_{i,n}\delta$. We want to find terms $\epsilon'_{j+n} = A'_{i,n}\epsilon'_{j} + B'_{i,n}\delta'$.
+**Theorem:** (Translating bilinear orbits)
 
-Define $E_j = \epsilon'_j - \epsilon_j$ and $\Delta = \delta' - \delta$.
+For two orbits series $z'$ and $z''$, such that $z'' = z' + \Delta$, where the terms of $z'$ can be estimated using the bilinear equations $\epsilon'_i \approxeq A'_{j,i-j}\epsilon'_j + B'_{j,i-j}\delta'$, and the terms of $z''$ can be estimated using $\epsilon''_i \approxeq A''_{j,i-j}\epsilon''_j + B''_{j,i-j}\delta''$, then
 
-We can calculate $z_i$, $z_j$, $z'_i$ and $z'_j$ using BLA.
+$A''_{j,j-i} = A'_{j,j-i}$
 
-Imagine 
+$B''_{j,j-i} = B'_{j,j-i}$
 
+*Proof:*
 
-Imagine a point $z''$ relative to $z$ and $z'$.  
+Consider an orbit $p$ close to $z'$ and $z''$.
 
-$z''_i = z'_i+\epsilon_j = z''_i+\epsilon'_j$
+$\delta' = p - z'$, $\delta'' = p - z''$
 
-$\epsilon_i = A_{j,n}\epsilon_j + B_{j,n}\delta$
+Therefore $\delta'' - \delta' = z''-z' = \Delta$.
 
+At iteration $i$, $p_i \approxeq z'_i + A'_{j,i-j}\epsilon'_j + B'_{j,i-j}\delta' \approxeq z''_i + A''_{j,i-j}\epsilon''j + B''_{j,i-j}\delta''$
 
-Let $\Delta$ be the distance between the orbits, such that $\Delta = \delta - \delta'$, and $\Epsilon_i$ be the distance between orbits at iteration $i$.
+Let $\Epsilon_i = \epsilon''_i - \epsilon'_i = z''_i - z'_i$, representing the distance between the orbits $z'$ and $z''$.
+
+$\Epsilon_i = A'_i\Epsilon_j+B'_i\Delta$
+
+1. $\epsilon''_i = A''_i\epsilon''_j + B''_i\delta''$
+2. $\epsilon''_i = \Epsilon_i - \epsilon'_i$
+3. $=A'_i\Epsilon_j+B'\Delta -A'_i\epsilon'_j - B'_i\delta'$
+4. $=A'_i\Epsilon_j+B'\Delta -A'_i(\Epsilon_j - \epsilon''_j) - B'_i(\Delta-\delta'')$
+5. $=A'_i\epsilon''_j + B'_i\delta''$
+$\square$
+
+This is a bit unexpected, but it means that in a given region, the bilinear coefficients are the same. Unfortunately you don't get anything for free because the translation is only valid over the scope of the original linearization.
 
 ## Quadratic approximation
 
@@ -214,40 +227,28 @@ We can also look at the size of the "residual" from equation 4 above.
 
 This approximation is valid provided that $|\epsilon_i|^2 < \epsilon$, which should give a longer branch. It is unclear whether the additional effort in computing extra terms is outweighed by having a longer branch.
 
-# Relocating the tree
+# Why didn't it work?
 
-Imagine that you have a reference orbit $z$, a relative orbit $z'=z+\delta$, and you want to create a third orbit $z''=c'+\delta'$ close to the second orbit.
+When constructing the tree, I was taking the pessimistic view that it would only be possible to jump forward from *any* point in the region. However, some points in the region will have a much smaller $\epsilon_i$, so could potentially be fast-forwarded much further.
 
-At iteration $i$, we have $\epsilon_i$ is the distance from the relative orbit to the reference orbit. We also have $\epsilon'_i$ as the distance between the second orbit $z'$ and the third orbit $z''$. It follows that the distance between $z''$ and $z$ is $\epsilon_i + \epsilon'_i$.
+So I need to think about how to calculate these additional terms, and when they can be applied.
 
-We also want to compute terms relative to the second orbit $z'$.
+Another idea is to set the length of the branch to equal 50% of the escape distance (or the bailout, whichever is the lower).
+
+The for root branch, there is no need to compute all terms because all terms have the same $\epsilon = 0$, and there is no need to extend the terms further.
+
+For secondary branches, we'll compute 50% of the remaining iterations?
+
+Each child branch could have a different branching value.
+
+General problem, for a point $\epsilon_i, \delta$, can we find an orbit with a term $A_{i,n},B_{i,n}$ which will safely allow us to skip forward $n$ spaces?
+
+Wait a minute! Can't we just pick a point directly underneath the point being calculated, and calculate a skip-forward with an epsilon always equal to 0???? Surely that can't work. No because we want to calculate the epsilon.
+
+Think of the whole thing as an orbit-cache. If we calculate one orbit, we'll also calculate the terms, so next time we calculate next to the orbit, we'll be able to use the terms.
+
+Why do we get such bad term utilisation in the secondary branches?
 
 
 
-# Turning this idea into an algorithm
-
-The general idea is that we can split the entire iteration into a series of linear big-steps. We can build this on top of perturbation and series-approximation, so for any orbit where we notice we are iterating forwards, we can "detect" that epsilon is small and use this to accelerate iteration.
-
-Another idea is to implement some kind of "rolling hash" so we compute a "skip forward 5" term for every entry. When can we apply then?
-
-## Constructing the tree
-
-Start by computing the orbit from iteration 0, Calculating $A_{0,n}$ and $B_{0,n}$ as far as the precision of $\epsilon_i$ allows.
-
-Then we'll create 4 further orbits, where each sub-orbit (at a distance $\Delta$ from the original) can be started using $\Epsilon_i$, $z'_i$ from the reference orbit. Again we'll compute $A_{n_1,n_2}, B_{n_1,n_2}$ for the sub-orbit, which can be done precisely. Since the maximum $\delta$ of the sub-orbit is less than the original orbit, we can calculate this precisely.
-
-Each branch contains:
-
-* $I \in N$, its base iteration
-* $\delta_b$, the distance to the high precision reference orbit
-* $\epsilon_I$ the starting epsilon for the branch, relative to the reference orbit, constructed by jumping forward from the previous branches
-* $J \in N$, the maximum iteration we can skip forward to
-* $A_{i}, B_{i} \in C$ for each iteration, to skip forward to iteration $i$.
-* $z_{i} \in C$ for each iteration, the orbital value at each iteration $i$, computed iteratively from $\delta_b$ and $\epsilon_I$.
-
-## Calculating escape iteration
-
-To calculate $z_i$ for a point $p$, we calculate its $\delta$ relative to the first reference orbit. Then we jump forward $J$ places to the second orbit, which maintains our $\epsilon$.
-
-This is very similar to when we branch an orbit. We need to calculate its $\epsilon$ from iteration 0.
 

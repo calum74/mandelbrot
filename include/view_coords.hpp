@@ -35,6 +35,8 @@ struct view_coords {
   std::pair<value_type, value_type> map_point(int w, int h, int cx,
                                               int cy) const;
 
+  std::pair<int, int> map_point(int w, int h, const view_coords &p) const;
+
   // Gets the desired precision
   int get_precision(int dps = 4) const;
 };
