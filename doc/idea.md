@@ -251,9 +251,19 @@ Why do we get such bad term utilisation in the secondary branches?
 
 Next idea: Each time we calculate an orbit, also calculate jump-forward terms. When we render an adjacent pixel, there's a good chance we can reuse the last orbit calculated.
 
-Naive algorithm: 
-Calculate an orbit normally (using series approximation etc). Also create a list of jump-forward coefficients. When rendering the adjacant point, reuse this list.
+# Caching a single BLA - BLA ladder
 
+This idea involves calculating a BLA for just a single point, and reusing for adjacent points as far as possible.
 
+At stack entry $n$:
+* delta from reference at base ??
+* epsilon from reference ??
+* A_{i,n}
+* B_{i,n}
+* $j_Z$ (for Zhouran's device)
+
+To calculate a point, look at the previous jump-forward value, and try to jump forward that many steps. Perform a binary search to jump forward more or less if we can, then record the iteration we reached.
+
+Then we'll carry on calculating the epsilon, A and B terms for that point, overwriting the upper parts of the tree until we escape.
 
 

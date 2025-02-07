@@ -12,6 +12,7 @@
 #pragma once
 #include "mandelbrot_calculation.hpp"
 #include <atomic>
+#include <cassert>
 #include <optional>
 #include <vector>
 
@@ -382,42 +383,6 @@ public:
     } while (!stop && entries.size() <= max_iterations &&
              !escaped(entries.back().z));
     // debug_terms();
-  }
-
-  // !! This does not belong here
-  void debug_terms() const {
-    // Debug - look at the terms
-    int max_term[Terms] = {};
-    using R = TermType::value_type;
-    R max[Terms] = {}, min[Terms] = {};
-    for (int i = 0; i < entries.size(); ++i) {
-      //
-      bool failed = false;
-      for (int t = 0; t < Terms; ++t) {
-        if ((!isfinite(fractals::real_part(entries[i].terms[t])) ||
-             !isfinite(fractals::imag_part(entries[i].terms[t])))) {
-          if (!max_term[t]) {
-            max_term[t] = i;
-          }
-        } else {
-          // It's finite
-          auto nt = fractals::norm(entries[i].terms[t]);
-          if (max[t] == R(0) || nt > max[t])
-            max[t] = nt;
-          if (min[t] == R(0) || nt < min[t])
-            min[t] = nt;
-        }
-      }
-    }
-    for (int t = 0; t < Terms; ++t) {
-      if (max_term[t]) {
-        std::cout << "Maximum term for " << t << " = " << max_term[t];
-        for (int u = 0; u < Terms; ++u)
-          std::cout << " " << entries[max_term[t]].terms[u];
-        std::cout << std::endl;
-      }
-      std::cout << "Max = " << max[t] << ", min = " << min[t] << std::endl;
-    }
   }
 
   auto epsilon(int i, delta_type delta, auto nd) const {

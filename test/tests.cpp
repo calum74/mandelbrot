@@ -1,3 +1,4 @@
+#include "bla.hpp"
 #include "complex_number.hpp"
 #include "fractal.hpp"
 #include "high_exponent_real.hpp"
@@ -362,6 +363,17 @@ int main() {
     std::cout << root->size() << " iterations in the root branch\n";
 
     dump_tree(root, radius, 0, 4);
+  }
+
+  {
+    // BLA
+    using O1 = basic_orbit<std::complex<double>, mandelbrot_calculation<2>>;
+    using O2 = stored_orbit<std::complex<double>, O1>;
+    using O3 = linear_orbit<std::complex<double>, O2>;
+    std::atomic<bool> stop;
+    O2 o2(std::complex<double>{0.1, 0.1}, 500, stop);
+    O3 o3(o2);
+    o3.get({0.01, 0.01}, 500);
   }
 
   return 0;
