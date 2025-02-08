@@ -31,8 +31,12 @@ public:
 
     reference_type reference_orbit(HighPrecisionType{c.x, c.y});
     std::lock_guard<std::mutex> lock(m);
+    std::cout << "Last skipped iterations = " << average_skipped() << std::endl;
     stored_orbit = {reference_orbit, c.max_iterations, stop};
     orbit = {*stored_orbit};
+    skipped_iterations = 0;
+    points_calculated = 0;
+    total_iterations = 0;
   }
 
   std::optional<stored_type> stored_orbit;
@@ -77,7 +81,11 @@ public:
                        coords.dy * (y - coords.ph / 2)};
 
     std::lock_guard<std::mutex> lock(m);
-    return orbit.get(delta, max_iterations);
+    auto r = orbit.get(delta, max_iterations);
+    ++points_calculated;
+    skipped_iterations += orbit.get_skipped_iterations();
+    total_iterations += r;
+    return r;
   }
 
 private:

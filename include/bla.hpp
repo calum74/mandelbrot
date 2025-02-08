@@ -52,12 +52,10 @@ public:
     last_jump = min;
     stack.resize(min);
 
-    stack.clear(); // !!
-
     if (!stack.empty()) {
       B = stack.back().B;
       jZ = stack.back().jZ;
-      epsilon = stack.back().B * (delta - stack.back().dc);
+      epsilon = B * (delta - stack.back().dc) + stack.back().dz;
     }
 
     // 2) Keep iterating until we escape
@@ -70,9 +68,9 @@ public:
       epsilon =
           2 * (*reference_orbit)[jZ] * epsilon + epsilon * epsilon + delta;
       B = 2 * z * B + DeltaType{1, 0};
-      stack.push_back({B, delta, jZ});
 
       ++jZ;
+      stack.push_back({B, delta, epsilon, jZ});
       z = (*reference_orbit)[jZ] + LowPrecisionType(epsilon);
 
       // Zhuoran's device
@@ -91,11 +89,13 @@ public:
     return stack.size();
   }
 
+  int get_skipped_iterations() const { return last_jump; }
+
 private:
   const Reference *reference_orbit;
 
   struct entry {
-    DeltaType B, dc;
+    DeltaType B, dc, dz;
     int jZ; // Zhouran's j. It's probably implicit from the entry position but
             // save it for now.
   };
