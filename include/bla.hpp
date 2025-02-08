@@ -33,11 +33,9 @@ public:
     // 1) Find the top position
     auto norm_delta = norm(delta);
 
-    stack.clear(); // !!
-
     // For now, just do a binary search
     int min = 0, max = stack.size() - 1;
-    while (min < max) {
+    while (min + 1 < max) {
       int mid = (min + max) / 2;
 
       // Test the term at position mid to see if it still
@@ -48,11 +46,13 @@ public:
               std::numeric_limits<typename DeltaType::value_type>::epsilon())
         min = mid;
       else
-        max = mid - 1;
+        max = mid;
     }
 
     last_jump = min;
     stack.resize(min);
+
+    stack.clear(); // !!
 
     if (!stack.empty()) {
       B = stack.back().B;
