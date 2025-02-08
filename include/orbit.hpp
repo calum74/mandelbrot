@@ -274,11 +274,8 @@ public:
     epsilon = fractals::normalize(epsilon);
     j++;
 
-    assert(j >= 0 && j < reference->size()); // !! This will probably start to
-                                             // fail until we fix this
-
-    auto z = (*reference)[j] + convert<value_type>(epsilon);
-
+    assert(j >= 0 && j < reference->size());
+    auto z = **this;
     if (j == (*reference).size() - 1 || escaped((*reference)[j]) ||
         fractals::norm(z) < fractals::norm(convert<value_type>(epsilon))) {
       // We have exceeded the bounds of the current orbit

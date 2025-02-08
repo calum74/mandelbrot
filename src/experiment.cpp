@@ -1,7 +1,9 @@
 
+#include "bla.hpp"
 #include "high_exponent_real.hpp"
 #include "mandelbrot.hpp"
-#include "orbit_tree.hpp"
+#include <mutex>
+#include <optional>
 
 // Calculate the Mandelbrot set using perturbations and
 // Taylor series to skip iterations. The algorithms are implemented in
@@ -17,45 +19,24 @@ public:
   using DeltaReal = typename DeltaType::value_type;
   using HighPrecisionReal = typename HighPrecisionType::value_type;
 
+  using reference_type =
+      mandelbrot::basic_orbit<HighPrecisionType, Calculation>;
+  using stored_type =
+      mandelbrot::stored_orbit<LowPrecisionType, reference_type>;
+
   void initialize(const view_coords &c, int w, int h,
                   std::atomic<bool> &stop) override {
     coords = {c, w, h};
-    auto radius = DeltaType(coords.dx * fractals::convert<DeltaReal>(w * 0.5),
-                            coords.dy * fractals::convert<DeltaReal>(h * 0.5));
-
-    pw = w;
-    experiment.resize(w * h);
-
-    using reference_type =
-        mandelbrot::basic_orbit<HighPrecisionType, Calculation>;
-    using stored_type =
-        mandelbrot::stored_orbit<LowPrecisionType, reference_type>;
-    using branch_type = mandelbrot::orbit_branch<LowPrecisionType, DeltaType,
-                                                 TermType, stored_type>;
+    max_iterations = c.max_iterations;
 
     reference_type reference_orbit(HighPrecisionType{c.x, c.y});
-    stored_type stored_orbit(reference_orbit, c.max_iterations, stop);
-
-    auto root = std::make_shared<branch_type>(stored_orbit, radius,
-                                              c.max_iterations, stop);
-
-    // Let's compute something!
-    std::uint64_t total_skipped = 0;
-    std::uint64_t total_points = 0;
-
-    auto fn = [&](int x, int y, int i, int skipped) {
-      experiment[x + y * w] = i;
-      ++total_points;
-      total_skipped += skipped;
-    };
-    mandelbrot::compute_tree(0, 0, w, h, root, radius, c.max_iterations, stop,
-                             fn);
-    std::cout << "Skipped " << (total_skipped / total_points)
-              << " iterations on average\n";
+    std::lock_guard<std::mutex> lock(m);
+    stored_orbit = {reference_orbit, c.max_iterations, stop};
+    orbit = {*stored_orbit};
   }
 
-  int pw;
-  std::vector<double> experiment;
+  std::optional<stored_type> stored_orbit;
+  mutable mandelbrot::linear_orbit<DeltaType, stored_type> orbit;
 
   // Are the given coordinates valid. Use this to prevent zooming out too far
   // or to select a different implementation for different resolutions.
@@ -86,16 +67,23 @@ public:
 
   mutable std::atomic<int> iterations_skipped;
 
+  mutable std::mutex m;
   // Calculates a single point of the fractal, at position (x,y).
   // Look up the actual coordinates (or in this case, the delta from the
   // center (ref_x, ref_y)) from the plane.
   double calculate(int x, int y) const override {
-    return experiment[x + y * pw];
+
+    DeltaType delta = {coords.dx * (x - coords.pw / 2),
+                       coords.dy * (y - coords.ph / 2)};
+
+    std::lock_guard<std::mutex> lock(m);
+    return orbit.get(delta, max_iterations);
   }
 
 private:
   // A mapping from points in the image to points in the complex plane.
   fractals::plane<HighPrecisionReal, DeltaReal> coords;
+  int max_iterations;
 };
 
 template <int N, int P, int T = 4, int Tolerance = 100,

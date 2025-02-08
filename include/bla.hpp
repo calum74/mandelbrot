@@ -22,15 +22,18 @@ of the orbit for adjacent orbits.
 */
 template <Complex DeltaType, RandomAccessOrbit Reference> class linear_orbit {
 public:
-  linear_orbit(const Reference &r) : reference_orbit(r) {}
+  linear_orbit() : reference_orbit() {}
+  linear_orbit(const Reference &r) : reference_orbit(&r) {}
 
   // The delta is to the reference orbit
   int get(DeltaType delta, int max_iterations) {
     DeltaType epsilon = 0;
-    int j = 0;
+    int jZ = 0;
     DeltaType B = 0;
     // 1) Find the top position
     auto norm_delta = norm(delta);
+
+    stack.clear(); // !!
 
     // For now, just do a binary search
     int min = 0, max = stack.size() - 1;
@@ -39,45 +42,62 @@ public:
 
       // Test the term at position mid to see if it still
       // has precision
-      auto z = reference_orbit[stack[mid].jZ];
+      auto z = (*reference_orbit)[stack[mid].jZ];
       if (norm(stack[mid].B) * norm(stack[mid].dc - delta) <
           std::norm(z) *
               std::numeric_limits<typename DeltaType::value_type>::epsilon())
         min = mid;
       else
-        max = mid;
+        max = mid - 1;
     }
 
-    last_jump = stack.size();
+    last_jump = min;
     stack.resize(min);
 
     if (!stack.empty()) {
       B = stack.back().B;
-      j = stack.back().jZ;
+      jZ = stack.back().jZ;
       epsilon = stack.back().B * (delta - stack.back().dc);
     }
 
     // 2) Keep iterating until we escape
 
-    auto z = reference_orbit[j];
+    using LowPrecisionType = typename Reference::value_type;
+    LowPrecisionType z = (*reference_orbit)[jZ];
 
+    z = (*reference_orbit)[jZ] + LowPrecisionType(epsilon);
     do {
-      z = reference_orbit[j] + epsilon;
-      epsilon = 2 * z * epsilon + delta;
+      epsilon =
+          2 * (*reference_orbit)[jZ] * epsilon + epsilon * epsilon + delta;
       B = 2 * z * B + DeltaType{1, 0};
-      stack.push_back({B, delta, j});
-      ++j;
+      stack.push_back({B, delta, jZ});
+
+      ++jZ;
+      z = (*reference_orbit)[jZ] + LowPrecisionType(epsilon);
+
+      // Zhuoran's device
+      if (jZ >= reference_orbit->size() - 1 ||
+          escaped((*reference_orbit)[jZ]) ||
+          fractals::norm(z) < fractals::norm(epsilon)) {
+        epsilon = z;
+        jZ = 0;
+      }
+
     } while (!escaped(z) && stack.size() < max_iterations);
+
+    if (stack.size() == max_iterations)
+      return 0;
 
     return stack.size();
   }
 
 private:
-  const Reference &reference_orbit;
+  const Reference *reference_orbit;
 
   struct entry {
     DeltaType B, dc;
-    int jZ; // Zhouran's j
+    int jZ; // Zhouran's j. It's probably implicit from the entry position but
+            // save it for now.
   };
 
   std::vector<entry> stack;
