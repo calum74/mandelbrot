@@ -159,7 +159,10 @@ int main() {
   }
 
   {
-    fractals::view_parameters p1{.coords = {1.5, -0.5, 0.5, 500},
+    fractals::view_parameters p1{.x = "1.5",
+                                 .y = "-0.5",
+                                 .r = "0.5",
+                                 .max_iterations = 500,
                                  .algorithm = "abc def",
                                  .colour_seed = 99,
                                  .colour_gradient = 0.001},

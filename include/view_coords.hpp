@@ -2,6 +2,7 @@
 #include "high_precision_real.hpp"
 
 namespace fractals {
+struct view_parameters;
 
 struct mapped_point {
   // The coordinates of a point (x,y) within a viewport, together with
@@ -14,6 +15,13 @@ struct view_coords {
   using value_type = real_number<4096, 0, 0>; // 4096 with no exponent
   value_type x, y, r;
   int max_iterations;
+
+  view_coords() = default;
+  view_coords(const value_type &x, const value_type &y, const value_type &r,
+              int max_iterations);
+  view_coords(const view_parameters &);
+
+  void write(view_parameters&) const;
 
   // Gets the natural log of r
   double ln_r() const;

@@ -1,12 +1,14 @@
 #pragma once
-#include "fractal.hpp"
+#include <string>
+#include <iostream>
 
 namespace fractals {
 
-// View parameters completely determine the image (except for the dimensions)
+// View parameters completely determine the image (except for the screen dimensions)
 struct view_parameters {
-  view_coords coords;
-  std::string algorithm; //
+  std::string x, y, r;
+  int max_iterations;
+  std::string algorithm;
   int colour_seed = 0;
   double colour_gradient = 10;
   std::string title; // User-defined string

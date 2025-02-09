@@ -1,7 +1,37 @@
 #include "view_coords.hpp"
 #include "high_exponent_real.hpp"
+#include "view_parameters.hpp"
 #include <iomanip>
 #include <numbers>
+
+fractals::view_coords::view_coords(const value_type &x, const value_type &y,
+                                   const value_type &r, int max_iterations)
+    : x(x), y(y), r(r), max_iterations(max_iterations) {}
+
+fractals::view_coords::view_coords(const view_parameters &vp) {
+  std::stringstream(vp.x) >> x;
+  std::stringstream(vp.y) >> y;
+  std::stringstream(vp.r) >> r;
+  max_iterations = vp.max_iterations;
+}
+
+void fractals::view_coords::write(view_parameters&vp) const {
+  auto precision = get_precision();
+  std::stringstream sx;
+  sx << std::setprecision(precision) << x;
+  vp.x = sx.str();
+
+  std::stringstream sy;
+  sy << std::setprecision(precision) << y;
+  vp.y = sy.str();
+
+  std::stringstream sr;
+  sr << std::setprecision(4);
+  fractals::log_radius(sr, ln_r());
+  vp.r = sr.str();
+
+  vp.max_iterations = max_iterations;
+}
 
 fractals::view_coords fractals::view_coords::scroll(int w, int h, int dx,
                                                     int dy) const {

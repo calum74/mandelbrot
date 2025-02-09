@@ -7,9 +7,9 @@ std::ostream &fractals::operator<<(std::ostream &os,
                                    const fractals::view_parameters &vp) {
 
   return os << "Version: 1.00\nX: "
-            << std::setprecision(vp.coords.get_precision()) << vp.coords.x
-            << "\nY: " << vp.coords.y << "\nR: " << vp.coords.r
-            << "\nMax-iterations: " << vp.coords.max_iterations
+            << vp.x
+            << "\nY: " << vp.y << "\nR: " << vp.r
+            << "\nMax-iterations: " << vp.max_iterations
             << "\nAlgorithm: " << vp.algorithm
             << "\nColour-scheme: " << vp.colour_seed
             << "\nColour-gradient: " << vp.colour_gradient << "\n";
@@ -26,13 +26,13 @@ std::istream &fractals::operator>>(std::istream &is,
     if (key == "Version")
       std::getline(is, value);
     else if (key == "X")
-      is >> vp.coords.x;
+      is >> vp.x;
     else if (key == "Y")
-      is >> vp.coords.y;
+      is >> vp.y;
     else if (key == "R")
-      is >> vp.coords.r;
+      is >> vp.r;
     else if (key == "Max-iterations")
-      is >> vp.coords.max_iterations;
+      is >> vp.max_iterations;
     else if (key == "Algorithm")
       std::getline(is, vp.algorithm);
     else if (key == "Colour-scheme")
