@@ -45,7 +45,7 @@ public:
   int get(DeltaType delta, int max_iterations) {
     DeltaType epsilon = 0;
     int jZ = 0;
-    DeltaType B = 0;
+    DeltaType B = 0, B2=0;
     // 1) Find the top position
     auto norm_delta = norm(delta);
 
@@ -57,8 +57,10 @@ public:
       // Test the term at position mid to see if it still
       // has precision
       auto z = (*reference_orbit)[stack[mid].jZ];
-      if (valid_approximation(norm(stack[mid].dc - delta), fractals::norm(z),
-                              norm(stack[mid].B)))
+      if(std::norm(stack[mid].B2) * norm(stack[mid].dc - delta) < 1e-7 * std::norm(stack[mid].B) )
+//      if(norm(stack[mid].dc - delta) < stack[mid].maxNormDelta)
+//      if (valid_approximation(norm(stack[mid].dc - delta), fractals::norm(z),
+//                              norm(stack[mid].B)))
         min = mid;
       else
         max = mid;
@@ -70,6 +72,7 @@ public:
     if (!stack.empty()) {
       B = stack.back().B;
       jZ = stack.back().jZ;
+      // Use the delta_squared term??
       epsilon = B * (delta - stack.back().dc) + stack.back().dz;
     }
 
@@ -89,12 +92,13 @@ public:
     do {
       epsilon =
           2 * (*reference_orbit)[jZ] * epsilon + epsilon * epsilon + delta;
+      B2 = 2 * z * B2 + B*B;
       B = 2 * z * B + DeltaType{1, 0};
 
       maxNormDelta = std::min(maxNormDelta, max_norm_delta(fractals::norm(z), fractals::norm(B)));
 
       ++jZ;
-      stack.push_back({B, delta, epsilon, jZ, maxNormDelta});
+      stack.push_back({B, B2, delta, epsilon, jZ, maxNormDelta});
       z = (*reference_orbit)[jZ] + LowPrecisionType(epsilon);
 
       // Zhuoran's device
@@ -119,7 +123,7 @@ private:
   const Reference *reference_orbit;
 
   struct entry {
-    DeltaType B, dc, dz;
+    DeltaType B, B2, dc, dz;
     int jZ; // Zhouran's j. It's probably implicit from the entry position but
             // save it for now.
     typename DeltaType::value_type maxNormDelta;  // The size of validity

@@ -31,7 +31,6 @@ public:
 
     reference_type reference_orbit(HighPrecisionType{c.x, c.y});
     std::lock_guard<std::mutex> lock(m);
-    std::cout << "Last skipped iterations = " << average_skipped() << std::endl;
     stored_orbit = {reference_orbit, c.max_iterations, stop};
     orbit = {*stored_orbit};
     skipped_iterations = 0;
