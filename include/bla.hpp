@@ -2,6 +2,22 @@
 #include "orbit.hpp"
 
 namespace mandelbrot {
+  
+template <typename SizeType>
+SizeType max_norm_delta(SizeType normZ, SizeType normB)
+{
+  constexpr auto epsilon = std::numeric_limits<SizeType>::epsilon();
+  constexpr auto e_squared = epsilon*epsilon;
+
+  auto s1 = e_squared * normZ/normB;
+  auto s2 = e_squared / (4 *  normB*normB);
+  return std::min(s1, s2);
+}
+
+template <typename SizeType>
+bool valid_approximation(SizeType normDelta, SizeType normZ, SizeType normB) {
+  return normDelta < max_norm_delta(normZ, normB);
+}
 
 /*
 A linear approximation orbit.
@@ -35,15 +51,14 @@ public:
 
     // For now, just do a binary search
     int min = 0, max = stack.size() - 1;
-    while (min + 1 < max) {
+    while (min + 5 < max) {
       int mid = (min + max) / 2;
 
       // Test the term at position mid to see if it still
       // has precision
       auto z = (*reference_orbit)[stack[mid].jZ];
-      if (norm(stack[mid].B) * norm(stack[mid].dc - delta) <
-          std::norm(z) *
-              std::numeric_limits<typename DeltaType::value_type>::epsilon())
+      if (valid_approximation(norm(stack[mid].dc - delta), fractals::norm(z),
+                              norm(stack[mid].B)))
         min = mid;
       else
         max = mid;
@@ -63,14 +78,23 @@ public:
     using LowPrecisionType = typename Reference::value_type;
     LowPrecisionType z = (*reference_orbit)[jZ];
 
+    typename DeltaType::value_type maxNormDelta;
+
+    if(stack.empty())
+      maxNormDelta = std::numeric_limits<typename DeltaType::value_type>::infinity();
+    else
+      maxNormDelta = stack.back().maxNormDelta;
+
     z = (*reference_orbit)[jZ] + LowPrecisionType(epsilon);
     do {
       epsilon =
           2 * (*reference_orbit)[jZ] * epsilon + epsilon * epsilon + delta;
       B = 2 * z * B + DeltaType{1, 0};
 
+      maxNormDelta = std::min(maxNormDelta, max_norm_delta(fractals::norm(z), fractals::norm(B)));
+
       ++jZ;
-      stack.push_back({B, delta, epsilon, jZ});
+      stack.push_back({B, delta, epsilon, jZ, maxNormDelta});
       z = (*reference_orbit)[jZ] + LowPrecisionType(epsilon);
 
       // Zhuoran's device
@@ -98,6 +122,7 @@ private:
     DeltaType B, dc, dz;
     int jZ; // Zhouran's j. It's probably implicit from the entry position but
             // save it for now.
+    typename DeltaType::value_type maxNormDelta;  // The size of validity
   };
 
   std::vector<entry> stack;
