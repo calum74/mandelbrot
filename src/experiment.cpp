@@ -39,7 +39,7 @@ public:
   }
 
   std::optional<stored_type> stored_orbit;
-  mutable mandelbrot::linear_orbit<DeltaType, stored_type> orbit;
+  mutable mandelbrot::bilinear_orbit<DeltaType, stored_type> orbit;
 
   // Are the given coordinates valid. Use this to prevent zooming out too far
   // or to select a different implementation for different resolutions.
