@@ -154,7 +154,7 @@ public:
         // fractals::norm(e2) < 1e-7 * fractals::norm(e1)) {
         // !! Check the validity ?? What about C
         // if (b1<=b2 && a1<=a2) {
-        dz = convert<DeltaType>(entry.A * TermType{dz} + entry.B * local_dc);  // !! e1
+        dz = convert<DeltaType>(entry.A * TermType{dz} + entry.B * local_dc);  // !! = e1
         min = n;
         n += step_size;
 
