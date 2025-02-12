@@ -119,7 +119,7 @@ public:
   bilinear_orbit() : reference_orbit() {}
   bilinear_orbit(const Reference &r) : reference_orbit(&r) {}
 
-  static constexpr int step_size = 100;
+  static constexpr int step_size = 20;
 
   // The delta dc is to the reference orbit
   int get(const DeltaType dc, int max_iterations) {
@@ -150,7 +150,7 @@ public:
       auto e2 = entry.A2 * local_dc * local_dc + entry.B2 * TermType(dz * dz) + local_dc * TermType(dz) * entry.C;
       auto x = std::numeric_limits<double>::epsilon();
 
-      if(convert<double>(fractals::norm(e2)) <= 1e-16 * convert<double>(fractals::norm(e1))) {
+      if(convert<double>(fractals::norm(e2)) <= x * convert<double>(fractals::norm(e1))) {
         // fractals::norm(e2) < 1e-7 * fractals::norm(e1)) {
         // !! Check the validity ?? What about C
         // if (b1<=b2 && a1<=a2) {
@@ -192,10 +192,12 @@ public:
     // 2) Keep iterating until we escape or reach the iteration limit
 
     using LowPrecisionType = typename Reference::value_type;
-    LowPrecisionType z = (*reference_orbit)[jZ];
-
-    z = (*reference_orbit)[jZ] + convert<LowPrecisionType>(dz);
+    LowPrecisionType z = (*reference_orbit)[jZ] + convert<LowPrecisionType>(dz);
     do {
+
+      // z = (*reference_orbit)[jZ] + LowPrecisionType(dz);
+
+      // ?? Where does this go
       stack.push_back({A, A2, B, B2, C, dc, dz, jZ});
 
       dz = 2 * (*reference_orbit)[jZ] * dz + dz * dz + dc;
@@ -209,7 +211,7 @@ public:
         A = 1;
         A2 = B = B2 = C = 0;
       } 
-      // else
+      // else  // ?? Do we need the else?
        {
         // !! Note the order of these
         TermType zz = 2 * z; // ?? Do we just want (*reference_orbit)[jZ] here?
