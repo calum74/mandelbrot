@@ -251,16 +251,59 @@ Why do we get such bad term utilisation in the secondary branches?
 
 Next idea: Each time we calculate an orbit, also calculate jump-forward terms. When we render an adjacent pixel, there's a good chance we can reuse the last orbit calculated.
 
-# Caching a single BLA - BLA ladder
+# A novel algorithm for computing the Mandelbrot set
 
-This idea involves calculating a BLA for just a single point, and reusing for adjacent points as far as possible.
+This algorithm uses bivariate linear approximation (BLA), but uses the last computed point as a new reference orbit for BLA. Since recent points are close (and can be arranged to always be adjacent), it ensures that we always have a "good" reference orbit, leading to much higher "orbit utilisation" when skipping over iterations.
 
-At stack entry $n$:
-* delta from reference at base ??
-* epsilon from reference ??
-* A_{i,n}
-* B_{i,n}
-* $j_Z$ (for Zhouran's device)
+To acheive this, we realise that the BLA terms of nearby orbits are always the same within their radius of validity. So if we have an orbit at one location, then we can simply reuse it for a different location!
+
+If we have terms $\delta'$, $\epsilon'_{i+n}$, $A_{i,n}$, $A'_{i,n}$, $B_{i,n}$, $B'_{i,n}$, $C_{i,n}$, such that
+
+$\epsilon_{i+n} \approxeq A_{i,n}\epsilon_i + A'_{i,n}\epsilon^2_i + B_{i,n}\delta + B'_{i,n}\delta^2 + C_{i,n}\epsilon_i\delta$
+
+$\epsilon'_{i+n} = z_i - \delta'$ calculated
+
+And we have an orbit we are computing $\delta''$, $\epsilon''_i$, relative to $z_i$, then
+
+$\epsilon''_{i+n} \approxeq A_{i,n}\epsilon_i + A'_{i,n}\epsilon^2_i + B_{i,n}\delta + B'_{i,n}\delta^2 + C_{i,n}\epsilon_i\delta + \epsilon'_{i+n}$
+
+$\delta = \delta'' - \delta'$
+
+$\epsilon_i = \epsilon''_i - \epsilon'_i$
+
+Proof:
+
+$\square$
+
+Input:
+
+* Iteration $i$
+* $\delta$ from reference
+* $\epsilon_i$ from reference
+
+Algorithm: Using the stack, obtain an entry $(i,n)$ that allows us to jump forward n places. 
+
+Theorem: 
+
+If ...
+
+then
+
+$\epsilon_{i+n} \approxeq $
+
+Compute 
+
+We then test that
+
+$A_{i,n} \epsilon_i + B_{i,n} \delta \approxeq A_{i,n} \epsilon_i + B_{i,n} \delta + A'_{i,n} \epsilon_i^2 + B'_{i,n}\delta^2 + C_{i,n}\epsilon_i\delta$
+
+
+If no such entry exists, we'll carry on with regular perturbation and populate new stack entries from the current position.
+
+To get a new iteration, we must:
+
+1. 
+
 
 To calculate a point, look at the previous jump-forward value, and try to jump forward that many steps. Perform a binary search to jump forward more or less if we can, then record the iteration we reached.
 

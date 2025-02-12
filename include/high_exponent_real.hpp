@@ -49,6 +49,10 @@ public:
   high_exponent_real &operator-=(high_exponent_real a) {
     return *this = (*this - a);
   }
+
+  high_exponent_real &operator*=(high_exponent_real a) {
+    return *this = (*this * a);
+  }
 };
 
 template <typename D, typename E>
@@ -150,6 +154,7 @@ int cmp(high_exponent_real<D, E> a, high_exponent_real<D, E> b) {
 
   int a_bigger = a.d < 0 ? -1 : 1;
 
+  // !! This does not work for zero !! FIXME
   // They are the same sign
   // Compare exponents
   if (a.e > b.e)
