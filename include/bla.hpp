@@ -108,10 +108,17 @@ private:
 };
 
 /*
-A bilinear orbit with a fixed step size.
+A bivariate orbit with a fixed step size.
 At each step, you can jump forward at most `step_size` iterations.
 
+`stack[i]` contains terms needed to jump forward from iteration `i%step_size` to
+iteration `i`. If `i%step_size == 0`, then this jumps forward from
+`i-step_size`.
 
+Iteration 0 is unused since you'll never need to jump forward to 0.
+
+To jump, calculate `dz = e.A*dz + e.B*(dc-e.dc)`, after first checking the
+higher order terms (A2,B2,C) for divergence.
 */
 template <Complex DeltaType, Complex TermType, RandomAccessOrbit Reference>
 class bilinear_orbit {
@@ -138,25 +145,22 @@ public:
     while (n < stack.size()) {
       TermType local_dc = dc - stack[n].dc;
       using term_real = typename TermType::value_type;
-      auto & entry = stack[n];
+      auto &entry = stack[n];
 
-      // TODO: Use termtype comparisons but unfortunately there's a bug in <=
-      // double b1 = convert<double>(fractals::norm(stack[n].B2 * TermType(local_dc)));
-      // double b2 = convert<double>(term_real(1e-7) * fractals::norm(stack[n].B));
-      // double a1 = convert<double>(fractals::norm(stack[n].A2 * TermType(dz)));
-      // double a2 = convert<double>(term_real(1e-7) * fractals::norm(stack[n].A));
+      auto new_dz = entry.A * TermType{dz} + entry.B * local_dc;
+      auto residual = entry.A2 * local_dc * local_dc +
+                      entry.B2 * TermType(dz * dz) +
+                      entry.C * local_dc * TermType(dz);
+      auto E = std::numeric_limits<double>::epsilon();
 
-      auto e1 = entry.A * TermType{dz} + entry.B * local_dc;
-      auto e2 = entry.A2 * local_dc * local_dc + entry.B2 * TermType(dz * dz) + local_dc * TermType(dz) * entry.C;
-      auto x = std::numeric_limits<double>::epsilon();
-
-      if(convert<double>(fractals::norm(e2)) <= x * convert<double>(fractals::norm(e1))) {
-        // fractals::norm(e2) < 1e-7 * fractals::norm(e1)) {
-        // !! Check the validity ?? What about C
-        // if (b1<=b2 && a1<=a2) {
-        dz = convert<DeltaType>(entry.A * TermType{dz} + entry.B * local_dc);  // !! = e1
+      // !! convert needed since <= does not work properly for 0
+      if (convert<double>(fractals::norm(residual)) <=
+          E * convert<double>(fractals::norm(new_dz))) {
+        dz = convert<DeltaType>(new_dz);
         min = n;
         n += step_size;
+
+        break; // Do not check in
 
         // !! Be careful with orbit resetting I think
       } else {
@@ -167,12 +171,13 @@ public:
     }
 
     // TODO: We could try to skip forward further in the final segment
-
     last_jump = min;
-    stack.resize(min);
 
-    // Our very last stack entry allows us to continue the sequence
-    if (!stack.empty()) {
+    if (stack.empty()) {
+      stack.push_back({A, A2, B, B2, C, dc, dz, jZ});
+    } else {
+      // Our very last stack entry allows us to continue the sequence
+      stack.resize(min + 1);
       A = stack.back().A;
       A2 = stack.back().A2;
       B = stack.back().B;
@@ -194,33 +199,28 @@ public:
     using LowPrecisionType = typename Reference::value_type;
     LowPrecisionType z = (*reference_orbit)[jZ] + convert<LowPrecisionType>(dz);
     do {
-
-      // z = (*reference_orbit)[jZ] + LowPrecisionType(dz);
-
-      // ?? Where does this go
-      stack.push_back({A, A2, B, B2, C, dc, dz, jZ});
-
       dz = 2 * (*reference_orbit)[jZ] * dz + dz * dz + dc;
 
-      ++jZ;
-
-
       if (stack.size() % step_size == 0) {
+        // We are going to push step_size+1
+
         // Reset the bivariate coefficients
         // Including quadratic terms
         A = 1;
         A2 = B = B2 = C = 0;
-      } 
-      // else  // ?? Do we need the else?
-       {
-        // !! Note the order of these
-        TermType zz = 2 * z; // ?? Do we just want (*reference_orbit)[jZ] here?
-        C = zz * C + 2 * A * B;
-        A2 = zz * A2 + A * A;
-        B2 = zz * B2 + B * B;
-        A = zz * A;
-        B = zz * B + TermType{1, 0};
       }
+
+      // Note the order of these assignments
+      TermType zz = 2 * (*reference_orbit)[jZ]; // Do we want z or 
+                                                // (*reference_orbit)[jZ] here?
+      C = zz * C + 2 * A * B;
+      A2 = zz * A2 + A * A;
+      B2 = zz * B2 + B * B;
+      A = zz * A;
+      B = zz * B + TermType{1, 0};
+
+      // Next iteration
+      ++jZ;
 
       z = (*reference_orbit)[jZ] + LowPrecisionType(dz);
 
@@ -232,6 +232,7 @@ public:
         jZ = 0;
       }
 
+      stack.push_back({A, A2, B, B2, C, dc, dz, jZ});
     } while (!escaped(z) && stack.size() < max_iterations);
 
     if (stack.size() == max_iterations)
