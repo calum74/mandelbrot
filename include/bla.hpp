@@ -134,7 +134,6 @@ public:
     // !! Don't reuse dz for both orbits
     DeltaType dz = 0; // dz from the reference orbit
     int jZ = 0;
-    TermType A{1}, A2{0}, B{0}, B2{0}, C{0};
     // 1) Find the top position
 
     // The entry at "n" allows us to skip forward to "n" from a previous step
@@ -177,19 +176,16 @@ public:
     last_jump = min;
 
     int debug_from, debug_to;
+    min = 0; // Test
 
     if (stack.empty()) {
       debug_from = 0;
       debug_to = 0;
+      TermType A{1}, A2{0}, B{0}, B2{0}, C{0};
       stack.push_back({A, A2, B, B2, C, dc, dz, jZ, 0, 0});
     } else {
       // Our very last stack entry allows us to continue the sequence
       stack.resize(min + 1);
-      A = stack.back().A;
-      A2 = stack.back().A2;
-      B = stack.back().B;
-      B2 = stack.back().B2;
-      C = stack.back().C;
       jZ = stack.back().jZ;
       debug_from = stack.back().debug_from;
       debug_to = stack.back().debug_to;
@@ -198,8 +194,8 @@ public:
       // we have translated the epsilon to be relative to the central orbit
 
       // Now, dz is relative to the high-precision orbit
-      dz = convert<DeltaType>(A * TermType(dz) +
-                              B * TermType(dc - stack.back().dc)) +
+      dz = convert<DeltaType>(stack.back().A * TermType(dz) +
+                              stack.back().B * TermType(dc - stack.back().dc)) +
            stack.back().dz;
     }
 
@@ -208,36 +204,52 @@ public:
     using LowPrecisionType = typename Reference::value_type;
     LowPrecisionType z = (*reference_orbit)[jZ] + convert<LowPrecisionType>(dz);
     do {
-      dz = 2 * (*reference_orbit)[jZ] * dz + dz * dz + dc;
 
-      // Note the order of these assignments
-      TermType zz = //2 * z;
-          2 * ((*reference_orbit)[jZ]+dz); // Do we want to add dz here or
-                                        // (*reference_orbit)[jZ] here?
-      C = zz * C + 2 * A * B;
-      A2 = zz * A2 + A * A;
-      B2 = zz * B2 + B * B;
-      A = zz * A;
-      B = zz * B + TermType{1, 0};
+      // Our current iteration
+      // Iteration 0 is at zero.
+      int i = stack.size() - 1;
 
-      stack.push_back({A, A2, B, B2, C, dc, dz, jZ, debug_from, ++debug_to});
+      // The distance of the current orbit to the reference orbit at the current
+      // iteration
 
-      if (stack.size() % step_size == 1) {
-        // We are going to push step_size+1
+      auto dz_i = dz;
+      auto &previous_entry = stack.back();
 
-        // Reset the bivariate coefficients
-        // Including quadratic terms
-        A = 1;
-        A2 = B = B2 = C = 0;
-        debug_from = stack.size()-1;
+      TermType A_in, A2_in, B_in, B2_in, C_in;
+      if (i % step_size == 0) {
+        A_in = 1;
+        A2_in = B_in = B2_in = C_in = 0;
+        debug_from = i;
+      } else {
+        A_in = previous_entry.A;
+        A2_in = previous_entry.A2;
+        B_in = previous_entry.B;
+        B2_in = previous_entry.B2;
+        C_in = previous_entry.C;
       }
+
+      auto z_i = (*reference_orbit)[jZ];
+      auto dz_i1 = 2 * z_i * dz_i + dz_i * dz_i + dc;
+
+      auto local_z_i = z_i + dz_i;
+
+      TermType two_z_i = 2 * local_z_i;
+
+      auto A_in1 = two_z_i * A_in;
+      auto A2_in1 = two_z_i * A2_in + A_in * A_in;
+      auto B_in1 = two_z_i * B_in + TermType{1, 0};
+      auto B2_in1 = two_z_i * B2_in + B_in * B_in;
+      auto C_in1 = two_z_i * C_in + 2 * A_in * B_in;
+
+      stack.push_back({A_in1, A2_in1, B_in1, B2_in1, C_in1, dc, dz_i1, jZ,
+                       debug_from, ++debug_to});
 
       // Next iteration
       ++jZ;
 
-      z = (*reference_orbit)[jZ] + LowPrecisionType(dz);
-
+      dz = dz_i1;
       // Zhuoran's device
+      z = (*reference_orbit)[jZ] + LowPrecisionType(dz);
       if (jZ >= reference_orbit->size() - 1 ||
           escaped((*reference_orbit)[jZ]) ||
           fractals::norm(z) < fractals::norm(dz)) {
@@ -245,8 +257,6 @@ public:
         jZ = 0;
       }
 
-      // !! Test
-      // auto dz2 = 2 * (*reference_orbit)[jZ] * dz + dz * dz + dc;
 
     } while (!escaped(z) && stack.size() < max_iterations);
 
