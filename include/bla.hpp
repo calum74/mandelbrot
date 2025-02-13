@@ -147,6 +147,9 @@ public:
       using term_real = typename TermType::value_type;
       auto &entry = stack[n];
 
+      assert(entry.debug_from == min);
+      assert(entry.debug_to == n);
+
       auto new_dz = entry.A * TermType{dz} + entry.B * local_dc;
       auto residual = entry.A2 * local_dc * local_dc +
                       entry.B2 * TermType(dz * dz) +
@@ -173,8 +176,12 @@ public:
     // TODO: We could try to skip forward further in the final segment
     last_jump = min;
 
+    int debug_from, debug_to;
+
     if (stack.empty()) {
-      stack.push_back({A, A2, B, B2, C, dc, dz, jZ});
+      debug_from = 0;
+      debug_to = 0;
+      stack.push_back({A, A2, B, B2, C, dc, dz, jZ, 0, 0});
     } else {
       // Our very last stack entry allows us to continue the sequence
       stack.resize(min + 1);
@@ -184,6 +191,8 @@ public:
       B2 = stack.back().B2;
       C = stack.back().C;
       jZ = stack.back().jZ;
+      debug_from = stack.back().debug_from;
+      debug_to = stack.back().debug_to;
 
       // Note that by adding stack.back().dz
       // we have translated the epsilon to be relative to the central orbit
@@ -201,23 +210,27 @@ public:
     do {
       dz = 2 * (*reference_orbit)[jZ] * dz + dz * dz + dc;
 
-      if (stack.size() % step_size == 0) {
+      // Note the order of these assignments
+      TermType zz = //2 * z;
+          2 * ((*reference_orbit)[jZ]+dz); // Do we want to add dz here or
+                                        // (*reference_orbit)[jZ] here?
+      C = zz * C + 2 * A * B;
+      A2 = zz * A2 + A * A;
+      B2 = zz * B2 + B * B;
+      A = zz * A;
+      B = zz * B + TermType{1, 0};
+
+      stack.push_back({A, A2, B, B2, C, dc, dz, jZ, debug_from, ++debug_to});
+
+      if (stack.size() % step_size == 1) {
         // We are going to push step_size+1
 
         // Reset the bivariate coefficients
         // Including quadratic terms
         A = 1;
         A2 = B = B2 = C = 0;
+        debug_from = stack.size()-1;
       }
-
-      // Note the order of these assignments
-      TermType zz = 2 * ((*reference_orbit)[jZ]); // Do we want to add dz here or 
-                                                // (*reference_orbit)[jZ] here?
-      C = zz * C + 2 * A * B;
-      A2 = zz * A2 + A * A;
-      B2 = zz * B2 + B * B;
-      A = zz * A;
-      B = zz * B + TermType{1, 0};
 
       // Next iteration
       ++jZ;
@@ -235,7 +248,6 @@ public:
       // !! Test
       // auto dz2 = 2 * (*reference_orbit)[jZ] * dz + dz * dz + dc;
 
-      stack.push_back({A, A2, B, B2, C, dc, dz, jZ});
     } while (!escaped(z) && stack.size() < max_iterations);
 
     if (stack.size() == max_iterations)
@@ -250,10 +262,19 @@ private:
   const Reference *reference_orbit;
 
   struct entry {
+    entry(TermType a, TermType a2, TermType b, TermType b2, TermType c,
+          DeltaType dc, DeltaType dz, int jZ, int from, int to)
+        : A(fractals::normalize(a)), A2(fractals::normalize(a2)),
+          B(fractals::normalize(b)), B2(fractals::normalize(b2)),
+          C(fractals::normalize(c)), dc(dc), dz(dz), jZ(jZ), debug_from(from),
+          debug_to(to) {}
+    entry() = default;
+    entry(const entry &) = default;
     TermType A, A2, B, B2, C;
     DeltaType dc, dz;
     int jZ; // Zhouran's j. It's probably implicit from the entry position but
             // save it for now.
+    int debug_from, debug_to; // Not needed but useful for checking
   };
 
   std::vector<entry> stack;
