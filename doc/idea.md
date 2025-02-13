@@ -183,11 +183,11 @@ $\square$
 
 This is a bit unexpected, but it means that in a given region, the bilinear coefficients are the same. Unfortunately you don't get anything for free because the translation is only valid over the scope of the original linearization.
 
-## Quadratic approximation
+## Higher order approximation
 
 What if we instead created a quadratic approximation for skip-forward:
 
-$\epsilon_{i+n} = A_{i,n}\epsilon_i + A'_{i,n}\epsilon_i^2 + B_{i,n}\delta + B'_{i,n}\delta^2 + C_{i,n}\epsilon\delta + O(\epsilon_i^3)$
+$\epsilon_{i+n} = A_{i,n}\epsilon_i + A'_{i,n}\epsilon_i^2 + B_{i,n}\delta + B'_{i,n}\delta^2 + C_{i,n}\epsilon_i\delta + O(\epsilon_i^3)$
 
 Where $A_{i,n}$ is a coefficient for skipping $n$ steps forward from iteration $i$.
 
@@ -203,7 +203,7 @@ $B_{i,n+1} = 2z_{i+n}B_{i,n}+1$
 
 $B'_{i,n+1} = 2z_{i+n}B'_{i,n} + B_{i,n}^2$
 
-$C_{i,n+1} = 2z_{i,n}C_{i,n}+2A_{i,n}B_{i,n}$
+$C_{i,n+1} = 2z_{i+n}C_{i,n}+2A_{i,n}B_{i,n}$
 
 Proof:
 
@@ -213,19 +213,18 @@ from the definition. We also have
 
 2. $\epsilon_{i+n+1} = 2z_{i+n}\epsilon_{i+n} + \epsilon_{i+n}^2 + \delta$
 
-3. $= 2z_{i+n}(A_{i,n}\epsilon_i + A'_{i,n}\epsilon_i^2 + B_{i,n}\delta + B'_{i,n}\delta^2 + C_{i,n}\epsilon\delta) + (A_{i,n}\epsilon_i + A'_{i,n}\epsilon_i^2 + B_{i,n}\delta + B'_{i,n}\delta^2 + C_{i,n}\epsilon\delta)^2 + \delta$
+3. $= 2z_{i+n}(A_{i,n}\epsilon_i + A'_{i,n}\epsilon_i^2 + B_{i,n}\delta + B'_{i,n}\delta^2 + C_{i,n}\epsilon_i\delta) + (A_{i,n}\epsilon_i + A'_{i,n}\epsilon_i^2 + B_{i,n}\delta + B'_{i,n}\delta^2 + C_{i,n}\epsilon\delta)^2 + \delta$
 
-4. $= 2z_{i+n}(A_{i,n}\epsilon_i + A'_{i,n}\epsilon_i^2 + B_{i,n}\delta + B'_{i,n}\delta^2 + C_{i,n}\epsilon\delta) + (A_{i,n}\epsilon_i + B_{i,n}\delta)^2 + \delta + O(\epsilon^3)$ 
+4. $= 2z_{i+n}(A_{i,n}\epsilon_i + A'_{i,n}\epsilon_i^2 + B_{i,n}\delta + B'_{i,n}\delta^2 + C_{i,n}\epsilon_i\delta) + (A_{i,n}\epsilon_i + B_{i,n}\delta)^2 + \delta + O(\epsilon^3)$ 
 
-5. $= (2z_{i+n}A_{i+n})\epsilon_i + (2z_{i+n}A'_{i+n} + A_{i+n}^2)\epsilon_i^2 + (2z_{i+n}B_{i,n}+1)\delta + (2z_{i+n}B'_{i,n} + B_{i,n}^2)\delta^2 + (2z_{i,n}C_{i,n}+2A_{i,n}B_{i,n})\epsilon\delta + O(\epsilon^3)$
+5. $= (2z_{i+n}A_{i+n})\epsilon_i + (2z_{i+n}A'_{i+n} + A_{i+n}^2)\epsilon_i^2 + (2z_{i+n}B_{i,n}+1)\delta + (2z_{i+n}B'_{i,n} + B_{i,n}^2)\delta^2 + (2z_{i,n}C_{i,n}+2A_{i,n}B_{i,n})\epsilon_i\delta + O(\epsilon^3)$
 
-We can then equate terms in 1 and 5.
+We can then equate terms in 1. and 5. $\square$
 
-$\square$
+Higher order terms can give a potentially more accurate way to calculate $\epsilon_i$, but they also give a way to quantify the error. This is a more precise way to put bounds on the validity of BLA.
 
-We can also look at the size of the "residual" from equation 4 above.
+If $|A'_{i,n}\epsilon_i^2+ B'_{i,n}\delta^2 + C_{i,n}\epsilon_i\delta| \le \epsilon|A_{i,n}\epsilon_i + B_{i,n}\delta|$ then we are good.
 
-This approximation is valid provided that $|\epsilon_i|^2 < \epsilon$, which should give a longer branch. It is unclear whether the additional effort in computing extra terms is outweighed by having a longer branch.
 
 # Why didn't it work?
 

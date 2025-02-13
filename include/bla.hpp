@@ -211,7 +211,7 @@ public:
       }
 
       // Note the order of these assignments
-      TermType zz = 2 * (*reference_orbit)[jZ]; // Do we want z or 
+      TermType zz = 2 * ((*reference_orbit)[jZ]); // Do we want to add dz here or 
                                                 // (*reference_orbit)[jZ] here?
       C = zz * C + 2 * A * B;
       A2 = zz * A2 + A * A;
@@ -231,6 +231,9 @@ public:
         dz = z;
         jZ = 0;
       }
+
+      // !! Test
+      // auto dz2 = 2 * (*reference_orbit)[jZ] * dz + dz * dz + dc;
 
       stack.push_back({A, A2, B, B2, C, dc, dz, jZ});
     } while (!escaped(z) && stack.size() < max_iterations);
