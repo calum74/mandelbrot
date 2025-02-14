@@ -115,27 +115,14 @@ template <typename DeltaType> bool is_valid(std::pair<DeltaType, DeltaType> p) {
 
 template <typename DeltaType, typename TermType> class linear_step {
 public:
-  linear_step(DeltaType dc)
-      : A{1}, A2{}, B{}, B2{}, C{}, dc{dc}, dz{}, debug_from(0), debug_to(0) {}
-
-  // !! private
-
-  linear_step(TermType a, TermType a2, TermType b, TermType b2, TermType c,
-              DeltaType dc, DeltaType dz, int jZ, int from, int to)
-      : A(fractals::normalize(a)), A2(fractals::normalize(a2)),
-        B(fractals::normalize(b)), B2(fractals::normalize(b2)),
-        C(fractals::normalize(c)), dc(dc), dz(dz), jZ(jZ), debug_from(from),
-        debug_to(to) {}
   linear_step() = default;
 
-  TermType A, A2, B, B2, C;
-  DeltaType dc, dz;
-  int jZ;                   // Index into the reference orbit
-  int debug_from, debug_to; // Not needed but useful for checking
+  linear_step(DeltaType dc)
+      : A{1}, A2{}, B{}, B2{}, C{}, dc{dc}, dz{}, jZ(0), debug_from(0), debug_to(0) {}
 
   linear_step restart() const {
     return {TermType{1}, TermType{0}, TermType{0}, TermType{0}, TermType{0},
-            dc,          dz,          jZ,          debug_from,  debug_to};
+            dc,          dz,          jZ,          debug_to,  debug_to};
   }
 
   template <RandomAccessOrbit Reference>
@@ -167,16 +154,12 @@ public:
             debug_to + 1};
   }
 
-  // Gets the new dz, relative to the orbit from our dc.
-  // You would need to add dz to get the orbit relative to the reference orbit.
-  // !! TermType (except that it doesn't work!)
-  std::pair<TermType, TermType> get_local_dz(TermType dz1, TermType dc1) const {
-    return {A * dz1 + B * dc1, A2 * dz1 * dz1 + B2 * dc1 * dc1 + C * dc1 * dz1};
-  }
-
   // Returns a dz (relative to the reference orbit)
   // If the precision is invalid, returns nothing
-  std::optional<DeltaType> jump_dz(DeltaType dz1, DeltaType dc1) const {
+  // ?? Return complex NaN?
+  std::optional<DeltaType> jump_dz(DeltaType dz1, DeltaType dc1, int expected_from, int expected_to) const {
+    assert(debug_from == expected_from);
+    assert(debug_to == expected_to);
     auto l = get_local_dz(dz1 - dz, dc1 - dc);
     return is_valid(l)
                ? std::optional<DeltaType>{convert<DeltaType>(l.first) + dz}
@@ -196,6 +179,26 @@ public:
   template <RandomAccessOrbit Reference>
   auto get_z(const Reference &reference) const {
     return reference[jZ] + dz;
+  }
+
+private:
+  linear_step(TermType a, TermType a2, TermType b, TermType b2, TermType c,
+              DeltaType dc, DeltaType dz, int jZ, int from, int to)
+      : A(fractals::normalize(a)), A2(fractals::normalize(a2)),
+        B(fractals::normalize(b)), B2(fractals::normalize(b2)),
+        C(fractals::normalize(c)), dc(dc), dz(dz), jZ(jZ), debug_from(from),
+        debug_to(to) {}
+
+  TermType A, A2, B, B2, C;
+  DeltaType dc, dz;
+  int jZ;                   // Index into the reference orbit
+  int debug_from, debug_to; // Not needed but useful for checking
+
+  // Gets the new dz, relative to the orbit from our dc.
+  // You would need to add dz to get the orbit relative to the reference orbit.
+  // !! TermType (except that it doesn't work!)
+  std::pair<TermType, TermType> get_local_dz(TermType dz1, TermType dc1) const {
+    return {A * dz1 + B * dc1, A2 * dz1 * dz1 + B2 * dc1 * dc1 + C * dc1 * dz1};
   }
 };
 
@@ -218,7 +221,7 @@ public:
   bilinear_orbit() : reference_orbit() {}
   bilinear_orbit(const Reference &r) : reference_orbit(&r) {}
 
-  static constexpr int step_size = 20;
+  static constexpr int step_size = 5;
   using entry = linear_step<DeltaType, TermType>;
 
   // The delta dc is to the reference orbit
@@ -235,7 +238,10 @@ public:
 
     // dz is always relative to the current orbit
     while (n < stack.size()) {
-      auto j = stack[n].jump_dz(dz, dc);
+      // there's some mismatch between the jump_dz and the computed dz
+      // off by one I think!
+
+      auto j = stack[n].jump_dz(dz, dc, n-step_size, n);
 
       if (j) {
         dz = *j;
@@ -253,8 +259,6 @@ public:
 
     int debug_from, debug_to;
 
-    min=0;
-
     if (stack.empty()) {
       stack.push_back(entry(dc));
     } else {
@@ -263,15 +267,13 @@ public:
 
     // 2) Keep iterating until we escape or reach the iteration limit
 
-    typename Reference::value_type z;
-
     entry e = stack.back().move_to(dz, dc);
 
     do {
-      e = e.next_iteration(*reference_orbit);
       if (stack.size() % step_size == 1) {
         e = e.restart();
       }
+      e = e.next_iteration(*reference_orbit);
       stack.push_back(e);
 
     } while (!escaped(stack.back().get_z(*reference_orbit)) &&

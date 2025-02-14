@@ -195,15 +195,15 @@ $A_{i,0} = 1$, $A'_{i,0} = B_{i,0} = B'_{i,0} = C_{i,0} = 0$
 
 **Theorem 5** (Computing quadratic terms)
 
-$A_{i,n+1} = 2z_{i+n}A_{i,n}$
+$$A_{i,n+1} = 2z_{i+n}A_{i,n}$$
 
-$A'_{i,n+1} = 2z_{i+n}A'_{i,n} + A_{i,n}^2$
+$$A'_{i,n+1} = 2z_{i+n}A'_{i,n} + A_{i,n}^2$$
 
-$B_{i,n+1} = 2z_{i+n}B_{i,n}+1$
+$$B_{i,n+1} = 2z_{i+n}B_{i,n}+1$$
 
-$B'_{i,n+1} = 2z_{i+n}B'_{i,n} + B_{i,n}^2$
+$$B'_{i,n+1} = 2z_{i+n}B'_{i,n} + B_{i,n}^2$$
 
-$C_{i,n+1} = 2z_{i+n}C_{i,n}+2A_{i,n}B_{i,n}$
+$$C_{i,n+1} = 2z_{i+n}C_{i,n}+2A_{i,n}B_{i,n}$$
 
 Proof:
 
