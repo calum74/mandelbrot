@@ -195,9 +195,9 @@ $A_{i,0} = 1$, $A'_{i,0} = B_{i,0} = B'_{i,0} = C_{i,0} = 0$
 
 **Theorem 5** (Computing quadratic terms)
 
-$A_{i,n+1} = 2z_{i+n}A_{i+n}$
+$A_{i,n+1} = 2z_{i+n}A_{i,n}$
 
-$A'_{i,n+1} = 2z_{i+n}A'_{i+n} + A_{i+n}^2$
+$A'_{i,n+1} = 2z_{i+n}A'_{i,n} + A_{i,n}^2$
 
 $B_{i,n+1} = 2z_{i+n}B_{i,n}+1$
 
@@ -207,17 +207,17 @@ $C_{i,n+1} = 2z_{i+n}C_{i,n}+2A_{i,n}B_{i,n}$
 
 Proof:
 
-1. $\epsilon_{i+n+1} = A_{i,n+1}\epsilon_i + A'_{i,n+1}\epsilon_i^2 + B_{i,n+1}\delta + B'_{i,n+1}\delta^2 + C_{i,n+1}\epsilon\delta + O(\epsilon_i^3)$
+1. $\epsilon_{i+n+1} = A_{i,n+1}\epsilon_i + A'_{i,n+1}\epsilon_i^2 + B_{i,n+1}\delta + B'_{i,n+1}\delta^2 + C_{i,n+1}\epsilon_i\delta + O(\epsilon_i^3)$
 
 from the definition. We also have
 
 2. $\epsilon_{i+n+1} = 2z_{i+n}\epsilon_{i+n} + \epsilon_{i+n}^2 + \delta$
 
-3. $= 2z_{i+n}(A_{i,n}\epsilon_i + A'_{i,n}\epsilon_i^2 + B_{i,n}\delta + B'_{i,n}\delta^2 + C_{i,n}\epsilon_i\delta) + (A_{i,n}\epsilon_i + A'_{i,n}\epsilon_i^2 + B_{i,n}\delta + B'_{i,n}\delta^2 + C_{i,n}\epsilon\delta)^2 + \delta$
+3. $= 2z_{i+n}(A_{i,n}\epsilon_i + A'_{i,n}\epsilon_i^2 + B_{i,n}\delta + B'_{i,n}\delta^2 + C_{i,n}\epsilon_i\delta + O(\epsilon_i^3)) + (A_{i,n}\epsilon_i + A'_{i,n}\epsilon_i^2 + B_{i,n}\delta + B'_{i,n}\delta^2 + C_{i,n}\epsilon_i\delta + O(\epsilon_i^3))^2 + \delta$
 
-4. $= 2z_{i+n}(A_{i,n}\epsilon_i + A'_{i,n}\epsilon_i^2 + B_{i,n}\delta + B'_{i,n}\delta^2 + C_{i,n}\epsilon_i\delta) + (A_{i,n}\epsilon_i + B_{i,n}\delta)^2 + \delta + O(\epsilon^3)$ 
+4. $= 2z_{i+n}(A_{i,n}\epsilon_i + A'_{i,n}\epsilon_i^2 + B_{i,n}\delta + B'_{i,n}\delta^2 + C_{i,n}\epsilon_i\delta) + (A_{i,n}\epsilon_i + B_{i,n}\delta)^2 + \delta + O(\epsilon_i^3)$ 
 
-5. $= (2z_{i+n}A_{i+n})\epsilon_i + (2z_{i+n}A'_{i+n} + A_{i+n}^2)\epsilon_i^2 + (2z_{i+n}B_{i,n}+1)\delta + (2z_{i+n}B'_{i,n} + B_{i,n}^2)\delta^2 + (2z_{i,n}C_{i,n}+2A_{i,n}B_{i,n})\epsilon_i\delta + O(\epsilon^3)$
+5. $= (2z_{i+n}A_{i,n})\epsilon_i + (2z_{i+n}A'_{i,n} + A_{i,n}^2)\epsilon_i^2 + (2z_{i+n}B_{i,n}+1)\delta + (2z_{i+n}B'_{i,n} + B_{i,n}^2)\delta^2 + (2z_{i,n}C_{i,n}+2A_{i,n}B_{i,n})\epsilon_i\delta + O(\epsilon_i^3)$
 
 We can then equate terms in 1. and 5. $\square$
 

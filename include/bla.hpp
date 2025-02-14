@@ -107,6 +107,98 @@ private:
   int last_jump = 0;
 };
 
+template <typename DeltaType> bool is_valid(std::pair<DeltaType, DeltaType> p) {
+  return fractals::norm(p.second) <=
+         std::numeric_limits<typename DeltaType::value_type>::epsilon() *
+             fractals::norm(p.first);
+}
+
+template <typename DeltaType, typename TermType> class linear_step {
+public:
+  linear_step(DeltaType dc)
+      : A{1}, A2{}, B{}, B2{}, C{}, dc{dc}, dz{}, debug_from(0), debug_to(0) {}
+
+  // !! private
+
+  linear_step(TermType a, TermType a2, TermType b, TermType b2, TermType c,
+              DeltaType dc, DeltaType dz, int jZ, int from, int to)
+      : A(fractals::normalize(a)), A2(fractals::normalize(a2)),
+        B(fractals::normalize(b)), B2(fractals::normalize(b2)),
+        C(fractals::normalize(c)), dc(dc), dz(dz), jZ(jZ), debug_from(from),
+        debug_to(to) {}
+  linear_step() = default;
+
+  TermType A, A2, B, B2, C;
+  DeltaType dc, dz;
+  int jZ;                   // Index into the reference orbit
+  int debug_from, debug_to; // Not needed but useful for checking
+
+  linear_step restart() const {
+    return {TermType{1}, TermType{0}, TermType{0}, TermType{0}, TermType{0},
+            dc,          dz,          jZ,          debug_from,  debug_to};
+  }
+
+  template <RandomAccessOrbit Reference>
+  linear_step next_iteration(const Reference &reference) const {
+    auto z = reference[jZ];
+    auto orbit_z = z + dz;
+    auto dz_next = 2 * z * dz + dz * dz + dc;
+
+    int jZ_next = jZ + 1;
+
+    if (jZ_next >= reference.size() - 1 || escaped(z) ||
+        fractals::norm(z) < fractals::norm(dz)) {
+      dz_next =
+          reference[jZ_next] + convert<typename Reference::value_type>(dz_next);
+      jZ_next = 0;
+    }
+
+    TermType two_orbit_z = 2 * orbit_z;
+
+    return {two_orbit_z * A,
+            two_orbit_z * A2 + A * A,
+            two_orbit_z * B + TermType{1, 0},
+            two_orbit_z * B2 + B * B,
+            two_orbit_z * C + 2 * A * B,
+            dc,
+            dz_next,
+            jZ_next,
+            debug_from,
+            debug_to + 1};
+  }
+
+  // Gets the new dz, relative to the orbit from our dc.
+  // You would need to add dz to get the orbit relative to the reference orbit.
+  // !! TermType (except that it doesn't work!)
+  std::pair<TermType, TermType> get_local_dz(TermType dz1, TermType dc1) const {
+    return {A * dz1 + B * dc1, A2 * dz1 * dz1 + B2 * dc1 * dc1 + C * dc1 * dz1};
+  }
+
+  // Returns a dz (relative to the reference orbit)
+  // If the precision is invalid, returns nothing
+  std::optional<DeltaType> jump_dz(DeltaType dz1, DeltaType dc1) const {
+    auto l = get_local_dz(dz1 - dz, dc1 - dc);
+    return is_valid(l)
+               ? std::optional<DeltaType>{convert<DeltaType>(l.first) + dz}
+               : std::nullopt;
+  }
+
+  // Note that new_dc and new_dz are relative to the reference orbit
+  linear_step move_to(DeltaType new_dz, DeltaType new_dc) const {
+    /* I think only the linear terms are valid to move, we can also move the
+    higher order terms as they are only used for error estimation. More
+    investigation needed.
+    */
+
+    return {A, A2, B, B2, C, new_dc, new_dz, jZ, debug_from, debug_to};
+  }
+
+  template <RandomAccessOrbit Reference>
+  auto get_z(const Reference &reference) const {
+    return reference[jZ] + dz;
+  }
+};
+
 /*
 A bivariate orbit with a fixed step size.
 At each step, you can jump forward at most `step_size` iterations.
@@ -127,6 +219,7 @@ public:
   bilinear_orbit(const Reference &r) : reference_orbit(&r) {}
 
   static constexpr int step_size = 20;
+  using entry = linear_step<DeltaType, TermType>;
 
   // The delta dc is to the reference orbit
   int get(const DeltaType dc, int max_iterations) {
@@ -142,123 +235,47 @@ public:
 
     // dz is always relative to the current orbit
     while (n < stack.size()) {
-      TermType local_dc = dc - stack[n].dc;
-      using term_real = typename TermType::value_type;
-      auto &entry = stack[n];
+      auto j = stack[n].jump_dz(dz, dc);
 
-      assert(entry.debug_from == min);
-      assert(entry.debug_to == n);
-
-      auto new_dz = entry.A * TermType{dz} + entry.B * local_dc;
-      auto residual = entry.A2 * local_dc * local_dc +
-                      entry.B2 * TermType(dz * dz) +
-                      entry.C * local_dc * TermType(dz);
-      auto E = std::numeric_limits<double>::epsilon();
-
-      // !! convert needed since <= does not work properly for 0
-      if (convert<double>(fractals::norm(residual)) <=
-          E * convert<double>(fractals::norm(new_dz))) {
-        dz = convert<DeltaType>(new_dz);
+      if (j) {
+        dz = *j;
         min = n;
         n += step_size;
-
-        break; // Do not check in
-
-        // !! Be careful with orbit resetting I think
+        break; // !! Temporary
       } else {
-        // std::cout << e1 << ' ' << e2 << std::endl;
-        // std::cout << a1 << " " << a2 << " " << b1 << " " << b2 << std::endl;
         break;
       }
     }
+    assert(min <= step_size);
 
     // TODO: We could try to skip forward further in the final segment
     last_jump = min;
 
     int debug_from, debug_to;
-    min = 0; // Test
+
+    min=0;
 
     if (stack.empty()) {
-      debug_from = 0;
-      debug_to = 0;
-      TermType A{1}, A2{0}, B{0}, B2{0}, C{0};
-      stack.push_back({A, A2, B, B2, C, dc, dz, jZ, 0, 0});
+      stack.push_back(entry(dc));
     } else {
-      // Our very last stack entry allows us to continue the sequence
       stack.resize(min + 1);
-      jZ = stack.back().jZ;
-      debug_from = stack.back().debug_from;
-      debug_to = stack.back().debug_to;
-
-      // Note that by adding stack.back().dz
-      // we have translated the epsilon to be relative to the central orbit
-
-      // Now, dz is relative to the high-precision orbit
-      dz = convert<DeltaType>(stack.back().A * TermType(dz) +
-                              stack.back().B * TermType(dc - stack.back().dc)) +
-           stack.back().dz;
     }
 
     // 2) Keep iterating until we escape or reach the iteration limit
 
-    using LowPrecisionType = typename Reference::value_type;
-    LowPrecisionType z = (*reference_orbit)[jZ] + convert<LowPrecisionType>(dz);
+    typename Reference::value_type z;
+
+    entry e = stack.back().move_to(dz, dc);
+
     do {
-
-      // Our current iteration
-      // Iteration 0 is at zero.
-      int i = stack.size() - 1;
-
-      // The distance of the current orbit to the reference orbit at the current
-      // iteration
-
-      auto dz_i = dz;
-      auto &previous_entry = stack.back();
-
-      TermType A_in, A2_in, B_in, B2_in, C_in;
-      if (i % step_size == 0) {
-        A_in = 1;
-        A2_in = B_in = B2_in = C_in = 0;
-        debug_from = i;
-      } else {
-        A_in = previous_entry.A;
-        A2_in = previous_entry.A2;
-        B_in = previous_entry.B;
-        B2_in = previous_entry.B2;
-        C_in = previous_entry.C;
+      e = e.next_iteration(*reference_orbit);
+      if (stack.size() % step_size == 1) {
+        e = e.restart();
       }
+      stack.push_back(e);
 
-      auto z_i = (*reference_orbit)[jZ];
-      auto dz_i1 = 2 * z_i * dz_i + dz_i * dz_i + dc;
-
-      auto local_z_i = z_i + dz_i;
-
-      TermType two_z_i = 2 * local_z_i;
-
-      auto A_in1 = two_z_i * A_in;
-      auto A2_in1 = two_z_i * A2_in + A_in * A_in;
-      auto B_in1 = two_z_i * B_in + TermType{1, 0};
-      auto B2_in1 = two_z_i * B2_in + B_in * B_in;
-      auto C_in1 = two_z_i * C_in + 2 * A_in * B_in;
-
-      stack.push_back({A_in1, A2_in1, B_in1, B2_in1, C_in1, dc, dz_i1, jZ,
-                       debug_from, ++debug_to});
-
-      // Next iteration
-      ++jZ;
-
-      dz = dz_i1;
-      // Zhuoran's device
-      z = (*reference_orbit)[jZ] + LowPrecisionType(dz);
-      if (jZ >= reference_orbit->size() - 1 ||
-          escaped((*reference_orbit)[jZ]) ||
-          fractals::norm(z) < fractals::norm(dz)) {
-        dz = z;
-        jZ = 0;
-      }
-
-
-    } while (!escaped(z) && stack.size() < max_iterations);
+    } while (!escaped(stack.back().get_z(*reference_orbit)) &&
+             stack.size() < max_iterations);
 
     if (stack.size() == max_iterations)
       return 0;
@@ -270,22 +287,6 @@ public:
 
 private:
   const Reference *reference_orbit;
-
-  struct entry {
-    entry(TermType a, TermType a2, TermType b, TermType b2, TermType c,
-          DeltaType dc, DeltaType dz, int jZ, int from, int to)
-        : A(fractals::normalize(a)), A2(fractals::normalize(a2)),
-          B(fractals::normalize(b)), B2(fractals::normalize(b2)),
-          C(fractals::normalize(c)), dc(dc), dz(dz), jZ(jZ), debug_from(from),
-          debug_to(to) {}
-    entry() = default;
-    entry(const entry &) = default;
-    TermType A, A2, B, B2, C;
-    DeltaType dc, dz;
-    int jZ; // Zhouran's j. It's probably implicit from the entry position but
-            // save it for now.
-    int debug_from, debug_to; // Not needed but useful for checking
-  };
 
   std::vector<entry> stack;
   int last_jump = 0;
