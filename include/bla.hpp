@@ -160,9 +160,9 @@ public:
   std::optional<DeltaType> jump_dz(DeltaType dz1, DeltaType dc1, int expected_from, int expected_to) const {
     assert(debug_from == expected_from);
     assert(debug_to == expected_to);
-    auto l = get_local_dz(dz1 - dz, dc1 - dc);
+    auto l = get_local_dz(dz1, dc1 - dc);
     return is_valid(l)
-               ? std::optional<DeltaType>{convert<DeltaType>(l.first) + dz}
+               ? std::optional<DeltaType>{convert<DeltaType>(l.first)}
                : std::nullopt;
   }
 
@@ -182,6 +182,7 @@ public:
   }
 
 private:
+public:  // Temporary
   linear_step(TermType a, TermType a2, TermType b, TermType b2, TermType c,
               DeltaType dc, DeltaType dz, int jZ, int from, int to)
       : A(fractals::normalize(a)), A2(fractals::normalize(a2)),
@@ -221,7 +222,7 @@ public:
   bilinear_orbit() : reference_orbit() {}
   bilinear_orbit(const Reference &r) : reference_orbit(&r) {}
 
-  static constexpr int step_size = 5;
+  static constexpr int step_size = 50;
   using entry = linear_step<DeltaType, TermType>;
 
   // The delta dc is to the reference orbit
@@ -247,12 +248,11 @@ public:
         dz = *j;
         min = n;
         n += step_size;
-        break; // !! Temporary
+        if (n == 3*step_size) break; // !! Temporary
       } else {
         break;
       }
     }
-    assert(min <= step_size);
 
     // TODO: We could try to skip forward further in the final segment
     last_jump = min;
@@ -263,6 +263,7 @@ public:
       stack.push_back(entry(dc));
     } else {
       stack.resize(min + 1);
+      dz += stack.back().dz;
     }
 
     // 2) Keep iterating until we escape or reach the iteration limit
