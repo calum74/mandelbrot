@@ -109,7 +109,7 @@ private:
 
 template <typename DeltaType> bool is_valid(std::pair<DeltaType, DeltaType> p) {
   return fractals::norm(p.second) <=
-         std::numeric_limits<typename DeltaType::value_type>::epsilon() *
+    typename DeltaType::value_type(1e-4) * std::numeric_limits<typename DeltaType::value_type>::epsilon() *
              fractals::norm(p.first);
 }
 
@@ -118,11 +118,12 @@ public:
   linear_step() = default;
 
   linear_step(DeltaType dc)
-      : A{1}, A2{}, B{}, B2{}, C{}, dc{dc}, dz{}, jZ(0), debug_from(0), debug_to(0) {}
+      : A{1}, A2{}, B{}, B2{}, C{}, dc{dc}, dz{}, jZ(0), debug_from(0),
+        debug_to(0) {}
 
   linear_step restart() const {
     return {TermType{1}, TermType{0}, TermType{0}, TermType{0}, TermType{0},
-            dc,          dz,          jZ,          debug_to,  debug_to};
+            dc,          dz,          jZ,          debug_to,    debug_to};
   }
 
   template <RandomAccessOrbit Reference>
@@ -157,13 +158,22 @@ public:
   // Returns a dz (relative to the reference orbit)
   // If the precision is invalid, returns nothing
   // ?? Return complex NaN?
-  std::optional<DeltaType> jump_dz(DeltaType dz1, DeltaType dc1, int expected_from, int expected_to) const {
+  std::optional<DeltaType> jump_dz(DeltaType dz1, DeltaType dc1,
+                                   int expected_from, int expected_to) const {
     assert(debug_from == expected_from);
     assert(debug_to == expected_to);
     auto l = get_local_dz(dz1, dc1 - dc);
-    return is_valid(l)
-               ? std::optional<DeltaType>{convert<DeltaType>(l.first)}
-               : std::nullopt;
+    using T = double;
+
+    if (convert<T>(fractals::norm(B2)) * fractals::norm(dc1 - dc) > 1e-15 * convert<T>(fractals::norm(B)))
+      return std::nullopt;
+
+    if (convert<T>(fractals::norm(A2)) * fractals::norm(dz1) > 1e-15 * convert<T>(fractals::norm(A)))
+      return std::nullopt;
+
+    // !! Test for escape
+    return is_valid(l) ? std::optional<DeltaType>{convert<DeltaType>(l.first)}
+                       : std::nullopt;
   }
 
   // Note that new_dc and new_dz are relative to the reference orbit
@@ -182,7 +192,7 @@ public:
   }
 
 private:
-public:  // Temporary
+public: // Temporary
   linear_step(TermType a, TermType a2, TermType b, TermType b2, TermType c,
               DeltaType dc, DeltaType dz, int jZ, int from, int to)
       : A(fractals::normalize(a)), A2(fractals::normalize(a2)),
@@ -222,7 +232,7 @@ public:
   bilinear_orbit() : reference_orbit() {}
   bilinear_orbit(const Reference &r) : reference_orbit(&r) {}
 
-  static constexpr int step_size = 50;
+  static constexpr int step_size = 10;
   using entry = linear_step<DeltaType, TermType>;
 
   // The delta dc is to the reference orbit
@@ -242,13 +252,15 @@ public:
       // there's some mismatch between the jump_dz and the computed dz
       // off by one I think!
 
-      auto j = stack[n].jump_dz(dz, dc, n-step_size, n);
+      auto j = stack[n].jump_dz(dz, dc, n - step_size, n);
 
       if (j) {
+        auto z = (*reference_orbit)[stack[n].jZ] + *j;
+        if (escaped(z))
+          break;
         dz = *j;
         min = n;
         n += step_size;
-        if (n == 3*step_size) break; // !! Temporary
       } else {
         break;
       }
@@ -256,8 +268,6 @@ public:
 
     // TODO: We could try to skip forward further in the final segment
     last_jump = min;
-
-    int debug_from, debug_to;
 
     if (stack.empty()) {
       stack.push_back(entry(dc));
@@ -268,6 +278,7 @@ public:
 
     // 2) Keep iterating until we escape or reach the iteration limit
 
+    // Orbit translation is sketchy
     entry e = stack.back().move_to(dz, dc);
 
     do {

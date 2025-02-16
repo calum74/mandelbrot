@@ -217,7 +217,7 @@ from the definition. We also have
 
 4. $= 2z_{i+n}(A_{i,n}\epsilon_i + A'_{i,n}\epsilon_i^2 + B_{i,n}\delta + B'_{i,n}\delta^2 + C_{i,n}\epsilon_i\delta) + (A_{i,n}\epsilon_i + B_{i,n}\delta)^2 + \delta + O(\epsilon_i^3)$ 
 
-5. $= (2z_{i+n}A_{i,n})\epsilon_i + (2z_{i+n}A'_{i,n} + A_{i,n}^2)\epsilon_i^2 + (2z_{i+n}B_{i,n}+1)\delta + (2z_{i+n}B'_{i,n} + B_{i,n}^2)\delta^2 + (2z_{i,n}C_{i,n}+2A_{i,n}B_{i,n})\epsilon_i\delta + O(\epsilon_i^3)$
+5. $= (2z_{i+n}A_{i,n})\epsilon_i + (2z_{i+n}A'_{i,n} + A_{i,n}^2)\epsilon_i^2 + (2z_{i+n}B_{i,n}+1)\delta + (2z_{i+n}B'_{i,n} + B_{i,n}^2)\delta^2 + (2z_{i+n}C_{i,n}+2A_{i,n}B_{i,n})\epsilon_i\delta + O(\epsilon_i^3)$
 
 We can then equate terms in 1. and 5. $\square$
 
@@ -295,17 +295,5 @@ Compute
 We then test that
 
 $A_{i,n} \epsilon_i + B_{i,n} \delta \approxeq A_{i,n} \epsilon_i + B_{i,n} \delta + A'_{i,n} \epsilon_i^2 + B'_{i,n}\delta^2 + C_{i,n}\epsilon_i\delta$
-
-
-If no such entry exists, we'll carry on with regular perturbation and populate new stack entries from the current position.
-
-To get a new iteration, we must:
-
-1. 
-
-
-To calculate a point, look at the previous jump-forward value, and try to jump forward that many steps. Perform a binary search to jump forward more or less if we can, then record the iteration we reached.
-
-Then we'll carry on calculating the epsilon, A and B terms for that point, overwriting the upper parts of the tree until we escape.
 
 
