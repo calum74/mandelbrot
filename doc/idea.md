@@ -297,3 +297,172 @@ We then test that
 $A_{i,n} \epsilon_i + B_{i,n} \delta \approxeq A_{i,n} \epsilon_i + B_{i,n} \delta + A'_{i,n} \epsilon_i^2 + B'_{i,n}\delta^2 + C_{i,n}\epsilon_i\delta$
 
 
+Starting with linear approximation, often called *bivariate linear approximation* (BLA), we can create a *linear step* that allows us to jump forward from iteration $n$ to iteration $m$.
+
+**Definition 5:** (Linear approximation)
+
+$$\epsilon_{mij} = A_{nmij}\epsilon_{nij} + B_{nmij}\delta_{ij} + O(\epsilon_{nij}^2)$$
+
+$\square$
+
+Note that $m\ge n$, meaning you can jump forward 0 steps, in which case $A_{nnij}=1, B_{nnij} = 0$. (We can probably jump backwards with this idea as well, but that might not be useful...)
+
+The next theorem allows us to calculate values for the linear terms $A$ and $B$.
+
+**Theorem 3:**
+
+$$\begin{align}
+A_{n,m+1,i,j} &= 2z_{mj}A_{nmij}\newline
+B_{n,m+1,i,j} &= 2z_{mj}B_{nmij}+1\newline
+\end{align}$$
+
+Proof:
+
+$$\begin{align}
+\epsilon_{m+1,i,j} &= A_{n,m+1,i,j}\epsilon_{nij} + B_{n,m+1,i,j}\delta_{ij} + O(\epsilon^2)\newline
+
+\epsilon_{m+1,i,j}  &= 2z_{mj}\epsilon_{mij}+ \epsilon_{mij}^2 + \delta_{ij}\newline
+
+&= 2z_{mj}(A_{nmij}\epsilon_{nij} + B_{nmij}\delta_{ij} + O(\epsilon^2))+ O(\epsilon^2) + \delta_{ij}\newline
+
+&= (2z_{mj}A_{nmij})\epsilon_{nij} + (2z_{mj}B_{nmij}+1)\delta_{ij} + O(\epsilon^2)\newline
+\end{align}$$
+
+Equating terms in (30) and (33) we get
+
+$$\begin{align}
+A_{n,m+1,i,j} &= 2z_{mj}A_{nmij}\newline
+B_{n,m+1,i,j} &= 2z_{mj}B_{nmij}+1\newline
+\end{align}$$
+
+$\square$
+
+Note we haven't said anything about the size of the $\epsilon^2$ term or when this equation is valid.
+
+Next, what happens to the terms $A$ and $B$ in nearby orbits? This is interesting because we want to be able to relocate orbits.
+
+**Theorem 4:** (Translating a linear orbit)
+
+$$\begin{align}
+A_{nmik} & = A_{nmij} = A_{nmjk}\newline
+B_{nmik} & = B_{nmij} = B_{nmjk}
+\end{align}$$
+
+Proof: We'll apply the properties of $\delta$ and $\epsilon$ from Theorem 1.
+
+$$\begin{align}
+\epsilon_{mik} &= \epsilon_{mij} + \epsilon_{mjk}\newline
+
+&= A_{nmik}\epsilon_{nik} + B_{nmik}\delta_{ik} + O(\epsilon^2) \newline
+
+&= A_{nmij}\epsilon_{nij} + B_{nmij}\delta_{ij} + A_{nmjk}\epsilon_{njk} + B_{nmjk}\delta_{jk} + O(\epsilon^2)
+\newline
+
+&= A_{nmij}(\epsilon_{nik} - \epsilon_{njk}) + B_{nmij}(\delta_{ik} - \delta_{jk}) + A_{nmjk}\epsilon_{njk} + B_{nmjk}\delta_{jk} + O(\epsilon^2)
+\newline
+
+&= A_{nmij}\epsilon_{nik} - A_{nmij}\epsilon_{njk} + B_{nmij}\delta_{ik} - B_{nmij}\delta_{jk} + A_{nmjk}\epsilon_{njk} + B_{nmjk}\delta_{jk} + O(\epsilon^2)
+\newline
+
+&= A_{nmij}\epsilon_{nik} + (A_{nmjk} - A_{nmij})\epsilon_{njk} + B_{nmij}\delta_{ik} + (B_{nmjk}- B_{nmij})\delta_{jk}  + O(\epsilon^2)
+\newline
+
+\end{align}
+$$
+
+Equating terms in (38) and (43), we see that
+
+$$\begin{align}
+A_{nmik} & = A_{nmij} = A_{nmjk}\newline
+B_{nmik} & = B_{nmij} = B_{nmjk}
+\end{align}$$
+
+$\square$
+
+This does not mean that the terms for $A$ and $B$ are constant, but that they are the same within a "local" region (to be determined).
+
+
+## Delete this section
+
+**Theorem 7:** If we have orbits $i$ and $k$, and we have calculated orbit $ik$, we can calculate orbit $ij$ using:
+
+$$
+\begin{align}
+A_j &= A_k + 2A_k\epsilon_{ik} + C_k\delta_{ik}\newline
+A'_j &= -A'_k\newline
+B_j &= B_k + 2B_k\delta_{ik} + C_k\epsilon_{ik}\newline
+B'_j &= -B'_k\newline
+C_j &= -C_k
+\end{align}
+$$
+
+Proof:
+
+From Definition 6:
+
+$$\begin{align}
+\epsilon_{mik} &= A_{nmk}\epsilon_{nik} + A'_{nmk}\epsilon_{nik}^2 + B_{nmk}\delta_{ik} + B'_{nmk}\delta_{ik}^2 + C_{nmk}\epsilon_{nik}\delta_{ik}+ O(\epsilon_{nik}^3)\newline
+\end{align}$$
+
+Using Theorem 1:
+
+$$\begin{align}
+\epsilon_{mik} &= \epsilon_{mij} + \epsilon_{mjk}\newline
+
+&= A_{nmj}\epsilon_{nij} + A'_{nmj}\epsilon_{nij}^2 + B_{nmij}\delta_{ij} + B'_{nmj}\delta_{ij}^2 + C_{nmj}\epsilon_{nij}\delta_{ij} \newline
+
+& +A_{nmk}\epsilon_{njk} + A'_{nmj}\epsilon_{njk}^2 + B_{nmk}\delta_{jk} + B'_{nmk}\delta_{jk}^2 + C_{nmk}\epsilon_{njk}\delta_{jk} + O(\epsilon_{njk}^3)
+\newline
+
+\end{align}$$
+
+However by Theorem 2, $\epsilon_{njk} = \epsilon_{nji} + \epsilon_{nik} = \epsilon_{nik} - \epsilon_{nij}$, so
+
+$$\begin{align}
+\epsilon_{mik}&= A_{nmj}\epsilon_{nij} + A'_{nmj}\epsilon_{nij}^2 + B_{nmj}\delta_{ij} + B'_{nmj}\delta_{ij}^2 + C_{nmj}\epsilon_{nij}\delta_{ij} \newline
+& +A_{nmk}(\epsilon_{nik} - \epsilon_{nij}) + A'_{nmk}(\epsilon_{nik} - \epsilon_{nij})^2 \newline &+ B_{nmk}(\delta_{nik} - \delta_{nij}) + B'_{nmk}(\delta_{ik} - \delta_{ij})^2 \newline &+ C_{nmk}(\epsilon_{nik} - \epsilon_{nij})(\delta_{ik} - \delta_{ij}) + O(\epsilon_{njk}^3)
+\newline
+
+\end{align}$$
+
+Expanding and distributing,
+
+$$\begin{align}
+\epsilon_{mik}&= A_{nmj}\epsilon_{nij} + A'_{nmj}\epsilon_{nij}^2 + B_{nmj}\delta_{ij} + B'_{nmj}\delta_{ij}^2 + C_{nmj}\epsilon_{nij}\delta_{ij} \newline
+& +A_{nmk}\epsilon_{nik} - A_{nmk}\epsilon_{nij} + A'_{nmk}\epsilon_{nik}^2 -2A'_{nmk}\epsilon_{nik}\epsilon_{nij} + A'_{nmk}\epsilon_{nij}^2 \newline &+ B_{nmk}\delta_{ik} - B_{nmk}\delta_{ij} + B'_{nmk}\delta_{ik}^2 -2B'_{nmk}\delta_{ik}\delta_{ij} + B'_{nmk}\delta_{ij}^2 \newline &+ C_{nmk}\epsilon_{nik}\delta_{ik} - C_{nmk}\epsilon_{nik}\delta_{ij} - C_{nmk}\epsilon_{nij}\delta_{ik} + C_{nmk}\epsilon_{nij}\delta_{ij} + O(\epsilon_{njk}^3)
+\newline
+
+\end{align}$$
+
+Gathering like terms, we see that we have some additional terms in $\epsilon_{ik}\epsilon_{ij}$, $\delta_{ik}\delta_{ij}$, $\epsilon_{ik}\delta_{ij}$ and $\epsilon_{ij}\delta_{ik}$, which we need to put into the relevant term for $ij$.
+
+$$\begin{align}
+
+\epsilon_{mik}&= (A_j - A_k - 2A_k\epsilon_{ik}-C_k\delta_{ik})\epsilon_{nij} \newline
+&+ (A'_j+A'_k)\epsilon_{nij}^2 \newline
+&+ (B_j-B_k-2B_k\delta_{ik}-C_k\epsilon_{ik})\delta_{ij} \newline
+&+ (B'_j+B'_k)\delta_{ij}^2 \newline
+&+ (C_j+C_k)\epsilon_{nij}\delta_{ij} \newline
+
+&+ (A_k)\epsilon_{nik} \newline
+&+ (A'_k)\epsilon_{nik}^2 \newline
+&+ (B_k)\delta_{ik} \newline
+&+ (B'_k)\delta_{ik}^2 \newline
+&+ (C_k)\epsilon_{nik}\delta_{ik} \newline
+\end{align}$$
+
+Equating the terms we get
+
+$$
+\begin{align}
+A_j &= A_k + 2A_k\epsilon_{ik} + C_k\delta_{ik}\newline
+A'_j &= -A'_k\newline
+B_j &= B_k + 2B_k\delta_{ik} + C_k\epsilon_{ik}\newline
+B'_j &= -B'_k\newline
+C_j &= -C_k
+\end{align}
+$$
+
+$\square$
+
+Now, this feels quite fishy.
