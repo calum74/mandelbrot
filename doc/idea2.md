@@ -9,7 +9,7 @@ in a linear step.
 
 Firstly let's establish some basic notation. When computing a Mandelbrot set, we need to compute whether each point $c \in \mathbb{C}$ *escapes*, which means defining a sequence of complex numbers $z_n$ calculated as follows:
 
-**Definition 1:** Define $z_n \in \mathbb{C}$ to be a point in a *reference orbit* at $c \in \mathbb{C}$, calculated using the standard Mandelbrot set sequence
+**Definition 1:** Let $z_n \in \mathbb{C}$ to be a point in a *reference orbit* at $c \in \mathbb{C}$, calculated using the standard Mandelbrot set sequence
 $$\begin{align}z_0 &= 0 \newline
 z_{n+1} &= z_n^2 + c\end{align}$$
 $\square$
@@ -19,16 +19,16 @@ We use $n$ and $m$ to refer to *iterations* of the orbit.
 In perturbation theory, we only need to calculate one reference orbit at $c$, and then we can calulate orbits *relative* to $c$, at a small distance $\delta$ from the orbit. Since we will be referring to multiple orbits, we label each orbit $i,j,k...$, and correspondingly label each $z_{n,i}$ at a distance $\delta_i$ from $c$.
 
 
-**Definition 2:** Define $z_{n,i} \in \mathbb{C}$ to be the value of the reference orbit at $c+\delta_i$.
+**Definition 2:** Let $z_{n,i} \in \mathbb{C}$ to be the value of the reference orbit at $c+\delta_i$.
 $$\begin{align}z_{0,i} &= 0\newline
 z_{n+1,i} &= z_{n,i}^2 + c + \delta_i\end{align}$$
 $\square$
 
 We can use $0$ to indicate the special orbit at $c$, so $\delta_0 = 0$.
 
-**Definition 3:** Define $\epsilon_{n,i,j} \in \mathbb{C} = z_{n,i} - z_{n,j}$ to be the distance between two orbits $i$ and $j$ at iteration $n$. $\square$
+**Definition 3:** Let $\epsilon_{n,i,j} \in \mathbb{C} = z_{n,i} - z_{n,j}$ to be the distance between two orbits $i$ and $j$ at iteration $n$. $\square$
 
-**Definition 4:** Define $\delta_{i,j} \in \mathbb{C} = \delta_i - \delta_j$ to be the distance of two deltas. $\square$
+**Definition 4:** Let $\delta_{i,j} \in \mathbb{C} = \delta_i - \delta_j$ to be the distance of two deltas. $\square$
 
 Not to be confused with tensor notation and the Kronecker delta. This notation is based on [Wikipedia notation](https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set).
 
@@ -82,7 +82,7 @@ $$\begin{align}\epsilon_{n+1} = 2z_{n}\epsilon_{n}+ \epsilon_{n}^2 + \delta\end{
 
 From now on I'll drop the commas and write $\epsilon_{n,i,j}$ as $\epsilon_{nij}$ except where the commas are needed.
 
-Starting with linear approximation, often called bivariate linear approximation (BLA), we can create a *linear step* that allows us to jump forward from iteration $n$ to iteration $m$.
+Starting with linear approximation, often called *bivariate linear approximation* (BLA), we can create a *linear step* that allows us to jump forward from iteration $n$ to iteration $m$.
 
 **Definition 5:** (Linear approximation)
 
@@ -90,7 +90,7 @@ $$\epsilon_{mij} = A_{nmij}\epsilon_{nij} + B_{nmij}\delta_{ij} + O(\epsilon_{ni
 
 $\square$
 
-Note that $m\ge n$, meaning you can jump forward 0 steps, in which case $A_{nnij}=1, B_{nnij} = 0$.
+Note that $m\ge n$, meaning you can jump forward 0 steps, in which case $A_{nnij}=1, B_{nnij} = 0$. (We can probably jump backwards with this idea as well, but that might not be useful...)
 
 The next theorem allows us to calculate values for the linear terms $A$ and $B$.
 
@@ -126,9 +126,7 @@ Note we haven't said anything about the size of the $\epsilon^2$ term or when th
 
 Next, what happens to the terms $A$ and $B$ in nearby orbits? This is interesting because we want to be able to relocate orbits.
 
-**Theorem 4:**
-
-For nearby orbits $i$, $j$ and $k$,
+**Theorem 4:** (Translating a linear orbit)
 
 $$\begin{align}
 A_{nmik} & = A_{nmij} = A_{nmjk}\newline
@@ -174,19 +172,21 @@ Having warmed up on linear approximation, let's add some more terms. This is imp
 
 **Definition 6:** (Quadratic approximation)
 
+For orbits $i$ and $j$, the distance between the orbits at iteration $m$ is approximated by
+
 $$\epsilon_{mij} = A_{nmij}\epsilon_{nij} + A'_{nmij}\epsilon_{nij}^2 + B_{nmij}\delta_{ij} + B'_{nmij}\delta_{ij}^2 + C_{nmij}\epsilon_{nij}\delta_{ij} + O(\epsilon_{nij}^3)$$
 
-$\square$
+For some constants $A_{nmij}$, $A'_{nmij}$, $B_{nmij}$, $B'_{nmij}$, $C_{nmij}$. $\square$
 
 Note that
 
 $$\begin{align}A_{nnij}=1, A'_{nnij} = B_{nnij} = B'_{nnij} = C_{nnij} = 0\end{align}$$
 
-Assume that
+Since
 
 $$\begin{align}\delta_{ij} = O(\epsilon_{nij})\end{align}$$
 
- which follows by Theorem 2.
+follows by Theorem 2, we'll gather up all higher order terms and represent them as $O(\epsilon_{nij}^3)$.
 
 **Theorem 6:** (Computation of quadratic terms.)
 
@@ -224,7 +224,25 @@ $$\begin{align}
 
 We can then equate terms in (53) and (61). $\square$
 
+**Corollary 1:**
+
+$$\begin{align}
+A_{nmij} = A_{nmkj} = A_{nmj}\newline
+A'_{nmij} = A'_{nmkj} = A'_{nmj}\newline
+B_{nmij} = B_{nmkj}= B_{nmj}\newline
+B'_{nmij} = B'_{nmkj} = B'_{nmj}\newline
+C_{nmij} = C_{nmkj} = C_{nmj}\newline
+\end{align}
+$$
+
+Proof: By construction of Theorem 6, only the base orbit $j$ is used in the construction of each term. $\square$
+
+Corollary 1 means that we only need to specify a single orbit when describing a term.
+
+
 **Theorem 7:** Triangle rule for polynomial terms.
+
+Assume we know $\epsilon_{nij}$ and we want to calculate the terms for $\epsilon_{nik}$
 
 $$
 A_{nmik} = A_{nmij} + ...
@@ -233,37 +251,61 @@ $$
 or something like that.
 
 Proof:
-We'll skip the $i$ and $n$ subscripts for brevity:
+
+From Definition 6:
 
 $$\begin{align}
-\epsilon_{i+n,\delta,\delta''} &= A_{\delta,\delta''}\epsilon_{\delta,\delta''} + ... + C_{\delta,\delta''}\epsilon_{\delta,\delta''}(\delta-\delta'')
-\newline
-\epsilon_{i+n,\delta,\delta''} &= \epsilon_{i+n,\delta,\delta'} + \epsilon_{i+n,\delta',\delta''}
-\newline
- &= A_{\delta,\delta'}\epsilon_{\delta,\delta'} + ... + C_{\delta,\delta'}\epsilon_{\delta,\delta'} + A_{\delta',\delta''}\epsilon_{\delta',\delta''} + ... + C_{\delta',\delta''}\epsilon_{\delta',\delta''}(\delta'-\delta'')
-\newline
- &= A_{\delta,\delta'}(\epsilon_{\delta,\delta''}-\epsilon_{\delta',\delta''}) ... + A_{i,n,\delta',\delta''}(\epsilon_{\delta',\delta''}) + ... C_{}
- \newline
- &= (A_{i,n,\delta,\delta'} + A_{i,n,\delta',\delta''})\epsilon_{\delta,\delta''}-\epsilon_{i,\delta',\delta''} + B_{i,n,\delta,\delta'}(\delta-\delta') + A_{i,n,\delta',\delta''}(\epsilon_{\delta',\delta} + \epsilon_{\delta,\delta''}) + B_{i,n,\delta',\delta''}(\delta'-\delta'') + ...
- \newline
-crap\newline
-\epsilon_{i+n+1,\delta,\delta''} &= A_{i,n+1}\epsilon_{i,\delta,\delta'} + A'_{i,n+1}\epsilon_{i,\delta,\delta'}^2 + ...
-\newline
-\epsilon_{i+n+1,\delta,\delta''} &= \epsilon_{i+n+1,\delta,\delta'} + \epsilon_{i+n+1,\delta',\delta''}
-\newline
-& = 2z_{i+n,\delta''}\epsilon_{i+n,\delta,\delta''} + \epsilon_{i+n,\delta,\delta''}^2 + \delta - \delta'
-\newline
-& = 2z_{i+n,\delta''}(\epsilon_{i+n,\delta,\delta'}+\epsilon_{i+n,\delta',\delta''}) + (\epsilon_{i+n,\delta,\delta'}+\epsilon_{i+n,\delta',\delta''})^2 + \delta - \delta'
-\newline
-& = 2z_{i+n,\delta''}(\epsilon_{i+n,\delta,\delta'}+\epsilon_{i+n,\delta',\delta''}) + (\epsilon_{i+n,\delta,\delta'}+\epsilon_{i+n,\delta',\delta''})^2 + \delta - \delta' + O(\epsilon_{i}^3)
+\epsilon_{mik} &= A_{nmk}\epsilon_{nik} + A'_{nmk}\epsilon_{nik}^2 + B_{nmk}\delta_{ik} + B'_{nmk}\delta_{ik}^2 + C_{nmk}\epsilon_{nik}\delta_{ik}+ O(\epsilon_{nik}^3)\newline
+\end{align}$$
 
+Using Theorem 1:
 
-\end{align}
+$$\begin{align}
+\epsilon_{mik} &= \epsilon_{mij} + \epsilon_{mjk}\newline
+
+&= A_{nmj}\epsilon_{nij} + A'_{nmj}\epsilon_{nij}^2 + B_{nmij}\delta_{ij} + B'_{nmj}\delta_{ij}^2 + C_{nmj}\epsilon_{nij}\delta_{ij} \newline
+
+& +A_{nmk}\epsilon_{njk} + A'_{nmj}\epsilon_{njk}^2 + B_{nmk}\delta_{jk} + B'_{nmk}\delta_{jk}^2 + C_{nmk}\epsilon_{njk}\delta_{jk} + O(\epsilon_{njk}^3)
+\newline
+
+\end{align}$$
+
+However by Theorem 2, $\epsilon_{njk} = \epsilon_{nji} + \epsilon_{nik} = \epsilon_{nik} - \epsilon_{nij}$, so
+
+$$\begin{align}
+\epsilon_{mik}&= A_{nmj}\epsilon_{nij} + A'_{nmj}\epsilon_{nij}^2 + B_{nmj}\delta_{ij} + B'_{nmj}\delta_{ij}^2 + C_{nmj}\epsilon_{nij}\delta_{ij} \newline
+& +A_{nmk}(\epsilon_{nik} - \epsilon_{nij}) + A'_{nmk}(\epsilon_{nik} - \epsilon_{nij})^2 \newline &+ B_{nmk}(\delta_{nik} - \delta_{nij}) + B'_{nmk}(\delta_{ik} - \delta_{ij})^2 \newline &+ C_{nmk}(\epsilon_{nik} - \epsilon_{nij})(\delta_{ik} - \delta_{ij}) + O(\epsilon_{njk}^3)
+\newline
+
+\end{align}$$
+
+Expanding and distributing,
+
+$$\begin{align}
+\epsilon_{mik}&= A_{nmj}\epsilon_{nij} + A'_{nmj}\epsilon_{nij}^2 + B_{nmj}\delta_{ij} + B'_{nmj}\delta_{ij}^2 + C_{nmj}\epsilon_{nij}\delta_{ij} \newline
+& +A_{nmk}\epsilon_{nik} - A_{nmk}\epsilon_{nij} + A'_{nmk}\epsilon_{nik}^2 -2A'_{nmk}\epsilon_{nik}\epsilon_{nij} + A'_{nmk}\epsilon_{nij}^2 \newline &+ B_{nmk}\delta_{nik} - B_{nmk}\delta_{nij} + B'_{nmk}\delta_{ik}^2 -2B'_{nmk}\delta_{ik}\delta_{ij} + B'_{nmk}\delta_{ij}^2 \newline &+ C_{nmk}\epsilon_{nik}\delta_{ik} - C_{nmk}\epsilon_{nik}\delta_{ij} - C_{nmk}\epsilon_{nij}\delta_{ik} + C_{nmk}\epsilon_{nij}\delta_{ij} + O(\epsilon_{njk}^3)
+\newline
+
+\end{align}$$
+
+Gathering like terms
+
+$$\begin{align}
+
+\epsilon_{mik}&= (A_{nmj} - A_{nmk})\epsilon_{nij} + A'_{nmj}\epsilon_{nij}^2 + (B_{nmj}-B_{nmk})\delta_{ij} + B'_{nmj}\delta_{ij}^2 + C_{nmj}\epsilon_{nij}\delta_{ij} \newline
+& +A_{nmk}\epsilon_{nik} + A'_{nmk}(\epsilon_{nik} - \epsilon_{nij})^2 \newline &+ B_{nmk}\delta_{nik} + B'_{nmk}(\delta_{ik} - \delta_{ij})^2 \newline &+ C_{nmk}(\epsilon_{nik} - \epsilon_{nij})(\delta_{ik} - \delta_{ij}) + O(\epsilon_{njk}^3)
+\newline
+
+\end{align}$$
+
+Let's equate the terms for $\epsilon_{nij} \implies A_{nmj} = A_{nmk}$
+
+$$
+A_{mnik} = ... \newline
+A'_{mnik} = A'_{mnij} + 
+C_{nmik} = C_{nmjk}\newline
 $$
 
-Strategy: We can eliminate some terms, and equate other terms and equate other terms to 0.
-
-Look at higher order terms. These will be more interesting.
 
 ## Relocating linear terms
 
