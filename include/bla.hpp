@@ -109,9 +109,29 @@ private:
 
 template <typename DeltaType> bool is_valid(std::pair<DeltaType, DeltaType> p) {
   return fractals::norm(p.second) <=
-    typename DeltaType::value_type(1e-4) * std::numeric_limits<typename DeltaType::value_type>::epsilon() *
+         std::numeric_limits<typename DeltaType::value_type>::epsilon() *
+             std::numeric_limits<typename DeltaType::value_type>::epsilon() *
              fractals::norm(p.first);
 }
+
+template <typename TermType> struct jump_terms {
+  TermType A = 1, A2 = 0, B = 0, B2 = 0, C = 0;
+};
+
+template <typename TermType>
+jump_terms<TermType> step_terms(const jump_terms<TermType> &terms, TermType z) {
+  return {2 * z * terms.A, 2 * z * terms.A2 + terms.A * terms.A,
+          2 * z * terms.B + 1, 2 * z * terms.B2 + terms.B * terms.B,
+          2 * z * terms.C + 2 * terms.A * terms.B};
+}
+
+template <typename DeltaType, typename TermType> class jump_step {
+public:
+  int n; // The iteration we are jumping from
+  int m; // The iteration we are jumping to
+  jump_terms<TermType> terms;
+  DeltaType d_ik, e_nik, e_mik;
+};
 
 template <typename DeltaType, typename TermType> class linear_step {
 public:
@@ -165,25 +185,17 @@ public:
     auto l = get_local_dz(dz1, dc1 - dc);
     using T = double;
 
-    if (convert<T>(fractals::norm(B2)) * fractals::norm(dc1 - dc) > 1e-15 * convert<T>(fractals::norm(B)))
+    if (convert<T>(fractals::norm(B2)) * fractals::norm(dc1 - dc) >
+        1e-15 * convert<T>(fractals::norm(B)))
       return std::nullopt;
 
-    if (convert<T>(fractals::norm(A2)) * fractals::norm(dz1) > 1e-15 * convert<T>(fractals::norm(A)))
+    if (convert<T>(fractals::norm(A2)) * fractals::norm(dz1) >
+        1e-15 * convert<T>(fractals::norm(A)))
       return std::nullopt;
 
     // !! Test for escape
     return is_valid(l) ? std::optional<DeltaType>{convert<DeltaType>(l.first)}
                        : std::nullopt;
-  }
-
-  // Note that new_dc and new_dz are relative to the reference orbit
-  linear_step move_to(DeltaType new_dz, DeltaType new_dc) const {
-    /* I think only the linear terms are valid to move, we can also move the
-    higher order terms as they are only used for error estimation. More
-    investigation needed.
-    */
-
-    return {A, A2, B, B2, C, new_dc, new_dz, jZ, debug_from, debug_to};
   }
 
   template <RandomAccessOrbit Reference>
@@ -215,16 +227,6 @@ public: // Temporary
 
 /*
 A bivariate orbit with a fixed step size.
-At each step, you can jump forward at most `step_size` iterations.
-
-`stack[i]` contains terms needed to jump forward from iteration `i%step_size` to
-iteration `i`. If `i%step_size == 0`, then this jumps forward from
-`i-step_size`.
-
-Iteration 0 is unused since you'll never need to jump forward to 0.
-
-To jump, calculate `dz = e.A*dz + e.B*(dc-e.dc)`, after first checking the
-higher order terms (A2,B2,C) for divergence.
 */
 template <Complex DeltaType, Complex TermType, RandomAccessOrbit Reference>
 class bilinear_orbit {
@@ -232,69 +234,43 @@ public:
   bilinear_orbit() : reference_orbit() {}
   bilinear_orbit(const Reference &r) : reference_orbit(&r) {}
 
-  static constexpr int step_size = 10;
-  using entry = linear_step<DeltaType, TermType>;
+  static constexpr int step_size = 50;
+  using step = jump_step<DeltaType, TermType>;
 
-  // The delta dc is to the reference orbit
-  int get(const DeltaType dc, int max_iterations) {
+  // k is the reference orbit
+  // j is the current orbit
+  int get(const DeltaType d_jk, int max_iterations) {
 
-    // !! Don't reuse dz for both orbits
-    DeltaType dz = 0; // dz from the reference orbit
-    int jZ = 0;
-    // 1) Find the top position
+    int n=0;
+    DeltaType e_njk = 0;
+    int reference_index = 0;
 
-    // The entry at "n" allows us to skip forward to "n" from a previous step
-    int n = step_size;
-    int min = 0;
+    using LowPrecisionType = typename Reference::value_type;
+    LowPrecisionType z_nj = (*reference_orbit)[reference_index] + e_njk;
 
-    // dz is always relative to the current orbit
-    while (n < stack.size()) {
-      // there's some mismatch between the jump_dz and the computed dz
-      // off by one I think!
+    while(!escaped(z_nj) && n < max_iterations)
+    {
+      // Perform once step
+      auto z_nk = (*reference_orbit)[reference_index];
 
-      auto j = stack[n].jump_dz(dz, dc, n - step_size, n);
+      // Next iteration
+      e_njk = 2 * z_nk * e_njk + e_njk*e_njk + d_jk;
 
-      if (j) {
-        auto z = (*reference_orbit)[stack[n].jZ] + *j;
-        if (escaped(z))
-          break;
-        dz = *j;
-        min = n;
-        n += step_size;
-      } else {
-        break;
+      ++reference_index;
+      ++n;
+
+      z_nj = (*reference_orbit)[reference_index] + e_njk;
+
+      if(reference_index >= reference_orbit->size()-1)
+      {
+        reference_index = 0;
+        e_njk = z_nj;
       }
     }
 
-    // TODO: We could try to skip forward further in the final segment
-    last_jump = min;
+    if(n == max_iterations) return 0;
 
-    if (stack.empty()) {
-      stack.push_back(entry(dc));
-    } else {
-      stack.resize(min + 1);
-      dz += stack.back().dz;
-    }
-
-    // 2) Keep iterating until we escape or reach the iteration limit
-
-    // Orbit translation is sketchy
-    entry e = stack.back().move_to(dz, dc);
-
-    do {
-      if (stack.size() % step_size == 1) {
-        e = e.restart();
-      }
-      e = e.next_iteration(*reference_orbit);
-      stack.push_back(e);
-
-    } while (!escaped(stack.back().get_z(*reference_orbit)) &&
-             stack.size() < max_iterations);
-
-    if (stack.size() == max_iterations)
-      return 0;
-
-    return stack.size();
+    return n;
   }
 
   int get_skipped_iterations() const { return last_jump; }
@@ -302,7 +278,8 @@ public:
 private:
   const Reference *reference_orbit;
 
-  std::vector<entry> stack;
+  std::vector<step> steps;
+
   int last_jump = 0;
 };
 } // namespace mandelbrot

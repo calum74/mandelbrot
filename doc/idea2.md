@@ -252,8 +252,8 @@ Each time we calculate an orbit $i$, we'll create *jump steps* consisting of:
 
 Exactly how many steps and how they are stored is an implementation detail. A simple implementation could
 
-- keep the orbit of the previously calculated point since that will be closest,
-- use a fixed step size.
+- use a fixed step size $S$
+- keep one step every $S$ iterations
 
 When we come to compute another orbit $j$, we have:
 
@@ -272,7 +272,7 @@ Then we have all the terms needed to determine the validity of the step and calc
 
 Then we repeat until we have no more valid jump steps available, and then we'll iterate until escape to create new jump steps for future orbits.
 
-Note that in general, there will be jump steps from many different orbits, not just the most recently calculated orbit.
+**Note that in general, there will be jump steps from many different orbits, not just the most recently calculated orbit.** This is why we must store $\delta_{ik}$, $\epsilon_{nik}$, and $\epsilon_{mik}$ in each step, because we don't know in general which orbit they came from.
 
 ## Implementation
 
