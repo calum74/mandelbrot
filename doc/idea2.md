@@ -2,7 +2,7 @@
 
 ## Introduction
 
-BLA2 is a novel algorithm for computing the Mandelbrot set, that  improves on existing bivariate linear approximation (BLA) methods by computing higher order terms, and by utilising a novel technique called *orbit shifting* to always locate an efficient reference orbit for linear approximation.
+BLA2 is a novel algorithm for computing the Mandelbrot set, that  improves on existing bivariate linear approximation (BLA) methods by computing higher order terms, and by utilising a novel technique called *orbit shifting* to always locate an efficient jump step for linear approximation.
 
 ### Notation quick reference
 
