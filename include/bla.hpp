@@ -127,13 +127,14 @@ jump_terms<TermType> step_terms(const jump_terms<TermType> &terms, TermType z) {
 
 // See Definition 6 for an explanation of this
 template <typename TermType>
-std::optional<TermType> eval_terms(const jump_terms<TermType> & terms, TermType e_nij, TermType d_ij)
-{
+std::optional<TermType> eval_terms(const jump_terms<TermType> &terms,
+                                   TermType e_nij, TermType d_ij) {
   auto x = terms.A * e_nij + terms.B * d_ij;
-  auto y = terms.A * e_nij * e_nij + terms.B * d_ij * d_ij + terms.C * e_nij * d_ij;
+  auto y =
+      terms.A * e_nij * e_nij + terms.B * d_ij * d_ij + terms.C * e_nij * d_ij;
   auto e = std::numeric_limits<typename TermType::value_type>::epsilon();
 
-  if( fractals::norm(y) < e*e*fractals::norm(x))
+  if (fractals::norm(y) <= e * e * fractals::norm(x))
     return x;
   return std::nullopt;
 }
@@ -144,8 +145,8 @@ public:
   int m; // The iteration we are jumping to
   jump_terms<TermType> terms;
   DeltaType d_ik, e_nik, e_mik;
+  int reference_index;
 };
-
 
 /*
 // multi_bilinear_orbit??
@@ -169,6 +170,7 @@ public:
     int n = 0;
     DeltaType e_njk = 0;
     int reference_index = 0;
+    skipped_steps = 0;
 
     using LowPrecisionType = typename Reference::value_type;
     LowPrecisionType z_nj = (*reference_orbit)[reference_index] + e_njk;
@@ -183,30 +185,41 @@ public:
           new_step.m = n;
 
           // Overwrite/push current term
-          if (index-1 < steps.size())
-            steps[index-1] = new_step;
+          if (index - 1 < steps.size())
+            steps[index - 1] = new_step;
           else
             steps.push_back(new_step);
         }
 
-        if(index<steps.size())
-        {
+        // !! The reference index step check is temporary
+        if (index < steps.size() && n == steps[index].reference_index) {
           // steps[index] might allow us to jump forward
           // See how far we can skip forward
-          auto try_step = eval_terms(steps[index].terms, e_njk - steps[index].e_nik, d_jk - steps[index].d_ik);
+          auto try_step =
+              eval_terms(steps[index].terms, e_njk - steps[index].e_nik,
+                         d_jk - steps[index].d_ik);
 
-          if(try_step) skipped_steps = step_size;
+          // !! Check escape
+          if (n == 0 && try_step) {
+            n = steps[index].m;
+            e_njk = *try_step + steps[index].e_mik;
+            skipped_steps += step_size;
+            reference_index = steps[index].reference_index;
+            z_nj = (*reference_orbit)[reference_index] + e_njk;
+          }
+          // TODO: Skip more than one step
         }
 
-        // TODO
-
         // Reset the terms for manual calculation
-        new_step = {.n=n, .d_ik = d_jk, .e_nik = e_njk};
+        new_step = {.n = n,
+                    .d_ik = d_jk,
+                    .e_nik = e_njk,
+                    .reference_index = reference_index};
       }
 
       // Perform one step
 
-      new_step.terms = step_terms(new_step.terms, DeltaType(z_nj));
+      new_step.terms = step_terms(new_step.terms, z_nj);
 
       auto z_nk = (*reference_orbit)[reference_index];
 
