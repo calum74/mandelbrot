@@ -292,8 +292,8 @@ int main() {
 
     mandelbrot::orbit_manager<
         std::complex<double>,
-        std::complex<fractals::high_exponent_real<double>>,
-        std::complex<fractals::high_exponent_real<double>>, 4, 20, 100,
+        std::complex<fractals::high_exponent_double>,
+        std::complex<fractals::high_exponent_double>, 4, 20, 100,
         mandelbrot::basic_orbit<std::complex<double>,
                                 mandelbrot::mandelbrot_calculation<2>>>
         manager;

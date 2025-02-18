@@ -10,7 +10,7 @@
 
 namespace fractals {
 
-template <typename Double, typename Exponent, bool Normalize>
+template <std::floating_point Double, std::integral Exponent, bool Normalize>
 class high_exponent_real;
 
 template <typename Double, typename Exponent>
@@ -20,7 +20,8 @@ struct normalized<high_exponent_real<Double, Exponent, false>> {
 
 using high_exponent_double = high_exponent_real<double, int, false>;
 
-struct skip_normalization {};
+using fast_high_exponent_double = high_exponent_real<double, int, false>;
+
 /*
   An exponented real is a normal floating point number (like a double) with
   extra precision for the exponent. This is a good compromise when we need a bit
@@ -29,17 +30,21 @@ struct skip_normalization {};
   Can in theory be combined with `high_precision_real` for an even higher
   number.
 */
-template <typename Double = double, typename Exponent = int,
-          bool Normalize = true>
+template <std::floating_point Double = double, std::integral Exponent = int,
+          bool Normalize = false>
 class high_exponent_real {
 public:
   template <bool FromNormalized>
-  high_exponent_real(
+  constexpr high_exponent_real(
       const high_exponent_real<Double, Exponent, FromNormalized> &src) {
     if constexpr (Normalize && !FromNormalized) {
-      int e1;
-      d = std::frexp(src.d, &e1);
-      e = src.e + e1;
+      if (src.d == 0) {
+        d = 0;
+        e = 0;
+      } else {
+        d = std::frexp(src.d, &e);
+        e += src.e;
+      }
     } else {
       d = src.d;
       e = src.e;
@@ -88,18 +93,18 @@ high_exponent_real<D, E, true> normalize(const high_exponent_real<D, E, N> x) {
 
 template <typename D, typename E, bool N>
 high_exponent_real<D, E, false> operator-(high_exponent_real<D, E, N> a) {
-  return {-a.d, a.e};
+  return high_exponent_real<D, E, false>{-a.d, a.e};
 }
 
 template <typename D, typename E, bool N1, bool N2>
 high_exponent_real<D, E, false> operator-(high_exponent_real<D, E, N1> a,
-                                   high_exponent_real<D, E, N2> b) {
+                                          high_exponent_real<D, E, N2> b) {
   return a + -b;
 }
 
 template <typename D, typename E, bool N1, bool N2>
 high_exponent_real<D, E, false> operator+(high_exponent_real<D, E, N1> a,
-                                   high_exponent_real<D, E, N2> b) {
+                                          high_exponent_real<D, E, N2> b) {
   if (a.d == 0)
     return b;
   if (b.d == 0)
@@ -108,24 +113,26 @@ high_exponent_real<D, E, false> operator+(high_exponent_real<D, E, N1> a,
   // Need to figure out a sensible exponent
   if (a.e > b.e) {
     // Convert b to a's exponent
-    return {a.d + b.d * (D)std::exp2(b.e - a.e), a.e};
+    return high_exponent_real<D, E, false>{a.d + b.d * (D)std::exp2(b.e - a.e),
+                                           a.e};
   } else if (a.e < b.e) {
     // Convert a to b's exponent
-    return {a.d * (D)std::exp2(a.e - b.e) + b.d, b.e};
+    return high_exponent_real<D, E, false>{a.d * (D)std::exp2(a.e - b.e) + b.d,
+                                           b.e};
   } else {
-    return {a.d + b.d, a.e};
+    return high_exponent_real<D, E, false>{a.d + b.d, a.e};
   }
 }
 
 template <typename D, typename E, bool N1, bool N2>
 high_exponent_real<D, E, false> operator*(high_exponent_real<D, E, N1> a,
-                                   high_exponent_real<D, E, N2> b) {
-  return {a.d * b.d, a.e + b.e};
+                                          high_exponent_real<D, E, N2> b) {
+  return high_exponent_real<D, E, false>{a.d * b.d, a.e + b.e};
 }
 
 template <typename D, typename E, bool N1, bool N2>
 high_exponent_real<D, E, false> operator/(high_exponent_real<D, E, N1> a,
-                                   high_exponent_real<D, E, N2> b) {
+                                          high_exponent_real<D, E, N2> b) {
   return high_exponent_real<D, E, false>{a.d / b.d, a.e - b.e};
 }
 
@@ -194,14 +201,14 @@ int cmp(high_exponent_real<D, E, true> a, high_exponent_real<D, E, true> b) {
 }
 
 template <typename D, typename E, bool N1, bool N2>
-bool operator==(high_exponent_real<D, E, N1> a, high_exponent_real<D, E, N2> b) {
-  auto a2 = normalize(a);
-  auto b2 = normalize(b);
-  return a2.d == b2.d && a2.e == b2.e;
+bool operator==(high_exponent_real<D, E, N1> a,
+                high_exponent_real<D, E, N2> b) {
+  return cmp(normalize(a), normalize(b)) == 0;
 }
 
 template <typename D, typename E, bool N1, bool N2>
-bool operator>=(high_exponent_real<D, E, N1> a, high_exponent_real<D, E, N2> b) {
+bool operator>=(high_exponent_real<D, E, N1> a,
+                high_exponent_real<D, E, N2> b) {
   return cmp(normalize(a), normalize(b)) >= 0;
 }
 
@@ -216,9 +223,18 @@ bool operator<(high_exponent_real<D, E, N1> a, high_exponent_real<D, E, N2> b) {
 }
 
 template <typename D, typename E, bool N1, bool N2>
-bool operator<=(high_exponent_real<D, E, N1> a, high_exponent_real<D, E, N2> b) {
+bool operator<=(high_exponent_real<D, E, N1> a,
+                high_exponent_real<D, E, N2> b) {
   return cmp(normalize(a), normalize(b)) <= 0;
 }
+
+template <std::floating_point D, typename E, bool N1, bool N2>
+  requires(N1 != N2)
+struct convert_to<high_exponent_real<D, E, N1>, high_exponent_real<D, E, N2>> {
+  static high_exponent_real<D, E, N1> get(high_exponent_real<D, E, N2> x) {
+    return x;
+  }
+};
 
 template <std::floating_point D1, std::floating_point D2, typename E, bool N>
 struct convert_to<D1, high_exponent_real<D2, E, N>> {
@@ -227,7 +243,9 @@ struct convert_to<D1, high_exponent_real<D2, E, N>> {
 
 template <std::floating_point D1, std::floating_point D2, typename E, bool N>
 struct convert_to<high_exponent_real<D1, E, N>, D2> {
-  static high_exponent_real<D1, E, N> get(D2 x) { return {(D1)x}; }
+  static high_exponent_real<D1, E, N> get(D2 x) {
+    return high_exponent_real<D1, E, N>{(D1)x};
+  }
 };
 
 template <typename D, typename E, bool N>
@@ -244,12 +262,12 @@ struct convert_to<high_precision_real<N>, high_exponent_real<D, E, Norm>> {
 
 template <int N, std::floating_point D, typename E, bool Norm>
 struct convert_to<high_exponent_real<D, E, Norm>, high_precision_real<N>> {
-  static high_exponent_real<D, E,Norm> get(const high_precision_real<N> &x) {
+  static high_exponent_real<D, E, Norm> get(const high_precision_real<N> &x) {
     if (x.fraction[0] == 0) {
       int e = count_fractional_zeros(x);
-      return {(D)(x << e).to_double(), -e};
+      return high_exponent_real<D, E, Norm>{(D)(x << e).to_double(), -e};
     } else {
-      return x.to_double();
+      return high_exponent_real<D, E, Norm>{x.to_double()};
     }
   }
 };
@@ -258,13 +276,14 @@ template <typename D, typename E> bool isfinite(high_exponent_real<D, E> a) {
   return std::isfinite(a.d);
 }
 
-template <typename D, typename E> D log(const high_exponent_real<D, E> &a) {
-  return std::log(a.d) + a.e * std::log(2); // Test this !!
+template <typename D, typename E, bool N>
+D log(const high_exponent_real<D, E, N> &a) {
+  return std::log(a.d) + a.e * std::log(2);
 }
 
 template <typename D, typename E, bool N>
-high_exponent_real<D, E> operator<<(const high_exponent_real<D, E, N> &a,
-                                    int shift) {
+high_exponent_real<D, E, false> operator<<(const high_exponent_real<D, E, N> &a,
+                                           int shift) {
   return {a.d, a.e + shift};
 }
 
@@ -312,6 +331,5 @@ operator*(std::complex<high_exponent_real<D, E, N>> a,
   return {a.real() * b.real() - a.imag() * b.imag(),
           a.real() * b.imag() + a.imag() * b.real()};
 }
-
 
 } // namespace fractals

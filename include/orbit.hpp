@@ -467,13 +467,13 @@ private:
     using term_norm = typename term_type::value_type;
 
     value_type z;
-    std::array<term_type, Terms> terms;
+    std::array<typename normalized<term_type>::type, Terms> terms;
     // The maximum delta for this term
     // If we use a delta with a higher norm than this, we risk imprecision and
     // therefore glitches
     delta_norm max_delta_norm = 0;
 
-    Entry(value_type z, const std::array<term_type, Terms> &ts)
+    Entry(value_type z, const std::array<typename normalized<term_type>::type, Terms> &ts)
         : z(z), terms(ts) {
       // We'll look at the terms in the series to figure out what the maximum
       // size of delta is for this term before imprecision sets in.

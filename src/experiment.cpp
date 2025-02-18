@@ -98,7 +98,7 @@ template <int N, int P, int T = 4, int Tolerance = 100,
           typename DeltaType = std::complex<double>>
 using MBX = ExperimentalMandelbrotCalculation<
     std::complex<double>, DeltaType,
-    std::complex<fractals::high_exponent_real<double>>,
+    std::complex<fractals::high_exponent_double>,
     std::complex<fractals::high_precision_real<P>>,
     mandelbrot::mandelbrot_calculation<N>, T, Tolerance>;
 
