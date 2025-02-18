@@ -8,13 +8,20 @@
 
 namespace fractals {
 
+  template <typename T>
+  concept Complex = requires(T v) {
+    // requires(typename T::value_type) {};
+    { v.real() } -> std::same_as<typename T::value_type>;
+    v.imag();
+  };
+  
 template <typename T> T real_part(const std::complex<T> &c) { return c.real(); }
 
 template <typename T> T imag_part(const std::complex<T> &c) { return c.imag(); }
 
-template <typename Complex> Complex square(const Complex &c) {
+template <Complex C> C square(const C &c) {
   return {real_part(c) * real_part(c) - imag_part(c) * imag_part(c),
-          typename Complex::value_type(2) * real_part(c) * imag_part(c)};
+          typename C::value_type(2) * real_part(c) * imag_part(c)};
 }
 
 template <typename T>
@@ -31,45 +38,45 @@ std::complex<T> mul(const std::complex<T> &a, const std::complex<T> &b) {
 inline double to_double(double d) { return d; }
 inline double to_double(float f) { return f; }
 
-template <typename C> C step(const C &z, const C &c) { return square(z) + c; }
+// template <Complex C> C step(const C &z, const C &c) { return square(z) + c; }
 
-template <typename C> auto norm(const C &c) {
+template <Complex C> auto norm(const C &c) {
   auto r = real_part(c);
   auto i = imag_part(c);
   return r * r + i * i;
 }
 
-template <int Order, typename C, bool is_even = (Order % 2 == 0)>
+template <int Order, Complex C, bool is_even = (Order % 2 == 0)>
 struct pow_impl;
 
-template <typename C> struct pow_impl<2, C, true> {
+template <Complex C> struct pow_impl<2, C, true> {
   static C eval(const C &c) { return square(c); }
 };
 
-template <typename C> struct pow_impl<1, C, false> {
+template <Complex C> struct pow_impl<1, C, false> {
   static C eval(const C &c) { return c; }
 };
 
-template <int Order, typename C> struct pow_impl<Order, C, true> {
+template <int Order, Complex C> struct pow_impl<Order, C, true> {
   static C eval(const C &c) {
     auto r = pow_impl<Order / 2, C>::eval(c);
     return square(r);
   }
 };
 
-template <typename C> struct pow_impl<0, C, true> {
+template <Complex C> struct pow_impl<0, C, true> {
   static C eval(const C &c) { return C{1, 0}; }
 };
 
-template <typename C> struct pow_impl<-1, C, false> {
+template <Complex C> struct pow_impl<-1, C, false> {
   static C eval(const C &c) { return C{0, 0}; } // Not implemented
 };
 
-template <int Order, typename C> struct pow_impl<Order, C, false> {
+template <int Order, Complex C> struct pow_impl<Order, C, false> {
   static C eval(const C &c) { return mul(c, pow_impl<Order - 1, C>::eval(c)); }
 };
 
-template <int Order, typename C> C pow(const C &c) {
+template <int Order, Complex C> C pow(const C &c) {
   return pow_impl<Order, C>::eval(c);
 }
 
@@ -117,11 +124,5 @@ template <int Digits, int MinExp, int MaxExp>
 using complex_number =
     std::complex<typename make_real<Digits, MinExp, MaxExp>::type>;
 
-template <typename T>
-concept Complex = requires(T v) {
-  // requires(typename T::value_type) {};
-  { v.real() } -> std::same_as<typename T::value_type>;
-  v.imag();
-};
 
 } // namespace fractals

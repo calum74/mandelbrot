@@ -1,5 +1,4 @@
 #pragma once
-#include "high_precision_real.hpp"
 #include "complex_number.hpp"
 
 namespace fractals {

@@ -116,7 +116,6 @@ template <typename Complex, int N> struct calculate_delta_terms<Complex, 4, N> {
 // The complex arithmetic required to calculate a Mandelbrot set
 // We consider the generalized Mandelbrot set, including higher orders
 // such as the cubic, but exclude non-integer orders.
-// TODO: Specialise this for N=2 for speed
 template <int N> struct mandelbrot_calculation {
 
   static constexpr int order = N;
