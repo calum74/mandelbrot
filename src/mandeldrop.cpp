@@ -1,8 +1,8 @@
 #include "fractal.hpp"
-#include "high_exponent_real.hpp"
 #include "mandelbrot.hpp"
 #include "mandelbrot_adaptor.hpp"
 #include "orbit.hpp"
+#include "convert.hpp"
 
 class SimpleMandeldrop : public fractals::PointwiseCalculation {
 public:

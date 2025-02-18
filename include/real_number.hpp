@@ -1,5 +1,7 @@
 #pragma once
 #include <limits>
+#include "high_precision_real.hpp"
+#include "high_exponent_real.hpp"
 
 /*
     Selects the datatype that is able to represent a given type requirement.
@@ -50,6 +52,25 @@ using real_number = typename make_real<Digits, MinExp, MaxExp>::type;
 
 template <typename T> struct normalized {
   using type = T;
+};
+
+template <int Digits>
+  requires(Digits > std::numeric_limits<long double>::digits)
+struct make_real<Digits, 0, 0> {
+  using type = high_precision_real<(Digits + 64) / 64>;
+};
+
+template <typename Double, typename Exponent>
+struct normalized<high_exponent_real<Double, Exponent, false>> {
+  using type = high_exponent_real<Double, Exponent, true>;
+};
+
+template <int Digits, int MinExp, int MaxExp>
+  requires(Digits <= std::numeric_limits<long double>::digits &&
+           (MinExp<std::numeric_limits<long double>::min_exponent || MaxExp>
+                std::numeric_limits<long double>::max_exponent))
+struct make_real<Digits, MinExp, MaxExp> {
+  using type = high_exponent_real<long double, int>;
 };
 
 } // namespace fractals

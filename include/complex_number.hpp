@@ -3,7 +3,6 @@
 */
 
 #pragma once
-#include "convert.hpp"
 #include "real_number.hpp"
 #include <complex>
 
@@ -31,14 +30,6 @@ std::complex<T> mul(const std::complex<T> &a, const std::complex<T> &b) {
 
 inline double to_double(double d) { return d; }
 inline double to_double(float f) { return f; }
-
-template <typename T1, typename T2>
-  requires(!std::same_as<T1, T2>)
-struct convert_to<std::complex<T1>, std::complex<T2>> {
-  static std::complex<T1> get(const std::complex<T2> &c) {
-    return {convert<T1>(c.real()), convert<T1>(c.imag())};
-  }
-};
 
 template <typename C> C step(const C &z, const C &c) { return square(z) + c; }
 

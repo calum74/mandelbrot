@@ -1,5 +1,5 @@
 #pragma once
-#include "high_precision_real.hpp"
+#include "real_number.hpp"
 
 namespace fractals {
 struct view_parameters;

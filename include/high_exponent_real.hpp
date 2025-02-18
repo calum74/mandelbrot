@@ -1,22 +1,13 @@
 #pragma once
-#include "convert.hpp"
-#include "high_precision_real.hpp"
-#include "real_number.hpp"
-
-#include <complex>
 
 #include <cmath>
 #include <iostream>
+#include <complex>
 
 namespace fractals {
 
 template <std::floating_point Double, std::integral Exponent, bool Normalize>
 class high_exponent_real;
-
-template <typename Double, typename Exponent>
-struct normalized<high_exponent_real<Double, Exponent, false>> {
-  using type = high_exponent_real<Double, Exponent, true>;
-};
 
 using high_exponent_double = high_exponent_real<double, int, false>;
 
@@ -228,50 +219,6 @@ bool operator<=(high_exponent_real<D, E, N1> a,
   return cmp(normalize(a), normalize(b)) <= 0;
 }
 
-template <std::floating_point D, typename E, bool N1, bool N2>
-  requires(N1 != N2)
-struct convert_to<high_exponent_real<D, E, N1>, high_exponent_real<D, E, N2>> {
-  static high_exponent_real<D, E, N1> get(high_exponent_real<D, E, N2> x) {
-    return x;
-  }
-};
-
-template <std::floating_point D1, std::floating_point D2, typename E, bool N>
-struct convert_to<D1, high_exponent_real<D2, E, N>> {
-  static D1 get(const high_exponent_real<D2, E, N> &x) { return x.to_double(); }
-};
-
-template <std::floating_point D1, std::floating_point D2, typename E, bool N>
-struct convert_to<high_exponent_real<D1, E, N>, D2> {
-  static high_exponent_real<D1, E, N> get(D2 x) {
-    return high_exponent_real<D1, E, N>{(D1)x};
-  }
-};
-
-template <typename D, typename E, bool N>
-struct convert_to<high_exponent_real<D, E, N>, int> {
-  static high_exponent_real<D, E, N> get(int x) { return {x}; }
-};
-
-template <int N, typename D, typename E, bool Norm>
-struct convert_to<high_precision_real<N>, high_exponent_real<D, E, Norm>> {
-  static high_precision_real<N> get(const high_exponent_real<D, E, Norm> &x) {
-    return high_precision_real<N>(x.d) << x.e;
-  }
-};
-
-template <int N, std::floating_point D, typename E, bool Norm>
-struct convert_to<high_exponent_real<D, E, Norm>, high_precision_real<N>> {
-  static high_exponent_real<D, E, Norm> get(const high_precision_real<N> &x) {
-    if (x.fraction[0] == 0) {
-      int e = count_fractional_zeros(x);
-      return high_exponent_real<D, E, Norm>{(D)(x << e).to_double(), -e};
-    } else {
-      return high_exponent_real<D, E, Norm>{x.to_double()};
-    }
-  }
-};
-
 template <typename D, typename E> bool isfinite(high_exponent_real<D, E> a) {
   return std::isfinite(a.d);
 }
@@ -288,18 +235,11 @@ high_exponent_real<D, E, false> operator<<(const high_exponent_real<D, E, N> &a,
 }
 
 template <typename D, typename E, bool N>
-high_exponent_real<D, E> operator>>(const high_exponent_real<D, E, N> &a,
+high_exponent_real<D, E, false> operator>>(const high_exponent_real<D, E, N> &a,
                                     int shift) {
   return a << -shift;
 }
 
-template <int Digits, int MinExp, int MaxExp>
-  requires(Digits <= std::numeric_limits<long double>::digits &&
-           (MinExp<std::numeric_limits<long double>::min_exponent || MaxExp>
-                std::numeric_limits<long double>::max_exponent))
-struct make_real<Digits, MinExp, MaxExp> {
-  using type = high_exponent_real<long double, int>;
-};
 
 // Specialise this because std::complex does incompatible things
 template <typename D, typename E, bool N1, bool N2>

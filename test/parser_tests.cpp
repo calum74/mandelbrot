@@ -1,5 +1,6 @@
 #include "high_exponent_real.hpp"
 #include "view_parameters.hpp"
+#include "real_number.hpp"
 #include <iomanip>
 #include <sstream>
 

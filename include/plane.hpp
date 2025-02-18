@@ -1,5 +1,6 @@
 #pragma once
 #include "view_coords.hpp"
+#include "convert.hpp"
 
 namespace fractals {
 

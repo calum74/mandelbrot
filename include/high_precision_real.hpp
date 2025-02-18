@@ -15,9 +15,6 @@
 #include <cstdint>
 #include <iostream>
 
-#include "convert.hpp"
-#include "real_number.hpp"
-
 #if _WIN32
 #include <intrin.h>
 #pragma intrinsic(_umul128)
@@ -117,39 +114,6 @@ template <int N> double to_double(const high_precision_real<N> &a) {
   return a.to_double();
 }
 
-template <int N, int M>
-struct convert_to<high_precision_real<N>, high_precision_real<M>> {
-  static high_precision_real<N> get(const high_precision_real<M> &x) {
-    return x;
-  }
-};
-
-template <int N>
-struct convert_to<high_precision_real<N>, high_precision_real<N>> {
-  static high_precision_real<N> get(const high_precision_real<N> &x) {
-    return x;
-  }
-};
-
-template <int M> struct convert_to<double, high_precision_real<M>> {
-  static double get(const high_precision_real<M> &x) { return x.to_double(); }
-};
-
-template <int M> struct convert_to<float, high_precision_real<M>> {
-  static float get(const high_precision_real<M> &x) { return x.to_double(); }
-};
-
-template <int N> struct convert_to<high_precision_real<N>, int> {
-  static high_precision_real<N> get(int x) { return {x}; }
-};
-
-template <int M> struct convert_to<high_precision_real<M>, double> {
-  static high_precision_real<M> get(double x) { return {x}; }
-};
-
-template <int M> struct convert_to<high_precision_real<M>, float> {
-  static high_precision_real<M> get(float x) { return {x}; }
-};
 
 template <int N>
 high_precision_real<N> operator/(const high_precision_real<N> &a, double d) {
@@ -631,12 +595,6 @@ bool valid_precision_for_inverse(const fractals::high_precision_real<N> &n) {
   // We must have something in the top 48-bits
   return n.fraction[N - 2] & 0xffffffffff000000ull;
 }
-
-template <int Digits>
-  requires(Digits > std::numeric_limits<long double>::digits)
-struct make_real<Digits, 0, 0> {
-  using type = high_precision_real<(Digits + 64) / 64>;
-};
 
 } // namespace fractals
 

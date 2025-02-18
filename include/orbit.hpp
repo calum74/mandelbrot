@@ -11,6 +11,7 @@
 
 #pragma once
 #include "mandelbrot_calculation.hpp"
+#include "convert_fwd.hpp"
 #include <atomic>
 #include <cassert>
 #include <optional>
