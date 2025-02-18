@@ -1,3 +1,6 @@
+/*
+  This file contains unfinished experiments.
+*/
 #include "complex_number.hpp"
 #include "orbit.hpp"
 
@@ -107,13 +110,6 @@ private:
   int last_jump = 0;
 };
 
-template <typename DeltaType> bool is_valid(std::pair<DeltaType, DeltaType> p) {
-  return fractals::norm(p.second) <=
-         std::numeric_limits<typename DeltaType::value_type>::epsilon() *
-             std::numeric_limits<typename DeltaType::value_type>::epsilon() *
-             fractals::norm(p.first);
-}
-
 template <typename TermType> struct jump_terms {
   TermType A = {1}, A2 = {0}, B = {0}, B2 = {0}, C = {0};
 };
@@ -134,18 +130,10 @@ std::optional<TermType> eval_terms(const jump_terms<TermType> &terms,
       terms.A * e_nij * e_nij + terms.B * d_ij * d_ij + terms.C * e_nij * d_ij;
   auto e = std::numeric_limits<typename TermType::value_type>::epsilon();
 
-  // if (std::norm(terms.A2) * norm(d_ij) > 1e-7 * std::norm(terms.A))
-  //   return std::nullopt;
-  // if (std::norm(terms.B2) * norm(d_ij) > 1e-7 * std::norm(terms.B))
-  //   return std::nullopt;
-
-  if (fractals::norm(y) > e * fractals::norm(x))
+  if (fractals::norm(y) > e * e* fractals::norm(x))
     return std::nullopt;
 
-  // if (fractals::norm(y) > e * e * fractals::norm(x))
-  //   return std::nullopt;
-
-  return x;
+  return x+y;
 }
 
 template <typename DeltaType, typename TermType> class jump_step {
@@ -158,8 +146,8 @@ public:
 };
 
 /*
-// multi_bilinear_orbit??
 A bivariate orbit with a fixed step size.
+Experiment in orbit shifting.
 */
 template <Complex DeltaType, Complex TermType, RandomAccessOrbit Reference>
 class bilinear_orbit {
@@ -201,8 +189,7 @@ public:
             steps.push_back(new_step);
         }
 
-        // !! The reference index step check is temporary
-        while (index < steps.size() /* && n == steps[index].reference_index */) {
+        while (index < steps.size()) {
           // steps[index] might allow us to jump forward
           // See how far we can skip forward
           auto try_step =
@@ -219,17 +206,13 @@ public:
           } else
             break;
           index++;
-          // TODO: Skip more than one step
         }
 
         // Reset the terms for manual calculation
-        new_step = {.n = n,
-                    .d_ik = d_jk,
-                    .e_nik = e_njk};
+        new_step = {.n = n, .d_ik = d_jk, .e_nik = e_njk};
       }
 
       // Perform one step
-
       new_step.terms = step_terms(new_step.terms, z_nj);
 
       auto z_nk = (*reference_orbit)[reference_index];

@@ -48,4 +48,8 @@ inline float normalize(float f) { return f; }
 template <int Digits, int MinExp, int MaxExp>
 using real_number = typename make_real<Digits, MinExp, MaxExp>::type;
 
+template <typename T> struct normalized {
+  using type = T;
+};
+
 } // namespace fractals

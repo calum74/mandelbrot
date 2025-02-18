@@ -240,7 +240,7 @@ void random_bits() {
   }
 }
 
-template <typename T> void test_comparison(T a, T b) {
+template <typename T1, typename T2> void test_comparison(T1 a, T2 b) {
   assert(a == a);
   assert(b == b);
   assert(a != b);

@@ -198,7 +198,7 @@ template <Complex OrbitType, Complex TermType, IteratedOrbit ReferenceOrbit,
 class taylor_series_orbit {
 public:
   using value_type = OrbitType;
-  using term_type = TermType;
+  using term_type = typename fractals::normalized<TermType>::type;
   using calculation = typename ReferenceOrbit::calculation;
 
   std::array<term_type, Terms> terms;
@@ -215,8 +215,6 @@ public:
     // See
     // https://en.wikipedia.org/wiki/Plotting_algorithms_for_the_Mandelbrot_set
     terms = calculation::delta_terms(**this, terms);
-    for (auto &t : terms)
-      t = normalize(t);
     ++orbit;
     return *this;
   }

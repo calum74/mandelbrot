@@ -117,6 +117,10 @@ template <typename T> std::complex<T> normalize(const std::complex<T> &c) {
   return {normalize(c.real()), normalize(c.imag())};
 }
 
+template <typename T> struct normalized<std::complex<T>> {
+  using type = std::complex<typename normalized<T>::type>;
+};
+
 // A complex number with the given precision
 template <int Digits, int MinExp, int MaxExp>
 using complex_number =
