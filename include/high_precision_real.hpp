@@ -132,6 +132,123 @@ void raw_rshift(const high_precision_real<N> &a,
     carry = new_carry;
   }
 }
+
+template <int N>
+int raw_cmp(const high_precision_real<N> &a, const high_precision_real<N> &b);
+
+template <int N>
+int cmp(const high_precision_real<N> &a, const high_precision_real<N> &b) {
+  if (is_zero(a) && is_zero(b))
+    return 0;
+  if (a.negative() && !b.negative())
+    return -1;
+  if (!a.negative() && b.negative())
+    return 1;
+  return a.negative() ? -raw_cmp(a, b) : raw_cmp(a, b);
+}
+
+template <int N>
+void raw_add(const high_precision_real<N> &a, const high_precision_real<N> &b,
+             high_precision_real<N> &result) {
+  result[result.size() - 1] = a[a.size() - 1] + b[b.size() - 1];
+
+  for (int i = a.size() - 2; i >= 0; i--) {
+    result[i] = a[i] + b[i] + (result[i + 1] < a[i + 1]);
+  }
+}
+
+template <int N>
+void raw_mul(const high_precision_real<N> &a, const high_precision_real<N> &b,
+             high_precision_real<N> &result) {
+  for (int i = a.size() - 1; i >= 0; i--) {
+    // TODO: Fix bounds of inner loop
+    for (int j = a.size() - 1; j >= 0; j--) {
+#if _WIN32
+      std::uint64_t m2;
+      std::uint64_t m1 = _umul128(a[i], b[j], &m2);
+#else
+      __uint128_t m = (__uint128_t)a[i] * (__uint128_t)b[j];
+      std::uint64_t m1 = m;
+      std::uint64_t m2 = m >> 64;
+#endif
+      auto ij = i + j;
+      int carry;
+      if (ij < a.size()) {
+        result[ij] += m1;
+        carry = result[ij] < m1;
+        m2 += carry;
+        carry = m2 < carry;
+      } else
+        carry = 0;
+      if (ij > 0 && ij <= a.size()) {
+        ij--;
+        result[ij] += m2;
+        carry = result[ij] < m2;
+      }
+      // Move into loop TODO
+      while (carry && ij-- > 0) {
+        result[ij] += carry;
+        carry = result[ij] == 0;
+      }
+    }
+  }
+}
+
+template <int N>
+int raw_cmp(const high_precision_real<N> &a, const high_precision_real<N> &b) {
+  for (int i = 0; i < a.size(); ++i) {
+    if (a[i] < b[i])
+      return -1;
+    if (a[i] > b[i])
+      return 1;
+  }
+  return 0;
+}
+
+template <int N>
+void raw_sub(const high_precision_real<N> &a, const high_precision_real<N> &b,
+             high_precision_real<N> &result) {
+  std::uint64_t borrow = 0;
+
+  for (int i = a.size() - 1; i >= 0; i--) {
+    result[i] = a[i] - b[i] - borrow;
+    borrow = a[i] + borrow < b[i];
+  }
+}
+
+template <int N>
+void raw_shiftleft(const high_precision_real<N> &a, high_precision_real<N> &b,
+                   int n) {
+  using part_type = typename high_precision_real<N>::part_type;
+  constexpr int part_bits = high_precision_real<N>::part_bits;
+  part_type extra = 0;
+  int m = n / part_bits;
+  n = n % part_bits;
+  for (int i = a.size() - 1; i >= 0; i--) {
+    if (i + m < a.size()) {
+      b[i] = (a[i + m] << n) | extra;
+      extra = n == 0 ? 0 : a[i + m] >> (part_bits - n);
+    } else
+      b[i] = 0;
+  }
+}
+
+template <int N>
+void raw_shiftright(const high_precision_real<N> &a, high_precision_real<N> &b,
+                    int n) {
+  using part_type = typename high_precision_real<N>::part_type;
+  part_type extra = 0;
+  constexpr int part_bits = high_precision_real<N>::part_bits;
+  int m = n / part_bits;
+  n = n % part_bits;
+  for (int i = 0; i < a.size(); i++) {
+    if (i - m >= 0) {
+      b[i] = a[i - m] >> n | extra;
+      extra = n == 0 ? 0 : a[i - m] << (part_bits - n);
+    } else
+      b[i] = 0;
+  }
+}
 } // namespace detail
 
 template <int N>
@@ -149,22 +266,6 @@ high_precision_real<N> operator/(const high_precision_real<N> &a, int n) {
   } else
     return a * high_precision_real<N>{1.0 / n};
 }
-
-namespace detail {
-template <int N>
-int raw_cmp(const high_precision_real<N> &a, const high_precision_real<N> &b);
-
-template <int N>
-int cmp(const high_precision_real<N> &a, const high_precision_real<N> &b) {
-  if (is_zero(a) && is_zero(b))
-    return 0;
-  if (a.negative() && !b.negative())
-    return -1;
-  if (!a.negative() && b.negative())
-    return 1;
-  return a.negative() ? -raw_cmp(a, b) : raw_cmp(a, b);
-}
-} // namespace detail
 
 template <int N>
 bool operator<(const high_precision_real<N> &a,
@@ -274,77 +375,6 @@ high_precision_real<N> operator*(int a, const high_precision_real<N> &b) {
     return high_precision_real<N>{a} * b;
   }
 }
-
-namespace detail {
-template <int N>
-void raw_add(const high_precision_real<N> &a, const high_precision_real<N> &b,
-             high_precision_real<N> &result) {
-  result[result.size() - 1] = a[a.size() - 1] + b[b.size() - 1];
-
-  for (int i = a.size() - 2; i >= 0; i--) {
-    result[i] = a[i] + b[i] + (result[i + 1] < a[i + 1]);
-  }
-}
-
-template <int N>
-void raw_mul(const high_precision_real<N> &a, const high_precision_real<N> &b,
-             high_precision_real<N> &result) {
-  for (int i = a.size() - 1; i >= 0; i--) {
-    // TODO: Fix bounds of inner loop
-    for (int j = a.size() - 1; j >= 0; j--) {
-#if _WIN32
-      std::uint64_t m2;
-      std::uint64_t m1 = _umul128(a[i], b[j], &m2);
-#else
-      __uint128_t m = (__uint128_t)a[i] * (__uint128_t)b[j];
-      std::uint64_t m1 = m;
-      std::uint64_t m2 = m >> 64;
-#endif
-      auto ij = i + j;
-      int carry;
-      if (ij < a.size()) {
-        result[ij] += m1;
-        carry = result[ij] < m1;
-        m2 += carry;
-        carry = m2 < carry;
-      } else
-        carry = 0;
-      if (ij > 0 && ij <= a.size()) {
-        ij--;
-        result[ij] += m2;
-        carry = result[ij] < m2;
-      }
-      // Move into loop TODO
-      while (carry && ij-- > 0) {
-        result[ij] += carry;
-        carry = result[ij] == 0;
-      }
-    }
-  }
-}
-
-template <int N>
-int raw_cmp(const high_precision_real<N> &a, const high_precision_real<N> &b) {
-  for (int i = 0; i < a.size(); ++i) {
-    if (a[i] < b[i])
-      return -1;
-    if (a[i] > b[i])
-      return 1;
-  }
-  return 0;
-}
-
-template <int N>
-void raw_sub(const high_precision_real<N> &a, const high_precision_real<N> &b,
-             high_precision_real<N> &result) {
-  std::uint64_t borrow = 0;
-
-  for (int i = a.size() - 1; i >= 0; i--) {
-    result[i] = a[i] - b[i] - borrow;
-    borrow = a[i] + borrow < b[i];
-  }
-}
-} // namespace detail
 
 template <int N>
 high_precision_real<N> operator*(const high_precision_real<N> &a,
@@ -456,7 +486,6 @@ template <int N> void make_tenth(high_precision_real<N> &tenth) {
 
 template <int N>
 std::istream &operator>>(std::istream &is, high_precision_real<N> &n) {
-
   char ch;
   bool negative;
   ch = is.peek();
@@ -540,42 +569,6 @@ template <int N> int count_fractional_zeros(const high_precision_real<N> &n) {
   }
   return 0;
 }
-
-namespace detail {
-template <int N>
-void raw_shiftleft(const high_precision_real<N> &a, high_precision_real<N> &b,
-                   int n) {
-  using part_type = typename high_precision_real<N>::part_type;
-  constexpr int part_bits = high_precision_real<N>::part_bits;
-  part_type extra = 0;
-  int m = n / part_bits;
-  n = n % part_bits;
-  for (int i = a.size() - 1; i >= 0; i--) {
-    if (i + m < a.size()) {
-      b[i] = (a[i + m] << n) | extra;
-      extra = n == 0 ? 0 : a[i + m] >> (part_bits - n);
-    } else
-      b[i] = 0;
-  }
-}
-
-template <int N>
-void raw_shiftright(const high_precision_real<N> &a, high_precision_real<N> &b,
-                    int n) {
-  using part_type = typename high_precision_real<N>::part_type;
-  part_type extra = 0;
-  constexpr int part_bits = high_precision_real<N>::part_bits;
-  int m = n / part_bits;
-  n = n % part_bits;
-  for (int i = 0; i < a.size(); i++) {
-    if (i - m >= 0) {
-      b[i] = a[i - m] >> n | extra;
-      extra = n == 0 ? 0 : a[i - m] << (part_bits - n);
-    } else
-      b[i] = 0;
-  }
-}
-} // namespace detail
 
 template <int N>
 high_precision_real<N> operator<<(const high_precision_real<N> &n, int shift) {
