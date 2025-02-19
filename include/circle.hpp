@@ -8,4 +8,4 @@
 
 #include "fractal.hpp"
 
-extern const fractals::pointwise_calculationFactory &circle_fractal;
+extern const fractals::pointwise_fractal &circle_fractal;
