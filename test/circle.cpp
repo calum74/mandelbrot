@@ -2,7 +2,7 @@
   Sample showing how to add new fractals.
 */
 
-#include "fractal.hpp"
+#include "make_fractal.hpp"
 
 // Define a new fractal by inheriting from fractals::pointwise_calculation
 // In this case we'll specify the data-type of real numbers as a template

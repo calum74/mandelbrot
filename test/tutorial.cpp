@@ -7,6 +7,7 @@
 
 #include "mandelbrot.hpp"
 #include "orbit.hpp"
+#include "pointwise_calculation.hpp"
 #include <iomanip>
 
 int main() {

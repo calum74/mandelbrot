@@ -1,4 +1,4 @@
-#include "fractal.hpp"
+#include "make_fractal.hpp"
 #include "mandelbrot.hpp"
 #include "mandelbrot_adaptor.hpp"
 #include "orbit.hpp"

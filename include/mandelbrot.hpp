@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "fractal.hpp"
+#include "pointwise_fractal.hpp"
 
 extern const fractals::pointwise_fractal &mandelbrot_fractal;
 extern const fractals::pointwise_fractal &mandeldrop_fractal;

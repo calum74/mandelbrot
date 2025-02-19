@@ -1,7 +1,7 @@
 // This is an implementation of the classic Mandelbrot set fractal.
 
 #include "mandelbrot.hpp"
-#include "fractal.hpp"
+#include "make_fractal.hpp"
 #include "high_exponent_real.hpp"
 #include "orbit.hpp"
 #include "orbit_manager.hpp"

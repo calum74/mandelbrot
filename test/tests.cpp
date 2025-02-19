@@ -1,6 +1,6 @@
 #include "bla.hpp"
 #include "complex_number.hpp"
-#include "fractal.hpp"
+#include "make_fractal.hpp"
 #include "high_exponent_real.hpp"
 #include "high_precision_real.hpp"
 #include "mandelbrot.hpp"

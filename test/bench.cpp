@@ -1,4 +1,5 @@
 #include "mandelbrot.hpp"
+#include "pointwise_calculation.hpp"
 #include <atomic>
 #include <chrono>
 #include <sstream>
