@@ -1,6 +1,5 @@
 #include "make_fractal.hpp"
 #include "mandelbrot.hpp"
-#include "plane.hpp"
 #include "mandelbrot_adaptor.hpp"
 #include "orbit.hpp"
 #include "convert.hpp"

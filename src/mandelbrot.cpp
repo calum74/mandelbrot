@@ -5,7 +5,6 @@
 #include "high_exponent_real.hpp"
 #include "orbit.hpp"
 #include "orbit_manager.hpp"
-#include "plane.hpp"
 
 // Calculate the Mandelbrot set using perturbations and
 // Taylor series to skip iterations. The algorithms are implemented in

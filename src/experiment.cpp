@@ -3,7 +3,7 @@
 #include "high_exponent_real.hpp"
 #include "mandelbrot.hpp"
 #include "make_fractal.hpp"
-#include "plane.hpp"
+
 #include <mutex>
 #include <optional>
 
