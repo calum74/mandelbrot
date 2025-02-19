@@ -8,7 +8,7 @@ This library contains a variety of data structures and algorithms implemented us
 
 Although C++ templates are harder to read, they give the additional flexibility needed to plug in new numerical types and allow for much better code reuse.
 
-Unfortunately, this documentation is very incomplete!
+Unfortunately, this documentation is very superficial!
 
 ## List of classes
 
@@ -28,6 +28,15 @@ Unfortunately, this documentation is very incomplete!
 | `complex_number<int Bits, int MinExp, int MaxExp>` | A `std::complex` number type with the required precision and exponent. Very high precisions and exponents are supported. |
 
 ### fractal.hpp
+
+Type | Description
+-- | --
+`pointwise_fractal` | A fractal.
+`pointwise_calculation` | The logic to calculate a fractal.
+
+Function | Description 
+-- | --
+`make_fractal()` | Creates a `pointwise_fractal`. 
 
 ### high_exponent_real.hpp
 
