@@ -1,6 +1,5 @@
 #pragma once
 #include "pointwise_calculation.hpp"
-#include "view_coords.hpp"
 #include "plane.hpp"
 
 namespace fractals {
