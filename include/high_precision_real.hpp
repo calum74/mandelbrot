@@ -1,5 +1,5 @@
 /*
-  Naive implementation of some high-precision arithmetic in C++.
+  Naive implementation of high-precision arithmetic in C++.
 
   These algorithms are not particularly efficient, for example multiplication is
   quadratic.
@@ -24,7 +24,7 @@ namespace fractals {
 /*
     A simple high-precision number implementation.
     The number of integer bits is 64 (part_type), and the number of fractional
-   bits is FractionalBits.
+    bits is FractionalBits.
 */
 template <int FractionalBits>
   requires(FractionalBits >= 0)
@@ -35,7 +35,7 @@ public:
   static constexpr int parts = 1 + (FractionalBits + part_bits - 1) / part_bits;
   using size_type = int;
 
-  // Initialized to 0
+  // Initialize to 0
   high_precision_real() : sign(false), part{} {}
 
   // Initialize from an integer
