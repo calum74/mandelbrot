@@ -1,7 +1,11 @@
 #pragma once
 #include "pointwise_fractal.hpp"
+#include "view_coords.hpp"
+
+#include <atomic>
 
 namespace fractals {
+
 /*
   The calculation of a fractal, where we can compute each (x,y) point
   independently and perhaps in parallel.

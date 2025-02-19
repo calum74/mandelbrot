@@ -2,6 +2,7 @@
 #include "pointwise_calculation.hpp"
 #include <atomic>
 #include <chrono>
+#include <iostream>
 #include <sstream>
 
 void benchmark(const char *x, const char *y, const char *r, int iterations,

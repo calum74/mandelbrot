@@ -9,7 +9,8 @@ template <typename T, typename Tag = void> struct point {
 };
 
 // A plane maps points in the display to points in the fractal.
-template <typename C1, typename C2 = C1> struct plane {
+template <typename C1, typename C2> class plane {
+  public:
   C1 x0, y0;
   C2 w, h, dx, dy;
   int pw, ph;
