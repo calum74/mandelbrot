@@ -24,10 +24,6 @@ concept IteratedOrbit = requires(T v) {
   *v;
   { *v } -> std::convertible_to<typename T::value_type>;
   ++v;
-  // v.reset();
-  // requires T::value_type;
-  // requires(T::value_type);
-  // requires(T::calculation);
 };
 
 template <typename T>

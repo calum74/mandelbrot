@@ -1,97 +1,102 @@
-To view these fractals, please visit [Mandelbrot-Qt](https://https://github.com/calum74/mandelbrot-qt) for an application which renders these fractals. This contains the internal data structures which may be of interest.
+To view these fractals, please visit [Mandelbrot-Qt](https://https://github.com/calum74/mandelbrot-qt) for an application which renders these fractals. This repository contains the internal data structures which may be of interest.
 
-# Why a C++ template library
+# Mandelbrot C++ template library
 
-Although C++ templates are ugly and hard to read, they offer a lot of benefits.
+## Overview
 
-A C++ template library allows the same code to work with many different configurations and data-types. If allows you to for example specify the power of the mandelbrot set `N`, the number of terms to compute in a series `T`, and the type of complex number you want to use for your calculation `Complex`. This will generate efficient code without sacrificing performance.
+This library contains a variety of data structures and algorithms implemented using C++ templates.
 
-```c++
-template<int N> struct mandelbrot_calculation
-{
-  ...
-  template <typename Complex, unsigned long T>
-  static std::array<Complex, T>
-  delta_terms(const Complex &z, const std::array<Complex, T> &previous) {
-     ...
-  }
-};
-```
+Although C++ templates are harder to read, they give the additional flexibility needed to plug in new numerical types and allow for much better code reuse.
 
-C++ templates allow different datatypes to be used at different resolutions, for example using `high_precision_real<3>` at low resolutions, and `high_precision_real<6>` at the next resolution.
+Unfortunately, this documentation is very incomplete!
 
-Importantly, templates enable fine-tuning and experiments. You can experiment with a new number type (e.g. `high_exponent_real`) without rewriting a lot of code. You can experiment with adding more terms to a Taylor series just by tuning a template parameter.
+## List of classes
 
-# Classes
+### complex_number.hpp
 
-## high_exponent_real<Value, Exponent>
+| Concept | Description |
+| ----- | ----------- |
+| `Complex` | Any complex number, for example `std::complex`. |
 
-Extends a `double` with an additional `Exponent` field, for situations where a standard `double` precision number is not sufficient (for example deltas).
+| Function | Description |
+| ----- | ----------- |
+| `pow<int N>()` | Raises a complex number to a fixed integer power in $lg N$ multiplications. |
+| `choose<int N, int M>()` | Statically calculates ${N\choose M}$. |
 
-## high_precision_real<N>
+| Type | Description |
+| ----- | ----------- |
+| `complex_number<int Bits, int MinExp, int MaxExp>` | A `std::complex` number type with the required precision and exponent. Very high precisions and exponents are supported. |
 
-Arbitrary-precision fixed-point arithmetic. `N` refers (quite awkwardly) to the number of 64-bit integers used to store the number. This is not optimized for ridiculously large values of `N`.
+### fractal.hpp
 
-## mandelbrot_calculation<N>
+### high_exponent_real.hpp
 
-Represents the equations for calculating a Mandelbrot set. `N` refers to the "power" of the Mandelbrot set, which is traditionally 2, but extends to arbitrary integers >1 (and indeed non-integers but that is out of scope).
+Type | Description
+-- | --
+`high_exponent_real<>` | A number that has fairly low precision, but has a number higher range of exponents.
+`high_exponent_double` | A `double` with a 32-bit exponent. Used for series terms which can get pretty large.
 
-$`z -> z^N + c`$
+### high_precision_real.hpp
 
-# About this repo
+Type | Description
+-- | --
+`high_precision_real<int FractionalBits>` | Represents a real number to a given precision. Needed to calculate the reference orbit and to represent view coordinates.
 
-This repository contains algorithms for computing the Mandelbrot set. Although the basic Mandelbrot set is quite easy to compute, more advanced algorithms are necessary for good performance at very deep zooms, such as using high-precision arithmetic, perturbation theory and Taylor series approximations.
+### mandelbrot_calculation.hpp
 
-The algorithms have been organised as a template library, to make it easy to modify the algorithms to for example add different data types, or to have different data types for different levels of precision.
+| Type | Description |
+| ----- | ----------- |
+| `mandelbrot_calculation<int Power>` | Implements common formulae and perturbation expressions for a Mandelbrot set of the given power. |
 
-In addition, Mandelbrot orbits have been implemented as C++ iterators.
+| Function | Description |
+| ----- | ----------- |
+| `escaped()` | Tests for escape. |
+| `mandelbrot_calculation::step()` | Performs a single iteration. |
+| `mandelbrot_calculation::step_epsilon()` | Computes $\epsilon_{i+1}$ ($\Delta z_{i+1}$). |
+| `mandelbrot_calculation::delta_terms()` | Computes the Taylor series terms to arbitrary length for any power of Mandelbrot set. |
 
-# Mandeldrop
+### orbit.hpp
 
-The Mandeldrop fractal is a variation of the Mandelbrot set, where each point is iterated according to `z -> z^2 + (1/c)`. This essentially inverts the image such that the black is on the outside instead of the image. However, this is a conformal mapping, so zooming in, the image looks the same as a regular Mandelbrot set.
+| Concept | Description |
+| ----- | ----------- |
+| `Calculation` | A type providing Mandelbrot term calculations. | 
+| `IteratedOrbit` | An orbit supporting `++`. |
+| `RandomAccessOrbit` | An orbit supporting `[]`. |
 
-In order to rotate the image into a droplet, the image is transformed further by a multiplication of `-i` which merely rotates the image by π/2. So the final algorithm becomes `z -> z^2 + (-i/c)`. (Detail: the image is often rendered with the y-axis going downwards, hence the minus.)
+| Type | Description |
+| ----- | ----------- |
+| `basic_orbit<>` | An `IteratedOrbit`, calculated using the standard formula, typically used for the high precision reference orbit. | 
+| `stored_orbit<>` | A `RandomAccessOrbit`, stores all of the values from a `basic_orbit<>` in an array, typically using low precision numbers. |
+| `taylor_series_orbit<>` | An `IteratedOrbit` that also calculates the Taylor series terms to any length. |
+| `perturbation_orbit<>` | An `IteratedOrbit` relative to a `stored_orbit<>`. Is able to reset the orbit which is why a `stored_orbit<>` is needed as the reference orbit. |
+| `stored_taylor_series_orbit<>` | A `RandomAccessOrbit` which stores the Taylor series terms in an array, and is able to skip forward to create a `perturbation_orbit<>`. |
 
-In order for this to work with perturbation theory, a little bit of mathing gives that we need to use the delta `id/(c*(c+d))`, where `c` is the reference orbit and `d` is the original delta. Then we can simply use the standard Mandelbrot algorithms to compute the image.
+### percentile.hpp
 
-I have seen some images of a Mandeldrop fractal before, so this idea is not original, but rotation through π/2 and use of perturbation theory might be new.
+Function | Description
+-- | --
+`top_percentile()` | Returns an element from an unsorted array at the given percentile, more efficiently than by sorting it.
 
-# High precision perturbation
+### plane.hpp
 
-Original work by Calum Grant.
+Type | Description
+-- | --
+`plane<>` | The mapping between pixel coordinates and complex coordinates.
 
-After a certain point, say ay 10^-320, regular perturbation implementations are no longer sufficient because `double` numbers are no longer able to hold even the deltas. `long double` numbers are available on certain platforms, but not all.
+### real_number.hpp
 
-To fix this, we can scale each delta with a factor M, which is a very small number like 2^-640. Then we rewrite our perturbation equations with d = M.D and e = M.E.
+Type | Description
+-- | --
+`real_number<int Bits, int MinExp, int MaxExp>` | A numerical datatype that is able to represent the specified level of precision.
 
-This gives
+### view_coords.hpp
 
-```
-(1)     E_(n+1) = 2.z_n.E_n + M.E_n^2 + D
-```
+Type | Description
+-- | --
+`view_coords` | The size and position of a view.
 
-The Taylor series for E_n in terms of D around a central orbit is given by
+### view_parameters.hpp
 
-```
-(2)     E_n = A_n.D + B_n.D^2 + C_n.D^3 + O(D^4)
-```
-
-We'll assume that M and D are both very small, so we can ignore O(D^4).  Substituting (2) into (1),
-
-```
-(3)     E_(n+1) = 2.z_n.(A_n.D + B_n.D^2 + C_n.D^3 + O(D^4)) + M.(A_n.D + B_n.D^2 + C_n.D^3 + O(D^4))^2 + D
-
-                = (2.z_n.A_n + 1).D + (2.z_n.B_n + M.A_n^2).D^2 + (2.z_n.C_n + 2.M.A_n.B_n).D^3 + O(D^4)
-```
-
-The Taylor series coefficients of E satisfy the iterative relation
-
-```
-(4)     A_(n+1) = 2.Z_n.A_n + 1
-        B_(n+1) = 2.z_n.B_n + M.A_n^2
-        C_(n+1) = 2.z_n.C_n + 2.M.A_n.B_n
-        D_(n+1) = 2.z_n.D_n + 2.M.A_n.D_n + 2.M.b_n.C_n
-        ...
-```
-
-We can use the adapted equations (1) and (4) in our Mandelbrot calculations to compute with higher precision.
+Type | Description
+-- | --
+`view_parameters` | All parameters required to specify a view.
