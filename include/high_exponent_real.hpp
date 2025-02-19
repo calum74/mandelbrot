@@ -7,9 +7,8 @@
 namespace fractals {
 
 /*
-  An exponented real is a normal floating point number (like a double) with
-  extra precision for the exponent. This is a good compromise when we need a bit
-  more precision and still get good performance.
+  A high_exponent_real is a normal floating point number (like a double) with
+  extra precision for the exponent.
 */
 template <std::floating_point Double = double, std::integral Exponent = int,
           bool Normalized = false>
@@ -18,12 +17,7 @@ public:
   template <bool SrcNormalized>
   constexpr high_exponent_real(
       const high_exponent_real<Double, Exponent, SrcNormalized> &src) {
-    if constexpr (!SrcNormalized) {
-      assign(src.mantissa(), src.exponent());
-    } else {
-      d = src.mantissa();
-      e = src.exponent();
-    }
+    *this = src;
   }
 
   template <bool SrcNormalized>
@@ -32,30 +26,25 @@ public:
     if constexpr (!SrcNormalized) {
       assign(src.mantissa(), src.exponent());
     } else {
-      d = src.d;
-      e = src.e;
+      d = src.mantissa();
+      e = src.exponent();
     }
     return *this;
   }
 
   high_exponent_real<Double, Exponent, true> normalize() const { return *this; }
 
-  void assign(Double d0, Exponent e0) {
+  constexpr void assign(Double d0, Exponent e0) {
     if constexpr (Normalized) {
-      if (d0 == 0) { // !! Special case needed??
-        d = 0;
-        e = 0;
-      } else {
-        d = std::frexp(d0, &e);
-        e += e0;
-      }
+      d = std::frexp(d0, &e);
+      e += e0;
     } else {
       d = d0;
       e = e0;
     }
   }
 
-  high_exponent_real(Double d0 = 0, Exponent e0 = 0) { assign(d0, e0); }
+  constexpr high_exponent_real(Double d0 = 0, Exponent e0 = 0) { assign(d0, e0); }
 
   Double to_double() const { return std::ldexp(d, e); }
   Double mantissa() const { return d; }
@@ -138,6 +127,7 @@ std::ostream &operator<<(std::ostream &os, high_exponent_real<D, E> a) {
   return os;
 }
 
+// ?? Does this work
 template <typename D, typename E>
 std::istream &operator>>(std::istream &is, high_exponent_real<D, E> &a) {
   // Read up to the 'e'.
@@ -171,14 +161,19 @@ std::istream &operator>>(std::istream &is, high_exponent_real<D, E> &a) {
 template <typename D, typename E>
 int cmp(high_exponent_real<D, E, true> a, high_exponent_real<D, E, true> b) {
   // If the sign is different
-  if (a.mantissa() < 0 && b.mantissa() > 0)
+  if (a.mantissa() <= 0 && b.mantissa() > 0)
     return -1;
-  if (a.mantissa() > 0 && b.mantissa() < 0)
+  if (a.mantissa() >= 0 && b.mantissa() < 0)
     return 1;
 
   int a_bigger = a.mantissa() < 0 ? -1 : 1;
 
-  // !! This does not work for zero !! FIXME
+  if (b.mantissa() == 0) {
+    if (a.mantissa() == 0)
+      return 0;
+    return a_bigger;
+  }
+
   // They are the same sign
   // Compare exponents
   if (a.exponent() > b.exponent())
