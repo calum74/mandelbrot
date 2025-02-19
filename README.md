@@ -42,7 +42,7 @@ Function | Description
 
 Type | Description
 -- | --
-`high_exponent_real<>` | A number that has fairly low precision, but has a number higher range of exponents.
+`high_exponent_real<>` | A number that has fairly low precision, but supports very high exponents.
 `high_exponent_double` | A `double` with a 32-bit exponent. Used for series terms which can get pretty large.
 
 ### high_precision_real.hpp

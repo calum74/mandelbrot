@@ -1,8 +1,12 @@
-# BLA2
+*This is a work in progress.*
+
+Current status: abandoned.
+
+# Idea #2
 
 ## Introduction
 
-BLA2 is a novel algorithm for computing the Mandelbrot set, that  improves on existing bivariate linear approximation (BLA) methods by computing higher order terms, and by utilising a novel technique called *orbit shifting* to always locate an efficient jump step for linear approximation.
+This idea improves on existing bivariate linear approximation (BLA) methods by computing higher order terms, and by utilising a novel technique called *orbit shifting* to always locate an efficient jump step for linear approximation.
 
 ### Notation quick reference
 
@@ -273,9 +277,3 @@ Then we have all the terms needed to determine the validity of the step and calc
 Then we repeat until we have no more valid jump steps available, and then we'll iterate until escape to create new jump steps for future orbits.
 
 **Note that in general, there will be jump steps from many different orbits, not just the most recently calculated orbit.** This is why we must store $\delta_{ik}$, $\epsilon_{nik}$, and $\epsilon_{mik}$ in each step, because we don't know in general which orbit they came from.
-
-## Implementation
-
-## Results
-
-## Conclusion

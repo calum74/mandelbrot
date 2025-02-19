@@ -1,8 +1,10 @@
-# The orbit-tree algorithm for rendering the Mandelbrot set
+*This is a work in progress.*
+
+Current status: on hold.
+
+# Idea #1: The orbit-tree algorithm for rendering the Mandelbrot set
 
 Original work by Calum Grant, January 2025
-
-Cite as https://github.com/calum74/mandelbrot
 
 ## Overview
 
@@ -140,7 +142,4 @@ If a branch is fully escaped at $\delta'$, we need to check the *parent* branch,
 
 If may also be that a pixel is not escaped even at the leaf branch. In that case, we need to carry on iterating the pixel $z''_i$ until it escapes or we reach the iteration limit.
 
-## Performance
-
-To do!
 
