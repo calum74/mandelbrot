@@ -23,6 +23,8 @@ namespace fractals {
 
 /*
     A simple high-precision number implementation.
+    The number of integer bits is 64 (part_type), and the number of fractional
+   bits is FractionalBits.
 */
 template <int FractionalBits>
   requires(FractionalBits >= 0)
@@ -30,15 +32,19 @@ class high_precision_real {
 public:
   using part_type = std::uint64_t;
   static constexpr int part_bits = sizeof(part_type) * 8;
-  static constexpr int parts = (FractionalBits + 2 * part_bits - 1) / part_bits;
+  static constexpr int parts = 1 + (FractionalBits + part_bits - 1) / part_bits;
   using size_type = int;
 
+  // Initialized to 0
   high_precision_real() : sign(false), part{} {}
 
+  // Initialize from an integer
   high_precision_real(int n) : sign(n < 0), part{} {
     part[0] = negative() ? -n : n;
   }
 
+  // Initialize from another high_precision_real, truncates or pads the extra
+  // bits
   template <int M>
   high_precision_real(const high_precision_real<M> &other)
       : sign(other.negative()) {
@@ -80,11 +86,15 @@ public:
     return negative() ? -value : value;
   }
 
+  // Access to the parts
+  // [0] is the integer component, [1:] are the fractional parts
   part_type &operator[](int i) { return part[i]; }
   const part_type &operator[](int i) const { return part[i]; }
 
+  // The total number of parts
   constexpr size_type size() const { return parts; }
 
+  // Get/set if the number is negative
   bool negative() const { return sign; }
   bool &negative() { return sign; }
 
@@ -97,13 +107,14 @@ private:
   part_type part[parts];
 };
 
+namespace detail {
 template <int N>
 void raw_lshift(const high_precision_real<N> &a,
                 high_precision_real<N> &result) {
   int carry = 0;
   constexpr int part_bits = high_precision_real<N>::part_bits;
   for (int i = a.size() - 1; i >= 0; --i) {
-    int new_carry = (a[i] & (1ull << (part_bits-1))) != 0;
+    int new_carry = (a[i] & (1ull << (part_bits - 1))) != 0;
     result[i] = (a[i] << 1) | carry;
     carry = new_carry;
   }
@@ -121,10 +132,7 @@ void raw_rshift(const high_precision_real<N> &a,
     carry = new_carry;
   }
 }
-
-template <int N> double to_double(const high_precision_real<N> &a) {
-  return a.to_double();
-}
+} // namespace detail
 
 template <int N>
 high_precision_real<N> operator/(const high_precision_real<N> &a, double d) {
@@ -135,7 +143,7 @@ template <int N>
 high_precision_real<N> operator/(const high_precision_real<N> &a, int n) {
   if (n == 2) {
     high_precision_real<N> result;
-    raw_rshift(a, result);
+    detail::raw_rshift(a, result);
     result.negative() = a.negative();
     return result;
   } else
@@ -143,6 +151,9 @@ high_precision_real<N> operator/(const high_precision_real<N> &a, int n) {
 }
 
 namespace detail {
+template <int N>
+int raw_cmp(const high_precision_real<N> &a, const high_precision_real<N> &b);
+
 template <int N>
 int cmp(const high_precision_real<N> &a, const high_precision_real<N> &b) {
   if (is_zero(a) && is_zero(b))
@@ -248,17 +259,6 @@ template <int N> bool is_zero(const high_precision_real<N> &a) {
 }
 
 template <int N>
-high_precision_real<N> operator*(const high_precision_real<N> &a,
-                                 const high_precision_real<N> &b) {
-  high_precision_real<N> result;
-  raw_mul(a, b, result);
-  result.negative() = a.negative() != b.negative();
-  if (is_zero(result))
-    result.negative() = false;
-  return result;
-}
-
-template <int N>
 high_precision_real<N> operator*(const high_precision_real<N> &a, double b) {
   return a * high_precision_real<N>{b};
 }
@@ -267,7 +267,7 @@ template <int N>
 high_precision_real<N> operator*(int a, const high_precision_real<N> &b) {
   if (a == 2) {
     high_precision_real<N> result;
-    raw_lshift(b, result);
+    detail::raw_lshift(b, result);
     result.negative() = b.negative();
     return result;
   } else {
@@ -275,6 +275,7 @@ high_precision_real<N> operator*(int a, const high_precision_real<N> &b) {
   }
 }
 
+namespace detail {
 template <int N>
 void raw_add(const high_precision_real<N> &a, const high_precision_real<N> &b,
              high_precision_real<N> &result) {
@@ -343,6 +344,18 @@ void raw_sub(const high_precision_real<N> &a, const high_precision_real<N> &b,
     borrow = a[i] + borrow < b[i];
   }
 }
+} // namespace detail
+
+template <int N>
+high_precision_real<N> operator*(const high_precision_real<N> &a,
+                                 const high_precision_real<N> &b) {
+  high_precision_real<N> result;
+  detail::raw_mul(a, b, result);
+  result.negative() = a.negative() != b.negative();
+  if (is_zero(result))
+    result.negative() = false;
+  return result;
+}
 
 template <int N>
 high_precision_real<N> operator+(const high_precision_real<N> &a,
@@ -351,16 +364,16 @@ high_precision_real<N> operator+(const high_precision_real<N> &a,
 
   if (a.negative() == b.negative()) {
     result.negative() = a.negative();
-    raw_add(a, b, result);
+    detail::raw_add(a, b, result);
   } else {
-    int c = raw_cmp(a, b);
+    int c = detail::raw_cmp(a, b);
     if (c < 0) {
       // a<b:
-      raw_sub(b, a, result);
+      detail::raw_sub(b, a, result);
       result.negative() = b.negative();
     } else if (c > 0) {
       // a>b
-      raw_sub(a, b, result);
+      detail::raw_sub(a, b, result);
       result.negative() = a.negative();
     }
     // else: result = 0
@@ -376,16 +389,16 @@ high_precision_real<N> operator-(const high_precision_real<N> &a,
 
   if (a.negative() != b.negative()) {
     result.negative() = a.negative();
-    raw_add(a, b, result);
+    detail::raw_add(a, b, result);
   } else {
-    int c = raw_cmp(a, b);
+    int c = detail::raw_cmp(a, b);
     if (c < 0) {
       // a<b:
-      raw_sub(b, a, result);
+      detail::raw_sub(b, a, result);
       result.negative() = !a.negative();
     } else if (c > 0) {
       // a>b
-      raw_sub(a, b, result);
+      detail::raw_sub(a, b, result);
       result.negative() = a.negative();
     }
     // else: 0
@@ -437,7 +450,7 @@ template <int N> void make_tenth(high_precision_real<N> &tenth) {
   for (int i = 2; i < tenth.size() - 1; ++i) {
     tenth[i] = 0x9999999999999999ull;
   }
-  if(tenth.size() > 2)
+  if (tenth.size() > 2)
     tenth[tenth.size() - 1] = 0x999999999999999aull;
 }
 
@@ -518,9 +531,7 @@ template <int N> int count_fractional_zeros(const high_precision_real<N> &n) {
   const int part_bits = high_precision_real<N>::part_bits;
   for (int i = 1; i < n.size(); ++i, c += part_bits) {
     if (n[i]) {
-      for (part_type b = (part_type)1
-                         << (part_bits - 1);
-           b; c++, b >>= 1) {
+      for (part_type b = (part_type)1 << (part_bits - 1); b; c++, b >>= 1) {
         if (b & n[i]) {
           return c;
         }
@@ -530,6 +541,7 @@ template <int N> int count_fractional_zeros(const high_precision_real<N> &n) {
   return 0;
 }
 
+namespace detail {
 template <int N>
 void raw_shiftleft(const high_precision_real<N> &a, high_precision_real<N> &b,
                    int n) {
@@ -563,15 +575,16 @@ void raw_shiftright(const high_precision_real<N> &a, high_precision_real<N> &b,
       b[i] = 0;
   }
 }
+} // namespace detail
 
 template <int N>
 high_precision_real<N> operator<<(const high_precision_real<N> &n, int shift) {
   high_precision_real<N> result;
   result.negative() = n.negative();
   if (shift > 0)
-    raw_shiftleft(n, result, shift);
+    detail::raw_shiftleft(n, result, shift);
   else if (shift < 0)
-    raw_shiftright(n, result, -shift);
+    detail::raw_shiftright(n, result, -shift);
   else
     result = n;
   return result;
