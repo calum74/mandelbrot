@@ -14,16 +14,16 @@ template <std::floating_point Double = double, std::integral Exponent = int,
           bool Normalized = false>
 class high_exponent_real {
 public:
-  template <bool SrcNormalized>
+  template <bool N>
   constexpr high_exponent_real(
-      const high_exponent_real<Double, Exponent, SrcNormalized> &src) {
+      const high_exponent_real<Double, Exponent, N> &src) {
     *this = src;
   }
 
-  template <bool SrcNormalized>
+  template <bool N>
   high_exponent_real &
-  operator=(const high_exponent_real<Double, Exponent, SrcNormalized> &src) {
-    if constexpr (!SrcNormalized) {
+  operator=(const high_exponent_real<Double, Exponent, N> &src) {
+    if constexpr (!N) {
       assign(src.mantissa(), src.exponent());
     } else {
       d = src.mantissa();
@@ -50,15 +50,18 @@ public:
   Double mantissa() const { return d; }
   Exponent exponent() const { return e; }
 
-  high_exponent_real &operator+=(high_exponent_real a) {
+  template<bool N>
+  high_exponent_real &operator+=(high_exponent_real<Double, Exponent, N> a) {
     return *this = (*this + a);
   }
 
-  high_exponent_real &operator-=(high_exponent_real a) {
+  template<bool N>
+  high_exponent_real &operator-=(high_exponent_real<Double, Exponent, N> a) {
     return *this = (*this - a);
   }
 
-  high_exponent_real &operator*=(high_exponent_real a) {
+  template<bool N>
+  high_exponent_real &operator*=(high_exponent_real<Double, Exponent, N> a) {
     return *this = (*this * a);
   }
 
@@ -119,45 +122,15 @@ high_exponent_real<D, E, false> operator/(high_exponent_real<D, E, N1> a,
   return {a.mantissa() / b.mantissa(), a.exponent() - b.exponent()};
 }
 
-template <typename D, typename E>
-std::ostream &operator<<(std::ostream &os, high_exponent_real<D, E> a) {
+template <typename D, typename E, bool N>
+std::ostream &operator<<(std::ostream &os, high_exponent_real<D, E, N> a) {
   os << a.mantissa();
   if (a.exponent())
     os << "*2^" << a.exponent();
   return os;
 }
 
-// ?? Does this work
-template <typename D, typename E>
-std::istream &operator>>(std::istream &is, high_exponent_real<D, E> &a) {
-  // Read up to the 'e'.
-  bool negative;
-  bool hexadecimal;
-
-  // Read sign
-  char p = is.peek();
-  if (p == '-') {
-    negative = true;
-    is.get(p);
-  } else {
-    negative = false;
-  }
-
-  if (p == '0') {
-    is.get(p);
-    p = is.peek();
-    if (p == 'x')
-      hexadecimal = true;
-    else
-      hexadecimal = false;
-  } else
-    hexadecimal = false;
-
-  // Keep reading until the '.'
-
-  return is;
-}
-
+namespace detail {
 template <typename D, typename E>
 int cmp(high_exponent_real<D, E, true> a, high_exponent_real<D, E, true> b) {
   // If the sign is different
@@ -188,36 +161,37 @@ int cmp(high_exponent_real<D, E, true> a, high_exponent_real<D, E, true> b) {
     return 1;
   return 0;
 }
+}
 
 template <typename D, typename E, bool N1, bool N2>
 bool operator==(high_exponent_real<D, E, N1> a,
                 high_exponent_real<D, E, N2> b) {
-  return cmp(normalize(a), normalize(b)) == 0;
+  return detail::cmp(normalize(a), normalize(b)) == 0;
 }
 
 template <typename D, typename E, bool N1, bool N2>
 bool operator>=(high_exponent_real<D, E, N1> a,
                 high_exponent_real<D, E, N2> b) {
-  return cmp(normalize(a), normalize(b)) >= 0;
+  return detail::cmp(normalize(a), normalize(b)) >= 0;
 }
 
 template <typename D, typename E, bool N1, bool N2>
 bool operator>(high_exponent_real<D, E, N1> a, high_exponent_real<D, E, N2> b) {
-  return cmp(normalize(a), normalize(b)) > 0;
+  return detail::cmp(normalize(a), normalize(b)) > 0;
 }
 
 template <typename D, typename E, bool N1, bool N2>
 bool operator<(high_exponent_real<D, E, N1> a, high_exponent_real<D, E, N2> b) {
-  return cmp(normalize(a), normalize(b)) < 0;
+  return detail::cmp(normalize(a), normalize(b)) < 0;
 }
 
 template <typename D, typename E, bool N1, bool N2>
 bool operator<=(high_exponent_real<D, E, N1> a,
                 high_exponent_real<D, E, N2> b) {
-  return cmp(normalize(a), normalize(b)) <= 0;
+  return detail::cmp(normalize(a), normalize(b)) <= 0;
 }
 
-template <typename D, typename E> bool isfinite(high_exponent_real<D, E> a) {
+template <typename D, typename E, bool N> bool isfinite(high_exponent_real<D, E, N> a) {
   return std::isfinite(a.d);
 }
 
@@ -236,38 +210,6 @@ template <typename D, typename E, bool N>
 high_exponent_real<D, E, false> operator>>(const high_exponent_real<D, E, N> &a,
                                            int shift) {
   return a << -shift;
-}
-
-// !! Move into complex_number.hpp
-// Specialise this because std::complex does incompatible things
-template <typename D, typename E, bool N1, bool N2>
-std::complex<high_exponent_real<D, E, false>>
-operator*(std::complex<high_exponent_real<D, E, N1>> a,
-          std::complex<high_exponent_real<D, E, N2>> b) {
-  return {a.real() * b.real() - a.imag() * b.imag(),
-          a.real() * b.imag() + a.imag() * b.real()};
-}
-
-template <typename D, typename E, bool N1, bool N2>
-std::complex<high_exponent_real<D, E, false>>
-operator+(std::complex<high_exponent_real<D, E, N1>> a,
-          std::complex<high_exponent_real<D, E, N2>> b) {
-  return {a.real() + b.real(), a.imag() + b.imag()};
-}
-
-template <typename D, typename E, bool N>
-std::complex<high_exponent_real<D, E, false>>
-operator+(std::complex<high_exponent_real<D, E, N>> a,
-          std::complex<high_exponent_real<D, E, N>> b) {
-  return {a.real() + b.real(), a.imag() + b.imag()};
-}
-
-template <typename D, typename E, bool N>
-std::complex<high_exponent_real<D, E, false>>
-operator*(std::complex<high_exponent_real<D, E, N>> a,
-          std::complex<high_exponent_real<D, E, N>> b) {
-  return {a.real() * b.real() - a.imag() * b.imag(),
-          a.real() * b.imag() + a.imag() * b.real()};
 }
 
 using high_exponent_double = high_exponent_real<double, int, false>;

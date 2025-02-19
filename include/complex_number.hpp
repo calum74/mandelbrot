@@ -37,6 +37,37 @@ std::complex<T> mul(const std::complex<T> &a, const std::complex<T> &b) {
 inline double to_double(double d) { return d; }
 inline double to_double(float f) { return f; }
 
+// Specialise this because std::complex does incompatible things
+template <typename D, typename E, bool N1, bool N2>
+std::complex<high_exponent_real<D, E, false>>
+operator*(std::complex<high_exponent_real<D, E, N1>> a,
+          std::complex<high_exponent_real<D, E, N2>> b) {
+  return {a.real() * b.real() - a.imag() * b.imag(),
+          a.real() * b.imag() + a.imag() * b.real()};
+}
+
+template <typename D, typename E, bool N1, bool N2>
+std::complex<high_exponent_real<D, E, false>>
+operator+(std::complex<high_exponent_real<D, E, N1>> a,
+          std::complex<high_exponent_real<D, E, N2>> b) {
+  return {a.real() + b.real(), a.imag() + b.imag()};
+}
+
+template <typename D, typename E, bool N>
+std::complex<high_exponent_real<D, E, false>>
+operator+(std::complex<high_exponent_real<D, E, N>> a,
+          std::complex<high_exponent_real<D, E, N>> b) {
+  return {a.real() + b.real(), a.imag() + b.imag()};
+}
+
+template <typename D, typename E, bool N>
+std::complex<high_exponent_real<D, E, false>>
+operator*(std::complex<high_exponent_real<D, E, N>> a,
+          std::complex<high_exponent_real<D, E, N>> b) {
+  return {a.real() * b.real() - a.imag() * b.imag(),
+          a.real() * b.imag() + a.imag() * b.real()};
+}
+
 // template <Complex C> C step(const C &z, const C &c) { return square(z) + c; }
 
 template <Complex C> auto norm(const C &c) {
