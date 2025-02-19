@@ -94,7 +94,7 @@ struct convert_to<high_exponent_real<D, E, N>, int> {
 template <int N, typename D, typename E, bool Norm>
 struct convert_to<high_precision_real<N>, high_exponent_real<D, E, Norm>> {
   static high_precision_real<N> get(const high_exponent_real<D, E, Norm> &x) {
-    return high_precision_real<N>(x.d) << x.e;
+    return high_precision_real<N>(x.mantissa()) << x.exponent();
   }
 };
 
@@ -109,6 +109,5 @@ struct convert_to<high_exponent_real<D, E, Norm>, high_precision_real<N>> {
     }
   }
 };
-
 
 } // namespace fractals

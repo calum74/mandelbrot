@@ -167,7 +167,7 @@ template <int N, int P, int Terms = 4, int TP1 = 20, int TP2 = 100,
           typename DeltaType = std::complex<double>>
 using MD = PerturbatedMandeldropCalculation<
     mandelbrot::mandeldrop_adaptor, std::complex<double>, DeltaType,
-    std::complex<fractals::fast_high_exponent_double>,
+    std::complex<fractals::high_exponent_double>,
     std::complex<fractals::high_precision_real<P>>,
     mandelbrot::mandelbrot_calculation<2>, Terms, TP1, TP2>;
 

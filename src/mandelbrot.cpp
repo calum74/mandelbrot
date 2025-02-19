@@ -143,7 +143,7 @@ template <int N, int P, int T = 4, int TermPrecision1 = 25,
           typename DeltaType = std::complex<double>>
 using MB = PerturbatedMandelbrotCalculation<
     std::complex<double>, DeltaType,
-    std::complex<fractals::fast_high_exponent_double>,
+    std::complex<fractals::high_exponent_double>,
     std::complex<fractals::high_precision_real<P>>,
     mandelbrot::mandelbrot_calculation<N>, T, TermPrecision1, TermPrecision2,
     Orbits>;
@@ -151,7 +151,7 @@ using MB = PerturbatedMandelbrotCalculation<
 template <int N, int P, int T = 4, int TermPrecision1 = 25,
           int TermPrecision2 = 100, int Orbits = 3>
 using MB_high = MB<N, P, T, TermPrecision1, TermPrecision2, Orbits,
-                   std::complex<fractals::fast_high_exponent_double>>;
+                   std::complex<fractals::high_exponent_double>>;
 
 // TODO: a more elegant way to choose parameters
 

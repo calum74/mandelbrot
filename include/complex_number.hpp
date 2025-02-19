@@ -8,13 +8,12 @@
 
 namespace fractals {
 
-  template <typename T>
-  concept Complex = requires(T v) {
-    // requires(typename T::value_type) {};
-    { v.real() } -> std::same_as<typename T::value_type>;
-    v.imag();
-  };
-  
+template <typename T>
+concept Complex = requires(T v) {
+  { v.real() } -> std::same_as<typename T::value_type>;
+  { v.imag() } -> std::same_as<typename T::value_type>;
+};
+
 template <typename T> T real_part(const std::complex<T> &c) { return c.real(); }
 
 template <typename T> T imag_part(const std::complex<T> &c) { return c.imag(); }
@@ -123,6 +122,5 @@ template <typename T> struct normalized<std::complex<T>> {
 template <int Digits, int MinExp, int MaxExp>
 using complex_number =
     std::complex<typename make_real<Digits, MinExp, MaxExp>::type>;
-
 
 } // namespace fractals
