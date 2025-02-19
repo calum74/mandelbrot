@@ -40,9 +40,9 @@ class pointwise_calculation_factory {
 public:
   virtual ~pointwise_calculation_factory() = default;
 
-  virtual const char *name() const = 0;
+  virtual std::string name() const = 0;
 
-  virtual const char *family() const = 0; //
+  virtual std::string family() const = 0;
 
   // Creates and initializes a new calculation.
   // Called once for each generated fractal image.
@@ -60,8 +60,8 @@ class pointwise_fractal {
 public:
   virtual ~pointwise_fractal() = default;
   virtual std::shared_ptr<pointwise_calculation_factory> create() const = 0;
-  virtual const char *name() const = 0;
-  virtual const char *family() const = 0;
+  virtual std::string name() const = 0;
+  virtual std::string family() const = 0;
 };
 
 namespace detail {
@@ -71,14 +71,14 @@ template <typename... Ts> class MultiPrecisionFactory;
 template <typename T, typename... Ts>
 class MultiPrecisionFactory<T, Ts...> : public pointwise_calculation_factory {
 public:
-  MultiPrecisionFactory(const char *name, const char *family)
+  MultiPrecisionFactory(std::string name, std::string family)
       : name_{name}, family_{family}, tail{name, family},
         value(std::make_shared<T>()) {}
 
   view_coords initial_coords() const override { return T::initial_coords(); }
-  const char *name() const override { return name_; }
+  std::string name() const override { return name_; }
 
-  const char *family() const override { return family_; }
+  std::string family() const override { return family_; }
 
   std::shared_ptr<pointwise_calculation>
   create(const view_coords &c, int x, int y,
@@ -98,15 +98,15 @@ public:
 private:
   MultiPrecisionFactory<Ts...> tail;
 
-  const char *name_;
-  const char *family_;
+  std::string name_;
+  std::string family_;
   std::shared_ptr<pointwise_calculation> value;
 };
 
 template <typename T>
 class MultiPrecisionFactory<T> : public pointwise_calculation_factory {
 public:
-  MultiPrecisionFactory(const char *name, const char *family)
+  MultiPrecisionFactory(std::string name, std::string family)
       : name_{name}, family_{family}, value(std::make_shared<T>()) {}
 
   std::shared_ptr<pointwise_calculation>
@@ -118,35 +118,35 @@ public:
 
   view_coords initial_coords() const override { return T::initial_coords(); }
 
-  const char *name() const override { return name_; }
+  std::string name() const override { return name_; }
 
-  const char *family() const override { return family_; }
+  std::string family() const override { return family_; }
 
   bool valid_for(const view_coords &c) const override {
     return T::valid_for(c);
   }
 
 private:
-  const char *name_;
-  const char *family_;
+  std::string name_;
+  std::string family_;
   std::shared_ptr<pointwise_calculation> value;
 };
 
 template <typename... Ts>
 class MultiPrecisionFractal : public pointwise_fractal {
 public:
-  MultiPrecisionFractal(const char *name, const char *family)
+  MultiPrecisionFractal(std::string name, std::string family)
       : name_(name), family_(family) {}
 
   std::shared_ptr<pointwise_calculation_factory> create() const override {
     return std::make_shared<MultiPrecisionFactory<Ts...>>(name_, family_);
   }
 
-  const char *name() const override { return name_; };
-  const char *family() const override { return family_; }
+  std::string name() const override { return name_; };
+  std::string family() const override { return family_; }
 
 private:
-  const char *name_, *family_;
+  std::string name_, family_;
 };
 } // namespace detail
 
