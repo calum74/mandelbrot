@@ -10,7 +10,6 @@
 
 #pragma once
 
-#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <iostream>
@@ -22,33 +21,45 @@
 
 namespace fractals {
 
-constexpr int bits_to_uint64(int i) { return (i + 63) >> 6; }
-
 /*
-    A minimal high-precision float implementation for greater precision.
+    A simple high-precision number implementation.
 */
-template <int N> struct high_precision_real {
+template <int FractionalBits>
+  requires(FractionalBits >= 0)
+class high_precision_real {
+public:
+  using part_type = std::uint64_t;
+  static constexpr int part_bits = sizeof(part_type) * 8;
+  static constexpr int parts = (FractionalBits + 2 * part_bits - 1) / part_bits;
+  using size_type = int;
 
-  static_assert(N > 0);
+  high_precision_real() : sign(false), part{} {}
 
-  // The sign of the number
-  bool negative;
-
-  // Fixed-point binary, with fraction[0] representing the integer component,
-  // and fraction[1..] representing the fractional parts to the given precision
-  std::uint64_t fraction[N];
-
-  high_precision_real() : negative(false), fraction{} {}
-
-  high_precision_real(int n) : negative(n < 0), fraction{} {
-    fraction[0] = negative ? -n : n;
+  high_precision_real(int n) : sign(n < 0), part{} {
+    part[0] = negative() ? -n : n;
   }
 
   template <int M>
   high_precision_real(const high_precision_real<M> &other)
-      : negative(other.negative) {
-    for (int i = 0; i < N; ++i) {
-      fraction[i] = i >= M ? 0 : other.fraction[i];
+      : sign(other.negative()) {
+    for (int i = 0; i < size(); ++i) {
+      part[i] = i >= other.size() ? 0 : other[i];
+    }
+  }
+
+  high_precision_real &operator*=(const high_precision_real &b) {
+    // This could be implemented more efficiently
+    return *this = *this * b;
+  }
+
+  high_precision_real(double d) : sign(d < 0) {
+    if (negative())
+      d = -d;
+    for (int i = 0; i < parts; ++i) {
+      double ip;
+      d = std::modf(d, &ip);
+      part[i] = ip;
+      d *= std::pow(2.0, part_bits);
     }
   }
 
@@ -62,39 +73,38 @@ template <int N> struct high_precision_real {
     return *this = *this - b;
   }
 
-  high_precision_real &operator*=(const high_precision_real &b) {
-    // This could be implemented more efficiently
-    return *this = *this * b;
-  }
-
-  high_precision_real(double d) : negative(d < 0) {
-    if (negative)
-      d = -d;
-    for (int i = 0; i < N; ++i) {
-      double ip;
-      d = std::modf(d, &ip);
-      fraction[i] = ip;
-      d *= std::pow(2.0, 64);
-    }
-  }
-
   double to_double() const {
-    double value = fraction[0];
-    for (int i = 1; i < N; ++i)
-      value += fraction[i] * std::pow(0.5, 64 * i);
-    return negative ? -value : value;
+    double value = part[0];
+    for (int i = 1; i < size(); ++i)
+      value += part[i] * std::pow(0.5, part_bits * i);
+    return negative() ? -value : value;
   }
 
-  int to_int() const { return negative ? -fraction[0] : fraction[0]; }
+  part_type &operator[](int i) { return part[i]; }
+  const part_type &operator[](int i) const { return part[i]; }
+
+  constexpr size_type size() const { return parts; }
+
+  bool negative() const { return sign; }
+  bool &negative() { return sign; }
+
+private:
+  // The sign of the number: 0 = positive, 1 = negative
+  bool sign;
+
+  // Fixed-point binary, with part[0] representing the integer component,
+  // and part[1:] representing the fractional parts
+  part_type part[parts];
 };
 
 template <int N>
 void raw_lshift(const high_precision_real<N> &a,
                 high_precision_real<N> &result) {
   int carry = 0;
-  for (int i = N - 1; i >= 0; --i) {
-    int new_carry = (a.fraction[i] & (1ull << 63)) != 0;
-    result.fraction[i] = (a.fraction[i] << 1) | carry;
+  constexpr int part_bits = high_precision_real<N>::part_bits;
+  for (int i = a.size() - 1; i >= 0; --i) {
+    int new_carry = (a[i] & (1ull << (part_bits-1))) != 0;
+    result[i] = (a[i] << 1) | carry;
     carry = new_carry;
   }
 }
@@ -102,10 +112,12 @@ void raw_lshift(const high_precision_real<N> &a,
 template <int N>
 void raw_rshift(const high_precision_real<N> &a,
                 high_precision_real<N> &result) {
-  std::uint64_t carry = 0;
-  for (int i = 0; i < N; ++i) {
-    std::uint64_t new_carry = (a.fraction[i] & 1) ? (1ull << 63) : 0;
-    result.fraction[i] = (a.fraction[i] >> 1) | carry;
+  using part_type = typename high_precision_real<N>::part_type;
+  constexpr int part_bits = high_precision_real<N>::part_bits;
+  part_type carry = 0;
+  for (int i = 0; i < a.size(); ++i) {
+    part_type new_carry = (a[i] & 1) ? (1ull << (part_bits - 1)) : 0;
+    result[i] = (a[i] >> 1) | carry;
     carry = new_carry;
   }
 }
@@ -113,7 +125,6 @@ void raw_rshift(const high_precision_real<N> &a,
 template <int N> double to_double(const high_precision_real<N> &a) {
   return a.to_double();
 }
-
 
 template <int N>
 high_precision_real<N> operator/(const high_precision_real<N> &a, double d) {
@@ -125,22 +136,24 @@ high_precision_real<N> operator/(const high_precision_real<N> &a, int n) {
   if (n == 2) {
     high_precision_real<N> result;
     raw_rshift(a, result);
-    result.negative = a.negative;
+    result.negative() = a.negative();
     return result;
   } else
     return a * high_precision_real<N>{1.0 / n};
 }
 
+namespace detail {
 template <int N>
 int cmp(const high_precision_real<N> &a, const high_precision_real<N> &b) {
   if (is_zero(a) && is_zero(b))
     return 0;
-  if (a.negative && !b.negative)
+  if (a.negative() && !b.negative())
     return -1;
-  if (!a.negative && b.negative)
+  if (!a.negative() && b.negative())
     return 1;
-  return a.negative ? -raw_cmp(a, b) : raw_cmp(a, b);
+  return a.negative() ? -raw_cmp(a, b) : raw_cmp(a, b);
 }
+} // namespace detail
 
 template <int N>
 bool operator<(const high_precision_real<N> &a,
@@ -150,9 +163,9 @@ bool operator<(const high_precision_real<N> &a,
 
 template <int N> bool operator>=(const high_precision_real<N> &a, int b) {
   // TODO: Doesn't handle negative cases properly
-  if (a.negative)
+  if (a.negative())
     return false;
-  return a.fraction[0] >= b;
+  return a[0] >= b;
 }
 
 template <int N> bool operator<(const high_precision_real<N> &a, int b) {
@@ -164,30 +177,30 @@ template <int N> bool operator<(const high_precision_real<N> &a, int b) {
 
 template <int N> bool operator<=(const high_precision_real<N> &a, int b) {
   // TODO: Doesn't handle negative cases properly
-  if (a.negative)
+  if (a.negative())
     return true;
-  if (a.fraction[0] < b)
+  if (a[0] < b)
     return true;
-  if (a.fraction[0] > b)
+  if (a[0] > b)
     return false;
-  for (int i = 1; i < N; i++)
-    if (a.fraction[i])
+  for (int i = 1; i < a.size(); i++)
+    if (a[i])
       return false;
   return true;
 }
 
 template <int N> high_precision_real<N> operator-(high_precision_real<N> b) {
   if (!is_zero(b))
-    b.negative = !b.negative;
+    b.negative() = !b.negative();
   return b;
 }
 
 template <int N> int count_leading_zeros(const high_precision_real<N> &n) {
   int c = 0;
-  for (int i = 0; i < N; ++i, c += 64) {
-    if (n.fraction[i]) {
+  for (int i = 0; i < n.size(); ++i, c += 64) {
+    if (n[i]) {
       for (std::uint64_t b = (std::uint64_t)1 << 63; b; c++, b >>= 1) {
-        if (b & n.fraction[i]) {
+        if (b & n[i]) {
           return c;
         }
       }
@@ -206,7 +219,7 @@ high_precision_real<N> inverse(const high_precision_real<N> &d) {
   // 1a, find out the number of leading zeros of b
   int m = count_leading_zeros(d) - 64;
   auto D2 = d << m; // Shift d left or right
-  D2.negative = false;
+  D2.negative() = false;
 
   // Step 2: Compute X = 48/17 − 32/17 × D'
   high_precision_real<N> X = high_precision_real<N>{48.0 / 17.0} -
@@ -217,19 +230,19 @@ high_precision_real<N> inverse(const high_precision_real<N> &d) {
     X = X + X * (one - D2 * X);
   }
   auto result = X << m;
-  result.negative = d.negative;
+  result.negative() = d.negative();
   return result;
 }
 
 template <int N>
 bool operator==(const high_precision_real<N> &a,
                 const high_precision_real<N> &b) {
-  return cmp(a, b) == 0;
+  return detail::cmp(a, b) == 0;
 }
 
 template <int N> bool is_zero(const high_precision_real<N> &a) {
-  for (int i = 0; i < N; ++i)
-    if (a.fraction[i])
+  for (int i = 0; i < a.size(); ++i)
+    if (a[i])
       return false;
   return true;
 }
@@ -239,14 +252,9 @@ high_precision_real<N> operator*(const high_precision_real<N> &a,
                                  const high_precision_real<N> &b) {
   high_precision_real<N> result;
   raw_mul(a, b, result);
-  result.negative = a.negative != b.negative;
+  result.negative() = a.negative() != b.negative();
   if (is_zero(result))
-    result.negative = false;
-
-#if HP_FLOAT_VALIDATION
-    // Does not detect overflows
-    // assert_eq(a.to_double() * b.to_double(), result.to_double());
-#endif
+    result.negative() = false;
   return result;
 }
 
@@ -260,7 +268,7 @@ high_precision_real<N> operator*(int a, const high_precision_real<N> &b) {
   if (a == 2) {
     high_precision_real<N> result;
     raw_lshift(b, result);
-    result.negative = b.negative;
+    result.negative() = b.negative();
     return result;
   } else {
     return high_precision_real<N>{a} * b;
@@ -270,47 +278,45 @@ high_precision_real<N> operator*(int a, const high_precision_real<N> &b) {
 template <int N>
 void raw_add(const high_precision_real<N> &a, const high_precision_real<N> &b,
              high_precision_real<N> &result) {
-  result.fraction[N - 1] = a.fraction[N - 1] + b.fraction[N - 1];
+  result[result.size() - 1] = a[a.size() - 1] + b[b.size() - 1];
 
-  for (int i = N - 2; i >= 0; i--) {
-    result.fraction[i] = a.fraction[i] + b.fraction[i] +
-                         (result.fraction[i + 1] < a.fraction[i + 1]);
+  for (int i = a.size() - 2; i >= 0; i--) {
+    result[i] = a[i] + b[i] + (result[i + 1] < a[i + 1]);
   }
 }
 
 template <int N>
 void raw_mul(const high_precision_real<N> &a, const high_precision_real<N> &b,
              high_precision_real<N> &result) {
-  for (int i = N - 1; i >= 0; i--) {
+  for (int i = a.size() - 1; i >= 0; i--) {
     // TODO: Fix bounds of inner loop
-    for (int j = N - 1; j >= 0; j--) {
+    for (int j = a.size() - 1; j >= 0; j--) {
 #if _WIN32
       std::uint64_t m2;
-      std::uint64_t m1 = _umul128(
-          a.fraction[i], b.fraction[j], &m2);
+      std::uint64_t m1 = _umul128(a[i], b[j], &m2);
 #else
-      __uint128_t m = (__uint128_t)a.fraction[i] * (__uint128_t)b.fraction[j];
+      __uint128_t m = (__uint128_t)a[i] * (__uint128_t)b[j];
       std::uint64_t m1 = m;
       std::uint64_t m2 = m >> 64;
 #endif
       auto ij = i + j;
       int carry;
-      if (ij < N) {
-        result.fraction[ij] += m1;
-        carry = result.fraction[ij] < m1;
+      if (ij < a.size()) {
+        result[ij] += m1;
+        carry = result[ij] < m1;
         m2 += carry;
         carry = m2 < carry;
       } else
         carry = 0;
-      if (ij > 0 && ij <= N) {
+      if (ij > 0 && ij <= a.size()) {
         ij--;
-        result.fraction[ij] += m2; //  + carry;
-        carry = result.fraction[ij] < m2;
+        result[ij] += m2;
+        carry = result[ij] < m2;
       }
       // Move into loop TODO
-      while (carry && ij-- > 0 /* && ij < N*/) { // !! Redundant test ij<N
-        result.fraction[ij] += carry;
-        carry = result.fraction[ij] == 0;
+      while (carry && ij-- > 0) {
+        result[ij] += carry;
+        carry = result[ij] == 0;
       }
     }
   }
@@ -318,10 +324,10 @@ void raw_mul(const high_precision_real<N> &a, const high_precision_real<N> &b,
 
 template <int N>
 int raw_cmp(const high_precision_real<N> &a, const high_precision_real<N> &b) {
-  for (int i = 0; i < N; ++i) {
-    if (a.fraction[i] < b.fraction[i])
+  for (int i = 0; i < a.size(); ++i) {
+    if (a[i] < b[i])
       return -1;
-    if (a.fraction[i] > b.fraction[i])
+    if (a[i] > b[i])
       return 1;
   }
   return 0;
@@ -332,9 +338,9 @@ void raw_sub(const high_precision_real<N> &a, const high_precision_real<N> &b,
              high_precision_real<N> &result) {
   std::uint64_t borrow = 0;
 
-  for (int i = N - 1; i >= 0; i--) {
-    result.fraction[i] = a.fraction[i] - b.fraction[i] - borrow;
-    borrow = a.fraction[i] + borrow < b.fraction[i];
+  for (int i = a.size() - 1; i >= 0; i--) {
+    result[i] = a[i] - b[i] - borrow;
+    borrow = a[i] + borrow < b[i];
   }
 }
 
@@ -343,29 +349,23 @@ high_precision_real<N> operator+(const high_precision_real<N> &a,
                                  const high_precision_real<N> &b) {
   high_precision_real<N> result;
 
-  if (a.negative == b.negative) {
-    result.negative = a.negative;
+  if (a.negative() == b.negative()) {
+    result.negative() = a.negative();
     raw_add(a, b, result);
   } else {
     int c = raw_cmp(a, b);
     if (c < 0) {
       // a<b:
       raw_sub(b, a, result);
-      result.negative = b.negative;
+      result.negative() = b.negative();
     } else if (c > 0) {
       // a>b
       raw_sub(a, b, result);
-      result.negative = a.negative;
+      result.negative() = a.negative();
     }
     // else: result = 0
   }
 
-#if HP_FLOAT_VALIDATION
-  auto a_debug = a.to_double();
-  auto b_debug = b.to_double();
-  auto r_debug = result.to_double();
-  assert(abs(a_debug + b_debug - r_debug) < 0.001);
-#endif
   return result;
 }
 
@@ -374,33 +374,30 @@ high_precision_real<N> operator-(const high_precision_real<N> &a,
                                  const high_precision_real<N> &b) {
   high_precision_real<N> result;
 
-  if (a.negative != b.negative) {
-    result.negative = a.negative;
+  if (a.negative() != b.negative()) {
+    result.negative() = a.negative();
     raw_add(a, b, result);
   } else {
     int c = raw_cmp(a, b);
     if (c < 0) {
       // a<b:
       raw_sub(b, a, result);
-      result.negative = !a.negative;
+      result.negative() = !a.negative();
     } else if (c > 0) {
       // a>b
       raw_sub(a, b, result);
-      result.negative = a.negative;
+      result.negative() = a.negative();
     }
     // else: 0
   }
 
-#if HP_FLOAT_VALIDATION
-  assert_eq(a.to_double() - b.to_double(), result.to_double());
-#endif
   return result;
 }
 
 template <int N>
 std::ostream &operator<<(std::ostream &os, high_precision_real<N> n) {
 
-  if (n.negative)
+  if (n.negative())
     os << '-';
 
   if (os.flags() & std::ios_base::hex) {
@@ -408,12 +405,14 @@ std::ostream &operator<<(std::ostream &os, high_precision_real<N> n) {
     // TODO: Hex mode
   }
 
-  os << n.fraction[0] << '.';
+  os << n[0] << '.';
 
   if (os.flags() & std::ios_base::hex) {
     // TODO: Hex output
+    os << "<todo>";
   } else {
-    int digits = (N - 1) * 64 * 0.301; // 0.301 = std::log(2) / std::log(10);
+    int digits = (n.size() - 1) * high_precision_real<N>::part_bits *
+                 0.301; // 0.301 = std::log(2) / std::log(10);
 
     // A naive O(N^2) algorithm.
     high_precision_real<N> ten{10};
@@ -422,9 +421,9 @@ std::ostream &operator<<(std::ostream &os, high_precision_real<N> n) {
       digits = os.precision();
 
     for (int i = 0; i < digits; i++) {
-      n.fraction[0] = 0;
+      n[0] = 0;
       n = n * ten;
-      os << n.fraction[0];
+      os << n[0];
     }
   }
 
@@ -432,13 +431,14 @@ std::ostream &operator<<(std::ostream &os, high_precision_real<N> n) {
 }
 
 template <int N> void make_tenth(high_precision_real<N> &tenth) {
-  tenth.negative = 0;
-  tenth.fraction[0] = 0;
-  tenth.fraction[1] = 0x1999999999999999ull;
-  for (int i = 2; i < N - 1; ++i) {
-    tenth.fraction[i] = 0x9999999999999999ull;
+  tenth.negative() = false;
+  tenth[0] = 0;
+  tenth[1] = 0x1999999999999999ull;
+  for (int i = 2; i < tenth.size() - 1; ++i) {
+    tenth[i] = 0x9999999999999999ull;
   }
-  tenth.fraction[N - 1] = 0x999999999999999aull;
+  if(tenth.size() > 2)
+    tenth[tenth.size() - 1] = 0x999999999999999aull;
 }
 
 template <int N>
@@ -447,7 +447,7 @@ std::istream &operator>>(std::istream &is, high_precision_real<N> &n) {
   char ch;
   bool negative;
   ch = is.peek();
-  n.negative = false;
+  n.negative() = false;
   if (ch == '-') {
     is.get(ch);
     negative = true;
@@ -457,14 +457,14 @@ std::istream &operator>>(std::istream &is, high_precision_real<N> &n) {
 
   // Read up to the decimal point
 
-  for (int i = 0; i < N; i++)
-    n.fraction[i] = 0;
+  for (int i = 0; i < n.size(); i++)
+    n[i] = 0;
 
   do {
     ch = is.peek();
     if (std::isdigit(ch)) {
       is.get(ch);
-      n.fraction[0] = n.fraction[0] * 10 + (ch - '0');
+      n[0] = n[0] * 10 + (ch - '0');
     }
   } while (std::isdigit(ch));
 
@@ -475,7 +475,7 @@ std::istream &operator>>(std::istream &is, high_precision_real<N> &n) {
 
   if (ch != 'e') {
     if (ch != '.') {
-      n.negative = negative;
+      n.negative() = negative;
       return is;
     }
     is.get(ch); // Skip '.'
@@ -486,7 +486,7 @@ std::istream &operator>>(std::istream &is, high_precision_real<N> &n) {
         is.get(ch);
         high_precision_real<N> i;
         // Not very optimal algorithm
-        i.fraction[0] = (ch - '0');
+        i[0] = (ch - '0');
         n = n + (i * mult);
         mult = mult * tenth;
       }
@@ -508,16 +508,20 @@ std::istream &operator>>(std::istream &is, high_precision_real<N> &n) {
     }
   }
 
-  n.negative = negative; // Set last because we're adding in the loop
+  n.negative() = negative; // Set last because we're adding in the loop
   return is;
 }
 
 template <int N> int count_fractional_zeros(const high_precision_real<N> &n) {
-  int c = 0; // ?? Why 1
-  for (int i = 1; i < N; ++i, c += 64) {
-    if (n.fraction[i]) {
-      for (std::uint64_t b = (std::uint64_t)1 << 63; b; c++, b >>= 1) {
-        if (b & n.fraction[i]) {
+  int c = 0;
+  using part_type = typename high_precision_real<N>::part_type;
+  const int part_bits = high_precision_real<N>::part_bits;
+  for (int i = 1; i < n.size(); ++i, c += part_bits) {
+    if (n[i]) {
+      for (part_type b = (part_type)1
+                         << (part_bits - 1);
+           b; c++, b >>= 1) {
+        if (b & n[i]) {
           return c;
         }
       }
@@ -529,37 +533,41 @@ template <int N> int count_fractional_zeros(const high_precision_real<N> &n) {
 template <int N>
 void raw_shiftleft(const high_precision_real<N> &a, high_precision_real<N> &b,
                    int n) {
-  std::uint64_t extra = 0;
-  int m = n / 64;
-  n = n % 64;
-  for (int i = N - 1; i >= 0; i--) {
-    if (i + m < N) {
-      b.fraction[i] = (a.fraction[i + m] << n) | extra;
-      extra = n == 0 ? 0 : a.fraction[i + m] >> (64 - n);
+  using part_type = typename high_precision_real<N>::part_type;
+  constexpr int part_bits = high_precision_real<N>::part_bits;
+  part_type extra = 0;
+  int m = n / part_bits;
+  n = n % part_bits;
+  for (int i = a.size() - 1; i >= 0; i--) {
+    if (i + m < a.size()) {
+      b[i] = (a[i + m] << n) | extra;
+      extra = n == 0 ? 0 : a[i + m] >> (part_bits - n);
     } else
-      b.fraction[i] = 0;
+      b[i] = 0;
   }
 }
 
 template <int N>
 void raw_shiftright(const high_precision_real<N> &a, high_precision_real<N> &b,
                     int n) {
-  std::uint64_t extra = 0;
-  int m = n / 64;
-  n = n % 64;
-  for (int i = 0; i < N; i++) {
+  using part_type = typename high_precision_real<N>::part_type;
+  part_type extra = 0;
+  constexpr int part_bits = high_precision_real<N>::part_bits;
+  int m = n / part_bits;
+  n = n % part_bits;
+  for (int i = 0; i < a.size(); i++) {
     if (i - m >= 0) {
-      b.fraction[i] = a.fraction[i - m] >> n | extra;
-      extra = n == 0 ? 0 : a.fraction[i - m] << (64 - n);
+      b[i] = a[i - m] >> n | extra;
+      extra = n == 0 ? 0 : a[i - m] << (part_bits - n);
     } else
-      b.fraction[i] = 0;
+      b[i] = 0;
   }
 }
 
 template <int N>
 high_precision_real<N> operator<<(const high_precision_real<N> &n, int shift) {
   high_precision_real<N> result;
-  result.negative = n.negative;
+  result.negative() = n.negative();
   if (shift > 0)
     raw_shiftleft(n, result, shift);
   else if (shift < 0)
@@ -576,25 +584,24 @@ high_precision_real<N> operator>>(const high_precision_real<N> &n, int shift) {
 
 template <int N>
 bool valid_precision(const fractals::high_precision_real<N> &n) {
-  for (int i = 0; i < N - 2; ++i) {
-    if (n.fraction[i])
+  for (int i = 0; i < n.size() - 2; ++i) {
+    if (n[i])
       return true;
   }
   // Ensure we have at least 64+32 = 96 bits
   // We must have something in the top 32-bits
-  return n.fraction[N - 2] & 0xffffffff00000000ull;
+  return n[n.size() - 2] & 0xffffffff00000000ull;
 }
 
 template <int N>
 bool valid_precision_for_inverse(const fractals::high_precision_real<N> &n) {
-  for (int i = 0; i < N - 2; ++i) {
-    if (n.fraction[i])
+  for (int i = 0; i < n.size() - 2; ++i) {
+    if (n[i])
       return true;
   }
   // Ensure we have at least 64+48 = 112 bits
   // We must have something in the top 48-bits
-  return n.fraction[N - 2] & 0xffffffffff000000ull;
+  return n[n.size() - 2] & 0xffffffffff000000ull;
 }
 
 } // namespace fractals
-

@@ -144,7 +144,7 @@ template <int N, int P, int T = 4, int TermPrecision1 = 25,
 using MB = PerturbatedMandelbrotCalculation<
     std::complex<double>, DeltaType,
     std::complex<fractals::high_exponent_double>,
-    std::complex<fractals::high_precision_real<P>>,
+    std::complex<fractals::real_number<P,0,0>>,
     mandelbrot::mandelbrot_calculation<N>, T, TermPrecision1, TermPrecision2,
     Orbits>;
 
@@ -162,31 +162,31 @@ using MB_high = MB<N, P, T, TermPrecision1, TermPrecision2, Orbits,
 // For the highest precition, we need to increase the precision on the delta
 // as well
 const fractals::PointwiseFractal &mandelbrot_fractal =
-    fractals::make_fractal<MB<2, 3, 4, 10, 1000>, MB<2, 6>, MB<2, 10>,
-                           MB_high<2, 18>, MB_high<2, 32>, MB_high<2, 40>,
-                           MB_high<2, 64, 3, 100, 1000, 1>>("Mandelbrot set",
+    fractals::make_fractal<MB<2, 2*64, 4, 10, 1000>, MB<2, 5*64>, MB<2, 9*64>,
+                           MB_high<2, 17*64>, MB_high<2, 31*64>, MB_high<2, 39*64>,
+                           MB_high<2, 63*64, 3, 100, 1000, 1>>("Mandelbrot set",
                                                             "mandelbrot");
 
 // Cubic Mandelbrot has no glitches with 3 Taylor series terms, but
 // glitches quite badly with 4 terms. On the other hand, Square mandelbrot works
 // better with 4 terms.
 const fractals::PointwiseFractal &mandelbrot3_fractal =
-    fractals::make_fractal<MB<3, 4, 3, 10000>, MB<3, 6, 3, 10000>,
-                           MB<3, 10, 3, 10000>, MB<3, 18, 3, 10000>>(
+    fractals::make_fractal<MB<3, 4*64, 3, 10000>, MB<3, 6*64, 3, 10000>,
+                           MB<3, 10*64, 3, 10000>, MB<3, 18*64, 3, 10000>>(
         "Cubic Mandelbrot (power 3)");
 
 const fractals::PointwiseFractal &mandelbrot4_fractal =
-    fractals::make_fractal<MB<4, 4>, MB<4, 6>, MB<4, 10>, MB<4, 18>>(
+    fractals::make_fractal<MB<4, 4*64>, MB<4, 6*64>, MB<4, 10*64>, MB<4, 18*64>>(
         "Mandelbrot (power 4)");
 
 const fractals::PointwiseFractal &mandelbrot5_fractal =
-    fractals::make_fractal<MB<5, 4>, MB<5, 6>, MB<5, 10>, MB<5, 18>>(
+    fractals::make_fractal<MB<5, 4*64>, MB<5, 6*64>, MB<5, 10*64>, MB<5, 18*64>>(
         "Mandelbox (power 5)");
 
 const fractals::PointwiseFractal &mandelbrot6_fractal =
-    fractals::make_fractal<MB<6, 4>, MB<6, 6>, MB<6, 10>, MB<6, 18>>(
+    fractals::make_fractal<MB<6, 4*64>, MB<6, 6*64>, MB<6, 10*64>, MB<6, 18*64>>(
         "Mandelbrot (power 6)");
 
 const fractals::PointwiseFractal &mandelbrot7_fractal =
-    fractals::make_fractal<MB<7, 4>, MB<7, 6>, MB<7, 10>, MB<7, 18>>(
+    fractals::make_fractal<MB<7, 4*64>, MB<7, 6*64>, MB<7, 10*64>, MB<7, 18*64>>(
         "Mandelflake (power 7)");

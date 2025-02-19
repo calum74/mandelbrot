@@ -101,7 +101,7 @@ struct convert_to<high_precision_real<N>, high_exponent_real<D, E, Norm>> {
 template <int N, std::floating_point D, typename E, bool Norm>
 struct convert_to<high_exponent_real<D, E, Norm>, high_precision_real<N>> {
   static high_exponent_real<D, E, Norm> get(const high_precision_real<N> &x) {
-    if (x.fraction[0] == 0) {
+    if (x[0] == 0) {
       int e = count_fractional_zeros(x);
       return high_exponent_real<D, E, Norm>{(D)(x << e).to_double(), -e};
     } else {

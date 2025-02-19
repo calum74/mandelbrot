@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cmath>
-#include <complex>
 #include <iostream>
 
 namespace fractals {
@@ -76,7 +75,7 @@ high_exponent_real<D, E, true> normalize(const high_exponent_real<D, E, N> x) {
 }
 
 template <typename D, typename E, bool N>
-high_exponent_real<D, E, false> operator-(high_exponent_real<D, E, N> a) {
+high_exponent_real<D, E, N> operator-(high_exponent_real<D, E, N> a) {
   return {-a.mantissa(), a.exponent()};
 }
 
@@ -192,7 +191,7 @@ bool operator<=(high_exponent_real<D, E, N1> a,
 }
 
 template <typename D, typename E, bool N> bool isfinite(high_exponent_real<D, E, N> a) {
-  return std::isfinite(a.d);
+  return std::isfinite(a.mantissa());
 }
 
 template <typename D, typename E, bool N>

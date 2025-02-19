@@ -57,7 +57,7 @@ template <typename T> struct normalized {
 template <int Digits>
   requires(Digits > std::numeric_limits<long double>::digits)
 struct make_real<Digits, 0, 0> {
-  using type = high_precision_real<(Digits + 64) / 64>;
+  using type = high_precision_real<Digits>;
 };
 
 template <typename Double, typename Exponent>
