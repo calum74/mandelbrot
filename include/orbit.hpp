@@ -10,7 +10,7 @@
 */
 
 #pragma once
-#include "fwd.hpp"
+#include "mandelbrot_fwd.hpp"
 #include "mandelbrot_calculation.hpp"
 #include <atomic>
 #include <cassert>

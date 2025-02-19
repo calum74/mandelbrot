@@ -2,7 +2,7 @@
 
 #include <memory>
 #include <string>
-#include "fwd.hpp"
+#include "mandelbrot_fwd.hpp"
 
 namespace fractals {
   class pointwise_fractal {
