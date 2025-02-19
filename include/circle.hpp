@@ -2,10 +2,10 @@
     A sample fractal showing how to add new fractals.
 
     The general idea is that you create a new symbol of type `const
-    fractals::pointwise_fractal &`. The implementation details of the
+    fractals::fractal &`. The implementation details of the
     fractal are hidden in the implementation file (circle.cpp)
 */
 
-#include "fwd.hpp"
+#include "mandelbrot_fwd.hpp"
 
-extern const fractals::pointwise_fractal &circle_fractal;
+extern const fractals::fractal &circle_fractal;

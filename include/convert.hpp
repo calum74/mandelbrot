@@ -1,4 +1,5 @@
 #pragma once
+#include "mandelbrot_fwd.hpp"
 #include "complex_number.hpp"
 
 namespace fractals {

@@ -31,12 +31,12 @@ Unfortunately, this documentation is very superficial!
 
 Type | Description
 -- | --
-`pointwise_fractal` | A fractal.
-`pointwise_calculation` | The logic to calculate a fractal.
+`fractal` | A fractal.
+`fractal_calculation` | The logic to calculate a fractal.
 
 Function | Description 
 -- | --
-`make_fractal()` | Creates a `pointwise_fractal`. 
+`make_fractal()` | Creates a `fractal`. 
 
 ### high_exponent_real.hpp
 

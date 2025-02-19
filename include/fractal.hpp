@@ -5,10 +5,10 @@
 #include "mandelbrot_fwd.hpp"
 
 namespace fractals {
-  class pointwise_fractal {
+  class fractal {
   public:
-    virtual ~pointwise_fractal() = default;
-    virtual std::shared_ptr<pointwise_calculation_factory> create() const = 0;
+    virtual ~fractal() = default;
+    virtual std::shared_ptr<fractal_calculation_factory> create() const = 0;
     virtual std::string name() const = 0;
     virtual std::string family() const = 0;
   };

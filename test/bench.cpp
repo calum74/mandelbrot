@@ -1,12 +1,12 @@
 #include "mandelbrot.hpp"
-#include "pointwise_calculation.hpp"
+#include "fractal_calculation.hpp"
 #include <atomic>
 #include <chrono>
 #include <iostream>
 #include <sstream>
 
 void benchmark(const char *x, const char *y, const char *r, int iterations,
-               int w, int h, const fractals::pointwise_fractal &fractal) {
+               int w, int h, const fractals::fractal &fractal) {
   auto t1 = std::chrono::high_resolution_clock::now();
   fractals::view_coords coords;
   std::stringstream(x) >> coords.x;

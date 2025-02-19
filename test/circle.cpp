@@ -4,10 +4,10 @@
 
 #include "make_fractal.hpp"
 
-// Define a new fractal by inheriting from fractals::pointwise_calculation
+// Define a new fractal by inheriting from fractals::fractal_calculation
 // In this case we'll specify the data-type of real numbers as a template
 // parameter.
-template <typename Real> class Circle : public fractals::pointwise_calculation {
+template <typename Real> class Circle : public fractals::fractal_calculation {
 public:
   // Your coordinate system for this fractal.
   // Real specifies how you're going to store your coordinates.
@@ -30,6 +30,6 @@ public:
   }
 };
 
-const fractals::pointwise_fractal &circle_fractal =
+const fractals::fractal &circle_fractal =
     fractals::make_fractal<Circle<double>,
                            Circle<fractals::high_precision_real<6>>>("Circle");

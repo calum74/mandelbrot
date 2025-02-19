@@ -15,7 +15,7 @@ template <mandelbrot::Complex LowPrecisionType, mandelbrot::Complex DeltaType,
           mandelbrot::Complex TermType, mandelbrot::Complex HighPrecisionType,
           mandelbrot::Calculation Calculation, int Terms, int TermPrecision>
 class ExperimentalMandelbrotCalculation
-    : public fractals::pointwise_calculation {
+    : public fractals::fractal_calculation {
 public:
   using SmallReal = typename LowPrecisionType::value_type;
   using DeltaReal = typename DeltaType::value_type;
@@ -105,6 +105,6 @@ using MBX = ExperimentalMandelbrotCalculation<
     mandelbrot::mandelbrot_calculation<N>, T, Tolerance>;
 
 // Nothing here now
-const fractals::pointwise_fractal &experimental_fractal =
+const fractals::fractal &experimental_fractal =
     fractals::make_fractal<MBX<2, 3*64>, MBX<2, 6*64>, MBX<2, 10*64>, MBX<2, 18*64>>(
         "Experiment", "mandelbrot");

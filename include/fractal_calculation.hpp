@@ -1,5 +1,5 @@
 #pragma once
-#include "pointwise_fractal.hpp"
+#include "fractal.hpp"
 #include "view_coords.hpp"
 
 #include <atomic>
@@ -13,10 +13,10 @@ namespace fractals {
   A virtual function call per point may seem excessive, but it's usually
   negligible overhead relative to computing each point.
 */
-class pointwise_calculation {
+class fractal_calculation {
 public:
   using view_coords = fractals::view_coords;
-  virtual ~pointwise_calculation() = default;
+  virtual ~fractal_calculation() = default;
 
   // Compute the point at the pixel position (x,y).
   virtual double calculate(int x, int y) const = 0;
@@ -35,9 +35,9 @@ public:
 /*
   A fractal that can be calculated in a point-wise fashion.
 */
-class pointwise_calculation_factory {
+class fractal_calculation_factory {
 public:
-  virtual ~pointwise_calculation_factory() = default;
+  virtual ~fractal_calculation_factory() = default;
 
   virtual std::string name() const = 0;
 
@@ -45,7 +45,7 @@ public:
 
   // Creates and initializes a new calculation.
   // Called once for each generated fractal image.
-  virtual std::shared_ptr<pointwise_calculation>
+  virtual std::shared_ptr<fractal_calculation>
   create(const view_coords &c, int x, int y, std::atomic<bool> &stop) const = 0;
 
   // Retrieve the initial coordinates for this fractal.

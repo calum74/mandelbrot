@@ -2,14 +2,14 @@
 
 #pragma once
 
-#include "pointwise_fractal.hpp"
+#include "fractal.hpp"
 
-extern const fractals::pointwise_fractal &mandelbrot_fractal;
-extern const fractals::pointwise_fractal &mandeldrop_fractal;
-extern const fractals::pointwise_fractal &mandelbrot3_fractal;
-extern const fractals::pointwise_fractal &mandelbrot4_fractal;
-extern const fractals::pointwise_fractal &mandelbrot5_fractal;
-extern const fractals::pointwise_fractal &mandelbrot6_fractal;
-extern const fractals::pointwise_fractal &mandelbrot7_fractal;
-extern const fractals::pointwise_fractal &mandelbrot_imprecise;
-extern const fractals::pointwise_fractal &experimental_fractal;
+extern const fractals::fractal &mandelbrot_fractal;
+extern const fractals::fractal &mandeldrop_fractal;
+extern const fractals::fractal &mandelbrot3_fractal;
+extern const fractals::fractal &mandelbrot4_fractal;
+extern const fractals::fractal &mandelbrot5_fractal;
+extern const fractals::fractal &mandelbrot6_fractal;
+extern const fractals::fractal &mandelbrot7_fractal;
+extern const fractals::fractal &mandelbrot_imprecise;
+extern const fractals::fractal &experimental_fractal;

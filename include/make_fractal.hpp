@@ -1,6 +1,7 @@
 #pragma once
-#include "pointwise_calculation.hpp"
+#include "fractal_calculation.hpp"
 #include "plane.hpp"
+#include "convert.hpp"
 
 namespace fractals {
 namespace detail {
@@ -8,7 +9,7 @@ namespace detail {
 template <typename... Ts> class MultiPrecisionFactory;
 
 template <typename T, typename... Ts>
-class MultiPrecisionFactory<T, Ts...> : public pointwise_calculation_factory {
+class MultiPrecisionFactory<T, Ts...> : public fractal_calculation_factory {
 public:
   MultiPrecisionFactory(std::string name, std::string family)
       : name_{name}, family_{family}, tail{name, family},
@@ -19,7 +20,7 @@ public:
 
   std::string family() const override { return family_; }
 
-  std::shared_ptr<pointwise_calculation>
+  std::shared_ptr<fractal_calculation>
   create(const view_coords &c, int x, int y,
          std::atomic<bool> &stop) const override {
 
@@ -39,16 +40,16 @@ private:
 
   std::string name_;
   std::string family_;
-  std::shared_ptr<pointwise_calculation> value;
+  std::shared_ptr<fractal_calculation> value;
 };
 
 template <typename T>
-class MultiPrecisionFactory<T> : public pointwise_calculation_factory {
+class MultiPrecisionFactory<T> : public fractal_calculation_factory {
 public:
   MultiPrecisionFactory(std::string name, std::string family)
       : name_{name}, family_{family}, value(std::make_shared<T>()) {}
 
-  std::shared_ptr<pointwise_calculation>
+  std::shared_ptr<fractal_calculation>
   create(const view_coords &c, int x, int y,
          std::atomic<bool> &stop) const override {
     value->initialize(c, x, y, stop);
@@ -68,16 +69,16 @@ public:
 private:
   std::string name_;
   std::string family_;
-  std::shared_ptr<pointwise_calculation> value;
+  std::shared_ptr<fractal_calculation> value;
 };
 
 template <typename... Ts>
-class MultiPrecisionFractal : public pointwise_fractal {
+class MultiPrecisionFractal : public fractal {
 public:
   MultiPrecisionFractal(std::string name, std::string family)
       : name_(name), family_(family) {}
 
-  std::shared_ptr<pointwise_calculation_factory> create() const override {
+  std::shared_ptr<fractal_calculation_factory> create() const override {
     return std::make_shared<MultiPrecisionFactory<Ts...>>(name_, family_);
   }
 
