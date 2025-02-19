@@ -4,7 +4,7 @@
 #include <sstream>
 
 void benchmark(const char *x, const char *y, const char *r, int iterations,
-               int w, int h, const fractals::PointwiseFractal &fractal) {
+               int w, int h, const fractals::pointwise_fractal &fractal) {
   auto t1 = std::chrono::high_resolution_clock::now();
   fractals::view_coords coords;
   std::stringstream(x) >> coords.x;

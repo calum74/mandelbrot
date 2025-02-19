@@ -4,7 +4,7 @@
 #include "orbit.hpp"
 #include "convert.hpp"
 
-class SimpleMandeldrop : public fractals::PointwiseCalculation {
+class SimpleMandeldrop : public fractals::pointwise_calculation {
 public:
   using Real = double;
   using Complex = std::complex<Real>;
@@ -44,7 +44,7 @@ private:
   fractals::plane<Real> coords;
 };
 
-const fractals::PointwiseFractal &naiveMandeldrop =
+const fractals::pointwise_fractal &naiveMandeldrop =
     fractals::make_fractal<SimpleMandeldrop>("Mandeldrop (low precision)");
 
 template <typename Adaptor, mandelbrot::Complex LowPrecisionType,
@@ -52,7 +52,7 @@ template <typename Adaptor, mandelbrot::Complex LowPrecisionType,
           mandelbrot::Complex HighPrecisionType,
           mandelbrot::Calculation Calculation, int Terms, int TermPrecision1,
           int TermPrecision2>
-class PerturbatedMandeldropCalculation : public fractals::PointwiseCalculation {
+class PerturbatedMandeldropCalculation : public fractals::pointwise_calculation {
 public:
   /*
     The "Mandeldrop" is a transformation of the Mandelbrot set under
@@ -171,6 +171,6 @@ using MD = PerturbatedMandeldropCalculation<
     std::complex<fractals::high_precision_real<P>>,
     mandelbrot::mandelbrot_calculation<2>, Terms, TP1, TP2>;
 
-const fractals::PointwiseFractal &mandeldrop_fractal =
+const fractals::pointwise_fractal &mandeldrop_fractal =
     fractals::make_fractal<MD<2, 4>, MD<2, 6>, MD<2, 10>,
                            MD<2, 16> /*, MB<20> */>("Mandeldrop");

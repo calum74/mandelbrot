@@ -14,10 +14,10 @@ namespace fractals {
   A virtual function call per point may seem excessive, but it's usually
   negligible overhead relative to computing each point.
 */
-class PointwiseCalculation {
+class pointwise_calculation {
 public:
   using view_coords = fractals::view_coords;
-  virtual ~PointwiseCalculation() = default;
+  virtual ~pointwise_calculation() = default;
 
   // Compute the point at the pixel position (x,y).
   virtual double calculate(int x, int y) const = 0;
@@ -36,9 +36,9 @@ public:
 /*
   A fractal that can be calculated in a point-wise fashion.
 */
-class PointwiseCalculationFactory {
+class pointwise_calculationFactory {
 public:
-  virtual ~PointwiseCalculationFactory() = default;
+  virtual ~pointwise_calculationFactory() = default;
 
   virtual const char *name() const = 0;
 
@@ -46,7 +46,7 @@ public:
 
   // Creates and initializes a new calculation.
   // Called once for each generated fractal image.
-  virtual std::shared_ptr<PointwiseCalculation>
+  virtual std::shared_ptr<pointwise_calculation>
   create(const view_coords &c, int x, int y, std::atomic<bool> &stop) const = 0;
 
   // Retrieve the initial coordinates for this fractal.
@@ -56,10 +56,10 @@ public:
   virtual bool valid_for(const view_coords &c) const = 0;
 };
 
-class PointwiseFractal {
+class pointwise_fractal {
 public:
-  virtual ~PointwiseFractal() = default;
-  virtual std::shared_ptr<PointwiseCalculationFactory> create() const = 0;
+  virtual ~pointwise_fractal() = default;
+  virtual std::shared_ptr<pointwise_calculationFactory> create() const = 0;
   virtual const char *name() const = 0;
   virtual const char *family() const = 0;
 };
@@ -69,7 +69,7 @@ namespace detail {
 template <typename... Ts> class MultiPrecisionFactory;
 
 template <typename T, typename... Ts>
-class MultiPrecisionFactory<T, Ts...> : public PointwiseCalculationFactory {
+class MultiPrecisionFactory<T, Ts...> : public pointwise_calculationFactory {
 public:
   MultiPrecisionFactory(const char *name, const char *family)
       : name_{name}, family_{family}, tail{name, family},
@@ -80,7 +80,7 @@ public:
 
   const char *family() const override { return family_; }
 
-  std::shared_ptr<PointwiseCalculation>
+  std::shared_ptr<pointwise_calculation>
   create(const view_coords &c, int x, int y,
          std::atomic<bool> &stop) const override {
 
@@ -100,16 +100,16 @@ private:
 
   const char *name_;
   const char *family_;
-  std::shared_ptr<PointwiseCalculation> value;
+  std::shared_ptr<pointwise_calculation> value;
 };
 
 template <typename T>
-class MultiPrecisionFactory<T> : public PointwiseCalculationFactory {
+class MultiPrecisionFactory<T> : public pointwise_calculationFactory {
 public:
   MultiPrecisionFactory(const char *name, const char *family)
       : name_{name}, family_{family}, value(std::make_shared<T>()) {}
 
-  std::shared_ptr<PointwiseCalculation>
+  std::shared_ptr<pointwise_calculation>
   create(const view_coords &c, int x, int y,
          std::atomic<bool> &stop) const override {
     value->initialize(c, x, y, stop);
@@ -129,16 +129,16 @@ public:
 private:
   const char *name_;
   const char *family_;
-  std::shared_ptr<PointwiseCalculation> value;
+  std::shared_ptr<pointwise_calculation> value;
 };
 
 template <typename... Ts>
-class MultiPrecisionFractal : public PointwiseFractal {
+class MultiPrecisionFractal : public pointwise_fractal {
 public:
   MultiPrecisionFractal(const char *name, const char *family)
       : name_(name), family_(family) {}
 
-  std::shared_ptr<PointwiseCalculationFactory> create() const override {
+  std::shared_ptr<pointwise_calculationFactory> create() const override {
     return std::make_shared<MultiPrecisionFactory<Ts...>>(name_, family_);
   }
 
