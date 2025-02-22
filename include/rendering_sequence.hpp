@@ -80,7 +80,8 @@ public:
 
   // !! Unclear whether we need the members to be atomic
   // !! Visibility
-  std::vector<std::atomic<T>> output;
+  // std::vector<std::atomic<T>> output;
+  std::vector<T> output;
 
 protected:
   virtual T get_point(int x, int y) = 0;
