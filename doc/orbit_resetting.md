@@ -33,13 +33,13 @@ $$\begin{align}z'_n = z_{n-m} + \epsilon_{n}\end{align}$$
 
 Proof: By induction on $n$. (7) is our induction hypothesis.
 
-When $n=m$, 
+Base case when $n=m$, 
 
 $$\begin{align}z_{n-m} + \epsilon_n &= z_0 + z'_n \newline &= 0 + z'_n \newline &= z'_n\end{align}$$
 
 from (1) and (5). This establishes (7) in the case that $n=m$.
 
-When $n>m$, assume that (7) holds for $n$. 
+Inductive step, when $n \ge m$, assume that (7) holds for $n$. 
 
 $$z'_{n+1} = z'^2_{n} + c + \delta$$
 
@@ -61,4 +61,4 @@ $\square$
 
 Note we didn't make use of (3).
 
-(6) and (7) allows us to compute $z'_n$ from an arbitrary iteration $m$ in the reference orbit, which means that we will always have a valid reference orbit because we can adjust $m$ to ensure that our reference iteration $n-m$ is always in the valid range.
+(6) and (7) allows us to compute $z'_n$ from an arbitrary iteration $m$ in the reference orbit, which means that we will always have a valid reference orbit because we can adjust $m$ to ensure that our reference iteration $z_{n-m}$ is always in the valid range.

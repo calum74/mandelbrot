@@ -66,7 +66,7 @@ public:
   void calculate(int threads, std::atomic<bool> &stop);
 
 protected:
-  virtual void calculate_point(int x, int y) = 0;
+  virtual void calculate_point(int x, int y, int w) = 0;
   virtual void layer_complete(int stride) = 0;
 
   int width, height, stride;
@@ -87,7 +87,7 @@ protected:
   virtual T get_point(int x, int y) = 0;
 
 private:
-  void calculate_point(int x, int y) override {
+  void calculate_point(int x, int y, int) override {
     output[x + y * width] = get_point(x, y);
   }
 };

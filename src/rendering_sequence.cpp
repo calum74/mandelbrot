@@ -157,7 +157,7 @@ void fractals::async_rendering_sequence::calculate(int threads,
         assert(x < width);
         assert(y >= 0);
         assert(y < height);
-        calculate_point(x, y);
+        calculate_point(x, y, stride);
         m.lock();
         if (--points_at_stride[stride] == 0) {
           layer_complete(stride);
