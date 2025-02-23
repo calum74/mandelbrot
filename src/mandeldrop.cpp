@@ -1,8 +1,8 @@
+#include "convert.hpp"
 #include "make_fractal.hpp"
 #include "mandelbrot.hpp"
 #include "mandelbrot_adaptor.hpp"
 #include "orbit.hpp"
-#include "convert.hpp"
 
 class SimpleMandeldrop : public fractals::fractal_calculation {
 public:
@@ -88,8 +88,8 @@ public:
     coords = {c, w, h};
     ref_x = (w / 2);
     ref_y = (h / 2);
-    c0 = {convert<SmallReal>(coords.x0) + (coords.dx * ref_x),
-          convert<SmallReal>(coords.y0) + (coords.dy * ref_y)};
+    c0 = {fractals::convert<SmallReal>(coords.x0) + fractals::convert<SmallReal>(coords.dx * ref_x),
+      fractals::convert<SmallReal>(coords.y0) + fractals::convert<SmallReal>(coords.dy * ref_y)};
     reference_orbit = {
         mandelbrot::make_basic_orbit<Calculation>(Adaptor::map(
             HighPrecisionType{coords.x0 + fractals::convert<HighPrecisionReal>(
@@ -104,7 +104,7 @@ public:
   // The call to `valid_precision` checks the size of the radius relative to
   // the size of a BigReal to make sure we have sufficient accuracy.
   static bool valid_for(const view_coords &c) {
-    return c.r <= 3 && valid_precision_for_inverse(HighPrecisionReal{c.r});
+    return c.r <= 3 && fractals::valid_precision_for_inverse(convert<HighPrecisionReal>(c.r));
   }
 
   // The initial coordinates to view the Mandelbrot set.
@@ -171,6 +171,17 @@ using MD = PerturbatedMandeldropCalculation<
     std::complex<fractals::high_precision_real<P>>,
     mandelbrot::mandelbrot_calculation<2>, Terms, TP1, TP2>;
 
-const fractals::fractal &mandeldrop_fractal =
+const fractals::fractal &x =
     fractals::make_fractal<MD<2, 4>, MD<2, 6>, MD<2, 10>,
                            MD<2, 16> /*, MB<20> */>("Mandeldrop");
+
+template <int Precision> struct mandeldrop_generator {
+  using type = PerturbatedMandeldropCalculation<
+      mandelbrot::mandeldrop_adaptor, std::complex<double>,
+      fractals::complex_number<0,-Precision,0>,
+      std::complex<fractals::high_exponent_double>,
+      fractals::complex_number<Precision, 0, 0>,
+      mandelbrot::mandelbrot_calculation<2>, 4, 20, 100>;
+};
+
+const fractals::fractal &mandeldrop_fractal = fractals::make_fractal<mandeldrop_generator>("Mandeldrop");

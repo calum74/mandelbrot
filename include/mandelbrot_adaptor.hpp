@@ -14,7 +14,7 @@ struct mandelbrot_adaptor {
 
 struct mandeldrop_adaptor {
   template <fractals::Complex C> static C map(const C &z) {
-    auto n = inverse(fractals::norm(z));
+    auto n = fractals::inverse(fractals::norm(z));
     return {-imag(z) * n, -real(z) * n};
   }
 
@@ -23,7 +23,7 @@ struct mandeldrop_adaptor {
     // Note that we can calculate deltas using low precision (`double`) complex
     // numbers. We just need to rearrange our calculation of the delta to avoid
     // loss of precision.
-    return DeltaType{0, 1} * d / (c0 * (c0 + d));
+    return DeltaType{0, 1} * d / fractals::convert<DeltaType>(c0 * (c0 + fractals::convert<C>(d)));
   }
 };
 } // namespace mandelbrot

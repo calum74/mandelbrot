@@ -46,6 +46,26 @@ operator*(std::complex<high_exponent_real<D, E, N1>> a,
           a.real() * b.imag() + a.imag() * b.real()};
 }
 
+// Specialise this because std::complex does incompatible things
+template <typename D, typename E, bool N1, bool N2> requires(N1 != N2)
+std::complex<high_exponent_real<D, E, false>>
+operator/(const std::complex<high_exponent_real<D, E, N1>> &a,
+          const std::complex<high_exponent_real<D, E, N2>> &b) {
+  auto d = b.real() * b.real() + b.imag() * b.imag();
+  return {(a.real() * b.real() + a.imag() * b.imag()) / d,
+          (a.imag() * b.real() - a.real() * b.imag()) / d};
+}
+
+template <typename D, typename E, bool N>
+std::complex<high_exponent_real<D, E, false>>
+operator/(const std::complex<high_exponent_real<D, E, N>> &a,
+          const std::complex<high_exponent_real<D, E, N>> &b) {
+  auto d = b.real() * b.real() + b.imag() * b.imag();
+  return {(a.real() * b.real() + a.imag() * b.imag()) / d,
+          (a.imag() * b.real() - a.real() * b.imag()) / d};
+}
+
+
 template <typename D, typename E, bool N1, bool N2>
 std::complex<high_exponent_real<D, E, false>>
 operator+(std::complex<high_exponent_real<D, E, N1>> a,
@@ -153,5 +173,4 @@ template <typename T> struct normalized<std::complex<T>> {
 template <int Digits, int MinExp, int MaxExp>
 using complex_number =
     std::complex<typename make_real<Digits, MinExp, MaxExp>::type>;
-
 } // namespace fractals

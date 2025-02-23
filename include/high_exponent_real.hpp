@@ -115,6 +115,12 @@ high_exponent_real<D, E, false> operator*(high_exponent_real<D, E, N1> a,
   return {a.mantissa() * b.mantissa(), a.exponent() + b.exponent()};
 }
 
+template <typename D, typename E, bool N>
+high_exponent_real<D, E, false> operator*(high_exponent_real<D, E, N> a,
+                                          int b) {
+  return {a.mantissa() * b, a.exponent()};
+}
+
 template <typename D, typename E, bool N1, bool N2>
 high_exponent_real<D, E, false> operator/(high_exponent_real<D, E, N1> a,
                                           high_exponent_real<D, E, N2> b) {

@@ -351,4 +351,8 @@ int main() {
   random_bits();
 
   high_exponent_real_tests();
+
+  {
+    using T = fractals::real_number<0,-128,0>;
+  }
 }

@@ -1,7 +1,7 @@
 #pragma once
+#include "convert.hpp"
 #include "fractal_calculation.hpp"
 #include "plane.hpp"
-#include "convert.hpp"
 
 namespace fractals {
 namespace detail {
@@ -72,8 +72,7 @@ private:
   std::shared_ptr<fractal_calculation> value;
 };
 
-template <typename... Ts>
-class MultiPrecisionFractal : public fractal {
+template <typename... Ts> class MultiPrecisionFractal : public fractal {
 public:
   MultiPrecisionFractal(std::string name, std::string family)
       : name_(name), family_(family) {}
@@ -104,4 +103,25 @@ template <typename... Ts>
 detail::MultiPrecisionFractal<Ts...> make_fractal(const char *name) {
   return {name, name};
 }
+
+template <template <int> class Fractal>
+detail::MultiPrecisionFractal<
+    typename Fractal<50>::type, typename Fractal<128>::type,
+    typename Fractal<256>::type, typename Fractal<640>::type,
+    typename Fractal<1024>::type, typename Fractal<1596>::type,
+    typename Fractal<2048>::type, typename Fractal<4096>::type>
+make_fractal(const char *name) {
+  return {name, name};
+}
+
+template <template <int> class Fractal>
+detail::MultiPrecisionFractal<
+    typename Fractal<50>::type, typename Fractal<128>::type,
+    typename Fractal<256>::type, typename Fractal<640>::type,
+    typename Fractal<1024>::type, typename Fractal<1596>::type,
+    typename Fractal<2048>::type, typename Fractal<4096>::type>
+make_fractal(const char *name, const char * family) {
+  return {name, family};
+}
+
 } // namespace fractals
