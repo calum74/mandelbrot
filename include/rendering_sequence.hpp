@@ -72,24 +72,4 @@ protected:
   int width, height, stride;
 };
 
-template <typename T>
-class buffered_rendering_sequence : public async_rendering_sequence {
-public:
-  buffered_rendering_sequence(int w, int h, int stride)
-      : async_rendering_sequence(w, h, stride), output(w * h) {}
-
-  // !! Unclear whether we need the members to be atomic
-  // !! Visibility
-  // std::vector<std::atomic<T>> output;
-  std::vector<T> output;
-
-protected:
-  virtual T get_point(int x, int y) = 0;
-
-private:
-  void calculate_point(int x, int y, int) override {
-    output[x + y * width] = get_point(x, y);
-  }
-};
-
 } // namespace fractals

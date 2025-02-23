@@ -1,24 +1,27 @@
 #pragma once
-#include "rendering_sequence.hpp"
 #include "pixmap.hpp"
+#include "rendering_sequence.hpp"
 
 namespace fractals {
+class fractal_calculation;
 
-    template <typename T>
-    struct error_value
-    {
-        T value;
-        int error;
-    };
+class calculation_pixmap : public async_rendering_sequence {
+public:
+  using value_type = error_value<double>;
+  using pixmap = pixmap<value_type>;
 
-    class calculation_pixmap : public rendering_sequence {
-    public:
-        std::shared_ptr<fractal_calculation> calculation;
-        using value_type = error_value<double>;
-        pixmap<value_type> pixels;
+  calculation_pixmap(pixmap &pm, int stride, fractal_calculation &calculation);
 
-        void calculate_point(int x, int y, int w) override;
-        std::atomic<double> min_value, max_value;
-        std::atomic<std::uint64_t> points_calculated;
-    };
-}
+  std::atomic<double> min_depth, max_depth;
+  std::atomic<std::uint64_t> points_calculated;
+
+protected:
+  fractal_calculation &calculation;
+  pixmap &pixels;
+
+  void calculate_point(int x, int y, int w) override;
+  void interpolate_region(int cx, int cy, int x0, int y0, int x1, int y1);
+  bool maybe_fill_region(int x0, int y0, int x1, int y1);
+};
+
+} // namespace fractals

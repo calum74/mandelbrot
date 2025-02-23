@@ -29,6 +29,13 @@ private:
   std::vector<T> pixels;
 };
 
+template <typename T1, typename T2, typename Fn>
+void map_pixmap(const pixmap<T1> &src, pixmap<T2> &dest, Fn fn) {
+  for (int j = 0; j < src.height(); ++j)
+    for (int i = 0; i < src.width(); ++i)
+      dest(i, j) = fn(src(i, j));
+}
+
 template <typename T, typename Fn>
 void map_pixmap(const pixmap<T> &src, pixmap<T> &dest, double dx, double dy,
                 double r, Fn fn, T default_value) {
@@ -49,5 +56,10 @@ void map_pixmap(const pixmap<T> &src, pixmap<T> &dest, double dx, double dy,
       }
     }
 }
+
+template <typename T> struct error_value {
+  T value;
+  int error;
+};
 
 } // namespace fractals

@@ -78,22 +78,6 @@ void dump_tree(std::shared_ptr<Tree> tree, std::complex<double> radius,
   }
 }
 
-class test_rendering_sequence
-    : public fractals::buffered_rendering_sequence<double> {
-public:
-  test_rendering_sequence()
-      : fractals::buffered_rendering_sequence<double>(500, 500, 16) {}
-
-  std::atomic<int> points = 0;
-  int layers = 0;
-  double get_point(int x, int y) override {
-    ++points;
-    return x + y;
-  }
-
-  void layer_complete(int stride) override { ++layers; }
-};
-
 void test_sequence(int w, int h) {
   std::vector<bool> visited(w * h);
   for (int i = 0; i < w * h; ++i) {
@@ -135,14 +119,6 @@ int main() {
     while (seq1.next(x, y, s, c))
       ++count;
     assert(count == 50);
-  }
-
-  {
-    test_rendering_sequence s1;
-    std::atomic<bool> stop;
-    s1.calculate(1, stop);
-    assert(s1.points == 500 * 500);
-    assert(s1.layers == 5);
   }
 
   {
