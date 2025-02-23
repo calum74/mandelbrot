@@ -110,18 +110,13 @@ detail::MultiPrecisionFractal<
     typename Fractal<256>::type, typename Fractal<640>::type,
     typename Fractal<1024>::type, typename Fractal<1596>::type,
     typename Fractal<2048>::type, typename Fractal<4096>::type>
-make_fractal(const char *name) {
-  return {name, name};
+make_fractal(const char *name, const char * family) {
+  return {name, family};
 }
 
 template <template <int> class Fractal>
-detail::MultiPrecisionFractal<
-    typename Fractal<50>::type, typename Fractal<128>::type,
-    typename Fractal<256>::type, typename Fractal<640>::type,
-    typename Fractal<1024>::type, typename Fractal<1596>::type,
-    typename Fractal<2048>::type, typename Fractal<4096>::type>
-make_fractal(const char *name, const char * family) {
-  return {name, family};
+auto make_fractal(const char *name) {
+  return make_fractal<Fractal>(name, name);
 }
 
 } // namespace fractals

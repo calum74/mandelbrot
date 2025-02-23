@@ -104,3 +104,11 @@ void fractals::calculation_pixmap::interpolate_region(int cx, int cy, int x0,
     }
   }
 }
+
+double fractals::fractal_calculation::average_iterations() const { return 0; }
+
+double fractals::fractal_calculation::average_skipped() const { return 0; }
+
+void fractals::fractal_calculation::initialize(const view_coords &c, int x,
+                                               int y, std::atomic<bool> &stop) {
+}
