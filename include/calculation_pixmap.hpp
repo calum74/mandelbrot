@@ -22,6 +22,7 @@ protected:
   void calculate_point(int x, int y, int w) override;
   void interpolate_region(int cx, int cy, int x0, int y0, int x1, int y1);
   bool maybe_fill_region(int x0, int y0, int x1, int y1);
+  void interpolate_region_smooth(int x0, int y0, int x1, int y1);
 };
 
 } // namespace fractals
