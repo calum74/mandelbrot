@@ -8,7 +8,7 @@
 #include "mandelbrot.hpp"
 #include "orbit.hpp"
 #include "fractal_calculation.hpp"
-#include "convert.hpp"
+#include "number_cast.hpp"
 #include <iomanip>
 
 int main() {
