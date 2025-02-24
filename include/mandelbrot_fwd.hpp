@@ -7,6 +7,6 @@ class fractal;
 class fractal_calculation;
 class view_coords;
 
-template <typename T1, typename T2> T1 convert(const T2 &x);
+template <typename T1, typename T2> T1 number_cast(const T2 &x);
 template <typename C1, typename C2=C1> class plane;
 }

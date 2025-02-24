@@ -21,7 +21,7 @@ template <> struct convert_to<float, double> {
   static float get(double f) { return f; }
 };
 
-template <typename T1, typename T2> T1 convert(const T2 &x) {
+template <typename T1, typename T2> T1 number_cast(const T2 &x) {
   return convert_to<T1, T2>::get(x);
 }
 
@@ -63,7 +63,7 @@ template <typename T1, typename T2>
   requires(!std::same_as<T1, T2>)
 struct convert_to<std::complex<T1>, std::complex<T2>> {
   static std::complex<T1> get(const std::complex<T2> &c) {
-    return {convert<T1>(c.real()), convert<T1>(c.imag())};
+    return {number_cast<T1>(c.real()), number_cast<T1>(c.imag())};
   }
 };
 

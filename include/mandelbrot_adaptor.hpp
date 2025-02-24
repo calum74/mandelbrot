@@ -23,7 +23,7 @@ struct mandeldrop_adaptor {
     // Note that we can calculate deltas using low precision (`double`) complex
     // numbers. We just need to rearrange our calculation of the delta to avoid
     // loss of precision.
-    return DeltaType{0, 1} * d / fractals::convert<DeltaType>(c0 * (c0 + fractals::convert<C>(d)));
+    return DeltaType{0, 1} * d / fractals::number_cast<DeltaType>(c0 * (c0 + fractals::number_cast<C>(d)));
   }
 };
 } // namespace mandelbrot

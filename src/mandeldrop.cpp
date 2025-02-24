@@ -10,7 +10,7 @@ public:
   using Complex = std::complex<Real>;
 
   static bool valid_for(const view_coords &c) {
-    return c.r <= 4 && convert<double>(c.r) > 1e-2; // 10;
+    return c.r <= 4 && number_cast<double>(c.r) > 1e-2; // 10;
   }
 
   static view_coords initial_coords() { return {0, -1, 3, 500}; }
@@ -88,13 +88,13 @@ public:
     coords = {c, w, h};
     ref_x = (w / 2);
     ref_y = (h / 2);
-    c0 = {fractals::convert<SmallReal>(coords.x0) + fractals::convert<SmallReal>(coords.dx * ref_x),
-      fractals::convert<SmallReal>(coords.y0) + fractals::convert<SmallReal>(coords.dy * ref_y)};
+    c0 = {fractals::number_cast<SmallReal>(coords.x0) + fractals::number_cast<SmallReal>(coords.dx * ref_x),
+      fractals::number_cast<SmallReal>(coords.y0) + fractals::number_cast<SmallReal>(coords.dy * ref_y)};
     reference_orbit = {
         mandelbrot::make_basic_orbit<Calculation>(Adaptor::map(
-            HighPrecisionType{coords.x0 + fractals::convert<HighPrecisionReal>(
+            HighPrecisionType{coords.x0 + fractals::number_cast<HighPrecisionReal>(
                                               coords.dx * ref_x),
-                              coords.y0 + fractals::convert<HighPrecisionReal>(
+                              coords.y0 + fractals::number_cast<HighPrecisionReal>(
                                               coords.dy * ref_y)})),
         max_iterations, stop};
   }
@@ -104,7 +104,7 @@ public:
   // The call to `valid_precision` checks the size of the radius relative to
   // the size of a BigReal to make sure we have sufficient accuracy.
   static bool valid_for(const view_coords &c) {
-    return c.r <= 3 && fractals::valid_precision_for_inverse(convert<HighPrecisionReal>(c.r));
+    return c.r <= 3 && fractals::valid_precision_for_inverse(number_cast<HighPrecisionReal>(c.r));
   }
 
   // The initial coordinates to view the Mandelbrot set.

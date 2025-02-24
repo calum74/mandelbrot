@@ -146,7 +146,7 @@ void fractals::log_radius(std::ostream &os, double log_base_e) {
 
 double fractals::view_coords::ln_r() const {
   return fractals::log(
-      fractals::convert<fractals::high_exponent_double>(r));
+      fractals::number_cast<fractals::high_exponent_double>(r));
 }
 
 fractals::mapped_point

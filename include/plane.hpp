@@ -19,15 +19,15 @@ template <typename C1, typename C2> class plane {
 
   plane(const view_coords &c, int pw, int ph) : pw(pw), ph(ph) {
     if (pw > ph) {
-      y0 = convert<C1>(c.y) - convert<C1>(c.r);
-      h = convert<C2>(c.r) * C2(2);
-      w = convert<C2>(c.r) * C2((2.0 * pw) / ph);
-      x0 = convert<C1>(c.x) - convert<C1>(w * C2(0.5));
+      y0 = number_cast<C1>(c.y) - number_cast<C1>(c.r);
+      h = number_cast<C2>(c.r) * C2(2);
+      w = number_cast<C2>(c.r) * C2((2.0 * pw) / ph);
+      x0 = number_cast<C1>(c.x) - number_cast<C1>(w * C2(0.5));
     } else {
-      x0 = convert<C1>(c.x) - convert<C1>(c.r);
-      w = convert<C2>(c.r) * C2(2);
-      h = convert<C2>(c.r) * C2((2.0 * ph) / pw);
-      y0 = convert<C1>(c.y) - convert<C1>(h * C2(0.5));
+      x0 = number_cast<C1>(c.x) - number_cast<C1>(c.r);
+      w = number_cast<C2>(c.r) * C2(2);
+      h = number_cast<C2>(c.r) * C2((2.0 * ph) / pw);
+      y0 = number_cast<C1>(c.y) - number_cast<C1>(h * C2(0.5));
     }
     dx = w * C2(1.0 / pw);
     dy = h * C2(1.0 / ph);

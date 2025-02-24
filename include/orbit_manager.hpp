@@ -178,9 +178,9 @@ private:
       using DeltaReal = typename DeltaType::value_type;
       DeltaType orbit_delta{
           max_delta.real() *
-              convert<DeltaReal>(double(x + 0.5) / double(lookup_width) - 0.5),
+              number_cast<DeltaReal>(double(x + 0.5) / double(lookup_width) - 0.5),
           max_delta.imag() *
-              convert<DeltaReal>(double(y + 0.5) / double(lookup_height) -
+              number_cast<DeltaReal>(double(y + 0.5) / double(lookup_height) -
                                  0.5)};
 
       auto series = std::make_shared<secondary_orbit>(
@@ -203,9 +203,9 @@ public:
   relative_orbit lookup(DeltaType delta, int max_iterations) const {
     // Find the cell corresponding to delta
     int x = 0.5 * lookup_width *
-            (1.0 + convert<double>(delta.real() / max_delta.real()));
+            (1.0 + number_cast<double>(delta.real() / max_delta.real()));
     int y = 0.5 * lookup_height *
-            (1.0 + convert<double>(delta.imag() / max_delta.imag()));
+            (1.0 + number_cast<double>(delta.imag() / max_delta.imag()));
 
     if (x >= lookup_width)
       x = lookup_width - 1;

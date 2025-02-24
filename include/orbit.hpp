@@ -84,7 +84,7 @@ public:
   using value_type = T;
   using calculation = typename ReferenceOrbit::calculation;
 
-  value_type operator*() const { return convert<value_type>(*reference); }
+  value_type operator*() const { return number_cast<value_type>(*reference); }
 
   converted_orbit &operator++() {
     ++reference;
@@ -127,7 +127,7 @@ public:
   }
 
   value_type operator*() const {
-    return *reference_orbit + convert<value_type>(epsilon);
+    return *reference_orbit + number_cast<value_type>(epsilon);
   }
 
   value_type reference_z() const { return *reference_orbit; }
@@ -152,7 +152,7 @@ public:
     // Store up to max_iterations or until orbit has escaped
     // Note that `orbit` is a value type so is reset to the beginning
     do {
-      values.push_back(convert<C>(*orbit));
+      values.push_back(number_cast<C>(*orbit));
       ++orbit;
     } while (!stop && values.size() <= max_iterations &&
              !escaped(values.back()));
@@ -205,7 +205,7 @@ public:
   taylor_series_orbit(ReferenceOrbit o) : orbit(o) {}
 
   // Convert the high-precision value into a low-precision value
-  value_type operator*() const { return convert<value_type>(*orbit); }
+  value_type operator*() const { return number_cast<value_type>(*orbit); }
 
   taylor_series_orbit &operator++() {
 
@@ -242,7 +242,7 @@ public:
       : n{starting_iteration}, j{start_j}, delta(delta),
         epsilon{starting_epsilon}, reference{&ref} {
     if (j == ref.size() - 1) {
-      epsilon = (*reference)[j] + convert<value_type>(epsilon);
+      epsilon = (*reference)[j] + number_cast<value_type>(epsilon);
       j = 0;
     }
   }
@@ -260,7 +260,7 @@ public:
 
   value_type operator*() const {
     assert(j >= 0 && j < reference->size());
-    return (*reference)[j] + convert<value_type>(epsilon);
+    return (*reference)[j] + number_cast<value_type>(epsilon);
   }
 
   perturbation_orbit &operator++() {
@@ -272,7 +272,7 @@ public:
     assert(j >= 0 && j < reference->size());
     auto z = **this;
     if (j == (*reference).size() - 1 || escaped((*reference)[j]) ||
-        fractals::norm(z) < fractals::norm(convert<value_type>(epsilon))) {
+        fractals::norm(z) < fractals::norm(number_cast<value_type>(epsilon))) {
       // We have exceeded the bounds of the current orbit
       // We need to reset the current orbit.
       // Thanks to
@@ -331,14 +331,14 @@ maximum_delta_norm(const std::array<TermType, Terms> &terms) {
 template <Complex DeltaType, Complex TermType, unsigned long Terms>
 DeltaType evaluate_epsilon(DeltaType delta,
                            const std::array<TermType, Terms> &terms) {
-  TermType d = convert<TermType>(delta);
+  TermType d = number_cast<TermType>(delta);
   TermType dc = d;
   TermType result = terms[0] * dc;
   for (int i = 1; i < Terms; ++i) {
     d = d * dc;
     result += terms[i] * d;
   }
-  return convert<DeltaType>(result);
+  return number_cast<DeltaType>(result);
 }
 
 /*
@@ -412,7 +412,7 @@ private:
     if (e && !escaped((*this)[skipped])) {
       // Seek upwards
       min = skipped;
-      epsilon = convert<epsilon_type>(*e);
+      epsilon = number_cast<epsilon_type>(*e);
       for (int mid = skipped + window_size; mid < max;
            mid += (window_size *= 2)) {
         e = this->epsilon(mid, delta, nd);
@@ -477,7 +477,7 @@ private:
       // Each term has a "norm" giving an indication of its size.
       // We need to make sure that each term is sufficiently "small"
       // relative to the previous term.
-      max_delta_norm = convert<delta_norm>(
+      max_delta_norm = number_cast<delta_norm>(
           maximum_delta_norm<TermPrecision1, TermPrecision2>(terms));
     }
 
@@ -485,8 +485,8 @@ private:
     std::optional<epsilon_type> epsilon(delta_type delta, delta_norm nd) const {
       if (nd > max_delta_norm)
         return std::nullopt;
-      return convert<epsilon_type>(
-          evaluate_epsilon(convert<term_type>(delta), terms));
+      return number_cast<epsilon_type>(
+          evaluate_epsilon(number_cast<term_type>(delta), terms));
     }
   };
 
@@ -494,7 +494,7 @@ private:
   std::vector<Entry> entries;
 
   void get_next() {
-    entries.push_back({convert<value_type>(*reference), reference.terms});
+    entries.push_back({number_cast<value_type>(*reference), reference.terms});
     ++reference;
   }
 
@@ -511,8 +511,8 @@ public:
   relative_orbit make_relative_orbit(delta_type delta, int limit,
                                      int &iterations_skipped) const {
     auto s = find_iterations_to_skip(delta, entries.size(), iterations_skipped);
-    return {*this, convert<epsilon_type>(delta), iterations_skipped,
-            iterations_skipped, convert<epsilon_type>(s)};
+    return {*this, number_cast<epsilon_type>(delta), iterations_skipped,
+            iterations_skipped, number_cast<epsilon_type>(s)};
   }
 };
 

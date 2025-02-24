@@ -256,16 +256,16 @@ void test_conversion(double x) {
   using HP = fractals::high_precision_real<5*64>;
 
   auto a = R(x);
-  auto b = fractals::convert<HP>(a);
-  auto c = fractals::convert<R>(b);
-  auto d = fractals::convert<HP>(c);
+  auto b = fractals::number_cast<HP>(a);
+  auto c = fractals::number_cast<R>(b);
+  auto d = fractals::number_cast<HP>(c);
   std::cout << x << std::endl;
   std::cout << a << "=" << b << "=" << c << std::endl;
 
   // assert(a == c);
   assert(b == d);
-  auto e = fractals::convert<double>(a);
-  auto f = fractals::convert<double>(b);
+  auto e = fractals::number_cast<double>(a);
+  auto f = fractals::number_cast<double>(b);
   assert(e == x);
   std::cout << "f=" << f << std::endl;
   std::cout << "x=" << x << std::endl;
@@ -290,8 +290,8 @@ void high_exponent_real_tests() {
 
   // Conversion
 
-  auto c = fractals::convert<HP3>(R{2.5});
-  std::cout << fractals::convert<R>(fractals::convert<HP3>(R{2.5})).to_double()
+  auto c = fractals::number_cast<HP3>(R{2.5});
+  std::cout << fractals::number_cast<R>(fractals::number_cast<HP3>(R{2.5})).to_double()
             << std::endl;
   r2 = 2.5;
   assert(r2 == R(2.5));
@@ -319,7 +319,7 @@ void high_exponent_real_tests() {
     HP20 h1 = 1;
     // Bug is here
     h1 = h1 >> (9 * 64); // 1288); //  * 64);
-    auto h2 = fractals::convert<R>(h1);
+    auto h2 = fractals::number_cast<R>(h1);
     std::cout << h1 << std::endl << h2;
   }
 }

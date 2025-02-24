@@ -29,10 +29,10 @@ public:
 
     max_iterations = c.max_iterations;
 
-    auto new_center = HighPrecisionType{convert<HighPrecisionReal>(c.x),
-                                        convert<HighPrecisionReal>(c.y)};
+    auto new_center = HighPrecisionType{number_cast<HighPrecisionReal>(c.x),
+                                        number_cast<HighPrecisionReal>(c.y)};
 
-    auto delta = fractals::convert<DeltaType>(new_center - center);
+    auto delta = fractals::number_cast<DeltaType>(new_center - center);
 
     center = new_center;
 
@@ -46,10 +46,10 @@ public:
       return;
 
     reference_orbit_type init(HighPrecisionType{
-        coords.x0 + fractals::convert<HighPrecisionReal>(coords.dx) *
-                        fractals::convert<HighPrecisionReal>(ref_x),
-        coords.y0 + fractals::convert<HighPrecisionReal>(coords.dy) *
-                        fractals::convert<HighPrecisionReal>(ref_y)});
+        coords.x0 + fractals::number_cast<HighPrecisionReal>(coords.dx) *
+                        fractals::number_cast<HighPrecisionReal>(ref_x),
+        coords.y0 + fractals::number_cast<HighPrecisionReal>(coords.dy) *
+                        fractals::number_cast<HighPrecisionReal>(ref_y)});
 
     orbits.new_view(
         delta, DeltaType{DeltaReal(0.5) * coords.w, DeltaReal(0.5) * coords.h},
@@ -62,7 +62,7 @@ public:
   // the size of a BigReal to make sure we have sufficient accuracy.
   static bool valid_for(const view_coords &c) {
     return c.r <= 2 &&
-           fractals::valid_precision(convert<HighPrecisionReal>(c.r));
+           fractals::valid_precision(number_cast<HighPrecisionReal>(c.r));
   }
 
   // The initial coordinates to view the Mandelbrot set.
