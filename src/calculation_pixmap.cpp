@@ -40,6 +40,7 @@ void fractals::calculation_pixmap::calculate_point(int x, int y, int stride) {
       maybe_fill_region(x - stride, y - stride, x, y);
     }
 
+#if 1 
     auto d = stride / 2;
     int x0 = x - d;
     int x1 = x + d;
@@ -54,6 +55,7 @@ void fractals::calculation_pixmap::calculate_point(int x, int y, int stride) {
     if (y1 >= pixels.height())
       y1 = pixels.height() - 1;
     interpolate_region(x, y, x0, y0, x1, y1);
+#endif
   }
 }
 
@@ -76,6 +78,25 @@ bool fractals::calculation_pixmap::maybe_fill_region(int x0, int y0, int x1,
         pixels(i, j) = c00;
     return true;
   }
+
+#if 0 
+  for (int j = y0; j <= y1; ++j) {
+    for (int i = x0; i <= x1; ++i) {
+      auto &p = pixels(i, j);
+      int new_error = std::min(i - x0, x1 - i) + std::min(j - y0, y1 - j);
+
+      if (new_error> 0 && new_error < p.error) {
+        double px = (i - x0) / (double)(x1 - x0);
+        double py = (j - y0) / (double)(y1 - y0);
+        double new_value = c00.value * (1 - px) * (1 - py) +
+                           c10.value * px * (1 - py) +
+                           c01.value * (1 - px) * py + c11.value * px * py;
+        p = {new_value, new_error};
+      }
+    }
+  }
+#endif
+
   return false;
 }
 

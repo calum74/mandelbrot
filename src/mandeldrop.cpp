@@ -135,8 +135,8 @@ public:
 
     // This calculation creates a "fractional" iteration
     // used for smoother rendering.
-    auto zn = log(norm(*z)) / 2;
-    auto nu = log(log(zn) / log(2)) / log(2);
+    auto zn = log2(norm(*z));
+    auto nu = log2(zn);
     return z.iteration() + 1 - nu;
   }
 
