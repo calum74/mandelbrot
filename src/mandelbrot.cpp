@@ -61,7 +61,6 @@ public:
   // The call to `valid_precision` checks the size of the radius relative to
   // the size of a BigReal to make sure we have sufficient accuracy.
   static bool valid_for(const view_coords &c) {
-    // !! Bug in comparison here - allows up to 3.
     return c.r <= 2 &&
            fractals::valid_precision(convert<HighPrecisionReal>(c.r));
   }
@@ -131,15 +130,33 @@ private:
       orbits;
 };
 
-// Configure a Mandelbrot set fractal based on its power N and precision.
-template <int N> struct mandelbrot_generator {
+// Configure a Mandelbrot set fractal based on its power and precision.
+template <int Power> struct mandelbrot_generator {
   template <int Precision> struct precision {
+
+    // The different numerical types we need.
+    // Uses the helper type `fractals::complex_number` to specify a complex number of the desired precision.
+    using low_precision_type = fractals::complex_number<48, 0, 0>;
+    using delta_type = fractals::complex_number<0, -2 * Precision, 0>;
+    using term_type = fractals::complex_number<0, -1000000, 1000000>;
+    using high_precision_type = fractals::complex_number<Precision, 0, 0>;
+
+    // The equations we need
+    using calculation_type = mandelbrot::mandelbrot_calculation<Power>;
+
+    // Various fudge factors. The reason these are here is to render
+    // more quickly without introducing glitches, otherwise we would
+    // just calculate everything to the highest precision but that would be
+    // too slow.
+    static constexpr int series_terms = 4;
+    static constexpr int term_precision1 = 25;
+    static constexpr int term_precision2 = 100;
+    static constexpr int num_orbits = Precision <= 1024 ? 3 : 1;
+
     using type = PerturbatedMandelbrotCalculation<
-        std::complex<double>, fractals::complex_number<0, -Precision, 0>,
-        std::complex<fractals::high_exponent_double>,
-        std::complex<fractals::real_number<Precision, 0, 0>>,
-        mandelbrot::mandelbrot_calculation<N>, 4, 25, 100,
-        (Precision <= 1024 ? 3 : 1)>;
+        low_precision_type, delta_type, term_type, high_precision_type,
+        calculation_type, series_terms, term_precision1, term_precision2,
+        num_orbits>;
   };
 };
 

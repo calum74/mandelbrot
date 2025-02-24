@@ -46,7 +46,7 @@ struct make_real<Digits, MinExp, MaxExp> {
 
 inline bool valid_precision_for_inverse(double d) { return d>=1e5 * std::numeric_limits<double>::epsilon(); }
 
-inline bool valid_precision(double d) { return d>=1e5 * std::numeric_limits<double>::epsilon(); }
+inline bool valid_precision(double d) { return d>=1e7 * std::numeric_limits<double>::epsilon(); }
 
 inline double inverse(double d) { return 1 / d; }
 
