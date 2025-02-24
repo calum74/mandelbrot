@@ -106,9 +106,9 @@ public:
 
     // This calculation creates a "fractional" iteration
     // used for smoother rendering.
-    auto zn = log(fractals::norm(*z)) / 2;
-    auto nu = log(log(zn) / log(2)) / log(2);
-    return z.iteration() + 1 - nu;
+    auto zn = log2(fractals::norm(*z));
+    auto nu = log2(zn)/log2(Calculation::order);
+    return z.iteration() + 1-nu;
   }
 
 private:
@@ -135,7 +135,8 @@ template <int Power> struct mandelbrot_generator {
   template <int Precision> struct precision {
 
     // The different numerical types we need.
-    // Uses the helper type `fractals::complex_number` to specify a complex number of the desired precision.
+    // Uses the helper type `fractals::complex_number` to specify a complex
+    // number of the desired precision.
     using low_precision_type = fractals::complex_number<48, 0, 0>;
     using delta_type = fractals::complex_number<0, -2 * Precision, 0>;
     using term_type = fractals::complex_number<0, -1000000, 1000000>;

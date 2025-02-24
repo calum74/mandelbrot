@@ -49,5 +49,7 @@ To see this library in action, see [tutorial.cpp](test/tutorial.cpp). You can al
 | `choose<int N, int M>()` | complex_number.hpp | Statically calculates ${N\choose M}$. |
 | `escaped()` | complex_number.hpp | Tests for escape. |
 `make_fractal<...>()` | make_fractal.hpp | Creates a `fractal`. 
+`number_cast<T>()` | number_cast.hpp | Converts a number from one type to another.
 | `pow<int N>()` | complex_number.hpp | Raises a complex number to a fixed integer power in $lg N$ multiplications. |
 `top_percentile()` | percentile.hpp | Returns an element from an unsorted array at the given percentile in $O(n)$ time.
+
