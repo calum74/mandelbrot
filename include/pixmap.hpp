@@ -39,9 +39,6 @@ void map_pixmap(const pixmap<T1> &src, pixmap<T2> &dest, Fn fn) {
 template <typename T, typename Fn>
 void map_pixmap(const pixmap<T> &src, pixmap<T> &dest, double dx, double dy,
                 double r, Fn fn, T default_value) {
-  bool zoom_eq = r == 1.0;
-  bool zoom_out = r > 1.0;
-
   for (int j = 0; j < dest.height(); ++j)
     for (int i = 0; i < dest.width(); ++i) {
       int i2 = r * i + dx;
