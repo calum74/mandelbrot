@@ -11,8 +11,8 @@ std::ostream &fractals::operator<<(std::ostream &os,
             << "\nY: " << vp.y << "\nR: " << vp.r
             << "\nMax-iterations: " << vp.max_iterations
             << "\nAlgorithm: " << vp.algorithm
-            << "\nColour-scheme: " << vp.colour_seed
-            << "\nColour-gradient: " << vp.colour_gradient << "\n";
+            << "\nColour-scheme: " << vp.shader.colour_scheme
+            << "\nColour-gradient: " << vp.shader.colour_gradient << "\n";
 }
 
 std::istream &fractals::operator>>(std::istream &is,
@@ -36,9 +36,9 @@ std::istream &fractals::operator>>(std::istream &is,
     else if (key == "Algorithm")
       std::getline(is, vp.algorithm);
     else if (key == "Colour-scheme")
-      is >> vp.colour_seed;
+      is >> vp.shader.colour_scheme;
     else if (key == "Colour-gradient")
-      is >> vp.colour_gradient;
+      is >> vp.shader.colour_gradient;
     else
       break;
   }

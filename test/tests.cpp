@@ -140,8 +140,8 @@ int main() {
                                  .r = "0.5",
                                  .max_iterations = 500,
                                  .algorithm = "abc def",
-                                 .colour_seed = 99,
-                                 .colour_gradient = 0.001},
+                                 .shader = {.colour_scheme = 99,
+                                 .colour_gradient = 0.001}},
         p2;
     std::stringstream ss1, ss2;
     ss1 << p1;
@@ -149,7 +149,7 @@ int main() {
     ss2 << p2;
     assert(ss1.str() == ss2.str());
     assert(p1.algorithm == p2.algorithm);
-    assert(p1.colour_seed == p2.colour_seed);
+    assert(p1.shader.colour_scheme == p2.shader.colour_scheme);
   }
 
   // Test Mandelbrot deltas

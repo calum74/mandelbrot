@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <iostream>
+#include "shader_parameters.hpp"
 
 namespace fractals {
 
@@ -9,9 +10,9 @@ struct view_parameters {
   std::string x, y, r;
   int max_iterations;
   std::string algorithm;
-  int colour_seed = 0;
-  double colour_gradient = 10;
   std::string title; // User-defined string
+
+  shader_parameters shader;
 };
 
 std::istream &operator>>(std::istream &is, view_parameters &params);
