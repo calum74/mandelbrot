@@ -3,7 +3,7 @@
 #include <cassert>
 
 fractals::calculation_pixmap::calculation_pixmap(
-    pixmap &pm, int stride, fractal_calculation &calculation)
+    pixmap_type &pm, int stride, fractal_calculation &calculation)
     : pixels(pm), async_rendering_sequence(pm.width(), pm.height(), stride),
       calculation(calculation) {
 
