@@ -16,4 +16,9 @@ double calculate_brightness(double dx, double dy, double colour_gradient,
 
 std::vector<RGB> generate_colours(int size, int seed);
 
+
+
+RGB get_colour(const std::vector<RGB> &colours, double iteration,
+    double gradient, double offset, double brightness);
+
 } // namespace fractals

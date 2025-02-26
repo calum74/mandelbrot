@@ -5,7 +5,8 @@
 double fractals::calculate_brightness(double dx, double dy,
                                       double colour_gradient,
                                       double ambient_brightness,
-                                      double source_brightness, const unit_vector & light_source) {
+                                      double source_brightness,
+                                      const unit_vector &light_source) {
   dx /= colour_gradient;
   dy /= colour_gradient;
 
@@ -30,12 +31,17 @@ double fractals::calculate_brightness(double dx, double dy,
   return ambient_brightness + source_brightness * dot_product;
 }
 
-std::vector<fractals::RGB> fractals::generate_colours(int size, int seed)
-{
+std::vector<fractals::RGB> fractals::generate_colours(int size, int seed) {
   std::mt19937 e(seed);
   std::vector<RGB> newColours(size);
   for (auto &c : newColours) {
     c = e() & 0xffffff;
   }
   return newColours;
+}
+
+fractals::unit_vector fractals::spherical_to_cartesian(double direction,
+                                                       double elevation) {
+  return {std::cos(elevation) * std::cos(direction),
+          std::cos(elevation) * std::sin(direction), std::sin(elevation)};
 }
