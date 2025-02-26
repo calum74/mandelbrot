@@ -5,9 +5,7 @@
 double fractals::calculate_brightness(double dx, double dy,
                                       double colour_gradient,
                                       double ambient_brightness,
-                                      double source_brightness, double source_x,
-                                      double source_y, double source_z,
-                                      double source_length) {
+                                      double source_brightness, const unit_vector & light_source) {
   dx /= colour_gradient;
   dy /= colour_gradient;
 
@@ -22,9 +20,9 @@ double fractals::calculate_brightness(double dx, double dy,
                                            surface_normal_z * surface_normal_z);
 
   double dot_product =
-      (surface_normal_x * source_x + surface_normal_y * source_y +
-       surface_normal_z * source_z) /
-      (surface_normal_length * source_length);
+      (surface_normal_x * light_source.x + surface_normal_y * light_source.y +
+       surface_normal_z * light_source.z) /
+      surface_normal_length;
 
   if (dot_product < 0)
     dot_product = 0;
