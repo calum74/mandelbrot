@@ -45,3 +45,35 @@ fractals::unit_vector fractals::spherical_to_cartesian(double direction,
   return {std::cos(elevation) * std::cos(direction),
           std::cos(elevation) * std::sin(direction), std::sin(elevation)};
 }
+
+fractals::RGB fractals::get_colour_from_index(const std::vector<RGB> &colours,
+                                              double index, double brightness) {
+  int i = index;
+  auto f2 = index - i;
+  auto f1 = 1.0 - f2;
+
+  i %= colours.size();
+  int j = (i + 1) % colours.size();
+  auto c1 = colours[i];
+  auto c2 = colours[j];
+
+  auto r = brightness * (red(c1) * f1 + red(c2) * f2);
+  auto g = brightness * (green(c1) * f1 + green(c2) * f2);
+  auto b = brightness * (blue(c1) * f1 + blue(c2) * f2);
+
+  if (r > 255)
+    r = 255;
+  if (g > 255)
+    g = 255;
+  if (b > 255)
+    b = 255;
+
+  if (r < 0)
+    r = 0;
+  if (g < 0)
+    g = 0;
+  if (b < 0)
+    b = 0;
+
+  return make_rgb(r, g, b);
+}

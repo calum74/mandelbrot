@@ -34,7 +34,5 @@ void fractals::gradient_stack::push(double iteration, double new_gradient,
       last_offset + iteration / last_gradient - iteration / new_gradient;
   stack.push_back({iteration, new_gradient, new_offset});
 }
-void fractals::gradient_stack::clear()
-{
-  stack.clear();
-}
+
+void fractals::gradient_stack::clear() { stack.clear(); }
