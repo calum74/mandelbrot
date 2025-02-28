@@ -52,7 +52,7 @@ private:
   std::shared_ptr<fractal_calculation_factory> fractal;
   listener *current_listener;
 
-  view_coords current_coords;  // What we're currently calculating
+  view_coords current_coords; // What we're currently calculating
   calculation_metrics metrics;
 
   std::future<void> calculation_future;
@@ -67,7 +67,8 @@ private:
   bool animating;
 
   // True in quality rendering mode,
-  // where we only display the new image once it has completely finished calculating.
+  // where we only display the new image once it has completely finished
+  // calculating.
   bool paused_waiting_for_calculation;
 
   view_pixmap previous_calculation_values, current_calculation_values;
@@ -81,18 +82,21 @@ private:
   void stop_animating();
 
   void animation_thread();
-  void complete_layer(double min_depth, double max_depth, std::uint64_t points_calculated, int stride);
+  void complete_layer(double min_depth, double max_depth,
+                      std::uint64_t points_calculated, int stride);
   bool valid() const;
 
   void freeze_current_view();
 };
 
+// Perform a pixel-by-pixel remapping, interpolate values and don't increase the
+// error values
 void map_values(const view_pixmap &src, view_pixmap &dest, double dx, double dy,
-  double r);
+                double r);
 
-// Perform a pixel-by-pixel remapping, interpolate values and don't increase the error values
-void interpolate_values(const view_pixmap &src, view_pixmap &dest, double dx, double dy,
-double r);
-
+// Perform a pixel-by-pixel remapping, interpolate values and don't increase the
+// error values
+void interpolate_values(const view_pixmap &src, view_pixmap &dest, double dx,
+                        double dy, double r);
 
 } // namespace fractals

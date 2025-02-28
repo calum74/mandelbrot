@@ -220,15 +220,12 @@ void interpolate_values(const view_pixmap &src, view_pixmap &dest, double dx,
 }
 } // namespace fractals
 
-void fractals::map_values(const view_pixmap &src, view_pixmap &dest, double dx,
+void fractals::interpolate_values(const view_pixmap &src, view_pixmap &dest, double dx,
                           double dy, double r) {
-  bool zoom_eq = r == 1.0;
-  bool zoom_out = r > 1.0;
-
   interpolate_values(src, dest, dx, dy, r, [&](int e) { return e; });
 }
 
-void fractals::interpolate_values(const view_pixmap &src, view_pixmap &dest,
+void fractals::map_values(const view_pixmap &src, view_pixmap &dest,
                                   double dx, double dy, double r) {
   bool zoom_eq = r == 1.0;
   bool zoom_out = r > 1.0;
