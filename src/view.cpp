@@ -82,8 +82,21 @@ void fractals::view::animation_thread() {
 void fractals::view::complete_layer(double min_depth, double max_depth,
                                     std::uint64_t points_calculated,
                                     int stride) {
-  // If we're not animating, or we have finished animating this step,
-  // copy the pixels over and notify the listener.
+  if(!animating)
+  {
+    // We are rendering directly to the output
+    // Copy the pixels to the output, update the metrics and notify the listener.
+
+    for(std::size_t i=0; i<current_calculation_values.size(); ++i)
+      values[i] = current_calculation_values[i].value;
+
+      metrics.points_calculated = points_calculated;
+    metrics.min_depth = min_depth;
+    metrics.max_depth = max_depth;
+    metrics.fully_evaluated = stride==1;
+
+    current_listener->update(metrics);
+  }
 }
 
 void fractals::view::set_size(int w, int h) {
@@ -107,11 +120,43 @@ void fractals::view::set_threading(int n) {
 
 void fractals::view::set_fractal(const fractals::fractal &f) {
   fractal = f.create();
+  set_coords(fractal->initial_coords());
+}
+
+void fractals::view::set_coords(const view_coords &vc) {
+  stop_animating();
+  stop_calculating();
   current_coords = fractal->initial_coords();
+  calculation =
+      fractal->create(current_coords, current_calculation_values.width(),
+                      current_calculation_values.height(), stop_calculation);
 }
 
 bool fractals::view::valid() const {
   return fractal && current_listener && calculation_threads > 0 &&
          current_calculation_values.width() > 0 &&
          current_calculation_values.height() > 0;
+}
+
+void fractals::view::animate_to(int x, int y, std::chrono::duration<double> duration)
+{
+  stop_calculating();
+  stop_animating();
+
+  previous_calculation_values = current_calculation_values;
+}
+
+void fractals::view::animate_to_center(std::chrono::duration<double> duration)
+{
+  
+}
+
+void fractals::view::zoom(int x, int y, double r)
+{
+  std::cout << "Zoom\n";
+}
+
+void fractals::view::scroll(int dx, int dy)
+{
+  std::cout << "Scroll\n";
 }

@@ -31,8 +31,9 @@ public:
   void set_coords(const view_coords &new_coords);
   void set_threading(int threads); // 0 for hardware
 
-  // Performs a smooth zoom in or a zoom out to the specified point.
-  void animate_to(int x, int y, double ratio, double duration);
+  // Performs a smooth zoom x2 to the specified point.
+  void animate_to(int x, int y, std::chrono::duration<double> duration);
+  void animate_to_center(std::chrono::duration<double> duration);
 
   // Performs an instant zoom in or out to the given point
   void zoom(int x, int y, double ratio);
@@ -56,6 +57,15 @@ private:
   std::atomic<bool> stop_calculation;
   std::atomic<bool> stop_animation;
   std::condition_variable animation_condition;
+
+  // True if we are calculating in the background.
+  // This means that we'll display a zoom of the background image,
+  // not the currently calculated image.
+  bool animating;
+
+  // True in quality rendering mode,
+  // where we only display the new image once it has completely finished calculating.
+  bool paused_waiting_for_calculation;
 
   pixmap<error_value<double>> previous_calculation_values, current_calculation_values;
 
