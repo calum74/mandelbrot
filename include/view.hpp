@@ -40,6 +40,7 @@ public:
   // Performs an instant scroll to the given point
   void scroll(int dx, int dy);
 
+  void start_calculating();
   void stop_current_animation_and_set_as_current();
 
 private:
@@ -62,7 +63,6 @@ private:
 
   int calculation_threads;
 
-  void start_calculating();
   void stop_calculating();
   void start_animating();
   void stop_animating();
@@ -70,5 +70,7 @@ private:
   void animation_thread();
 
   void complete_layer(double min_depth, double max_depth, std::uint64_t points_calculated, int stride);
+
+  bool valid() const;
 };
 } // namespace fractals
