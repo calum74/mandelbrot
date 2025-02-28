@@ -7,6 +7,9 @@
 #include <future>
 
 namespace fractals {
+
+using view_pixmap = pixmap<error_value<double>>;
+
 /*
 This is currently a work in progress.
 
@@ -17,7 +20,7 @@ public:
   view();
   ~view();
 
-  pixmap<double> values;
+  view_pixmap values;
 
   class listener {
   public:
@@ -67,7 +70,7 @@ private:
   // where we only display the new image once it has completely finished calculating.
   bool paused_waiting_for_calculation;
 
-  pixmap<error_value<double>> previous_calculation_values, current_calculation_values;
+  view_pixmap previous_calculation_values, current_calculation_values;
 
   class my_calculation_pixmap;
 
@@ -78,9 +81,18 @@ private:
   void stop_animating();
 
   void animation_thread();
-
   void complete_layer(double min_depth, double max_depth, std::uint64_t points_calculated, int stride);
-
   bool valid() const;
+
+  void freeze_current_view();
 };
+
+void map_values(const view_pixmap &src, view_pixmap &dest, double dx, double dy,
+  double r);
+
+// Perform a pixel-by-pixel remapping, interpolate values and don't increase the error values
+void interpolate_values(const view_pixmap &src, view_pixmap &dest, double dx, double dy,
+double r);
+
+
 } // namespace fractals
