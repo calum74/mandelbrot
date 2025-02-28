@@ -24,8 +24,9 @@ public:
 
   class listener {
   public:
+    virtual void redraw() = 0;
     virtual void update(const calculation_metrics &) = 0;
-    virtual void animation_timeout(const calculation_metrics &) = 0;
+    virtual void animation_complete(const calculation_metrics &) = 0;
   };
 
   void set_size(int w, int h);
@@ -35,17 +36,19 @@ public:
   void set_threading(int threads); // 0 for hardware
 
   // Performs a smooth zoom x2 to the specified point.
-  void animate_to(int x, int y, std::chrono::duration<double> duration);
-  void animate_to_center(std::chrono::duration<double> duration);
+  void animate_to(int x, int y, std::chrono::duration<double> duration, bool wait_for_completion);
+  void animate_to_center(std::chrono::duration<double> duration, bool wait_for_completion);
 
   // Performs an instant zoom in or out to the given point
+  // Cancels any animations in progress
   void zoom(int x, int y, double ratio);
 
   // Performs an instant scroll to the given point
+  // Cancels any animations in progress
   void scroll(int dx, int dy);
 
-  void start_calculating();
   void stop_current_animation_and_set_as_current();
+  void start_calculating();
 
 private:
   std::shared_ptr<fractal_calculation> calculation;
@@ -59,6 +62,8 @@ private:
   std::future<void> animation_future;
   std::atomic<bool> stop_calculation;
   std::atomic<bool> stop_animation;
+  std::atomic<bool> calculation_completed;
+  std::mutex mutex;
   std::condition_variable animation_condition;
 
   // True if we are calculating in the background.
@@ -69,7 +74,19 @@ private:
   // True in quality rendering mode,
   // where we only display the new image once it has completely finished
   // calculating.
+  bool wait_for_calculation_to_complete;
   bool paused_waiting_for_calculation;
+
+  // Which point we are zooming into
+  int zoom_x, zoom_y;
+
+  // How far we have zoomed so far
+  // 1.0 = just started
+  // 0.5 = finished zooming
+  double rendered_zoom_ratio;
+
+  std::chrono::time_point<std::chrono::system_clock> animation_start;
+  std::chrono::duration<double> animation_duration;
 
   view_pixmap previous_calculation_values, current_calculation_values;
 

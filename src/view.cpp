@@ -57,31 +57,57 @@ void fractals::view::stop_animating() {
 
 void fractals::view::animation_thread() {
   while (!stop_animation) {
-    std::unique_lock<std::mutex> lock;
+    std::unique_lock<std::mutex> lock(mutex);
     auto e = animation_condition.wait_for(lock, 10ms);
 
     if (e == std::cv_status::timeout && !stop_animation) {
+      std::cout << "Animation frame!\n";
+      std::chrono::duration<double> duration =
+          std::chrono::system_clock::now() - animation_start;
 
-      // If we are in the animation time,
-      // Are we in the animation time
-      // Look at the wallclock time...
-      // Time to
-      // The condition
+      double time_ratio = duration.count() / animation_duration.count();
 
-      // If we have finished animating, then either
-      // a) we have finished calculating
-      // b) we have not finished calculating, and we need to wait for the
-      // calculation to finish c) we haven't finished calculating, and we show
-      // the intermediate results straight away. If we finished calculating,
-      // then copy the pixels to the output and we are finished If we haven't
-      // finished calculating, then
+
+      if (time_ratio >= 1) {
+        time_ratio = 1;
+        stop_animation = true;
+        animating = false;
+      }
+      rendered_zoom_ratio = std::pow(0.5, time_ratio);
+
+      // !! Use the mutex rather than atomics
+      bool display_previous_image =
+      time_ratio < 1 ||
+          (wait_for_calculation_to_complete && !calculation_completed);
+
+      if (display_previous_image) {
+
+        map_values(
+          previous_calculation_values, values, zoom_x * (1.0 - rendered_zoom_ratio),
+          zoom_y * (1.0 - rendered_zoom_ratio), rendered_zoom_ratio);
+  
+      } else {
+        // Animation finished
+        if(calculation_completed) {
+          values = current_calculation_values;
+          current_listener->animation_complete(metrics);  // Maybe start another animation
+        }
+        // else: Wait for the calculation to update the image
+      }
+      current_listener->redraw();
     }
   }
+  std::cout << "Finished animating\n";
 }
 
 void fractals::view::complete_layer(double min_depth, double max_depth,
                                     std::uint64_t points_calculated,
                                     int stride) {
+  std::unique_lock<std::mutex> lock(mutex);
+
+  if (stride == 1)
+    calculation_completed = true;
+
   if (!animating) {
     // We are rendering directly to the output
     // Copy the pixels to the output, update the metrics and notify the
@@ -94,6 +120,7 @@ void fractals::view::complete_layer(double min_depth, double max_depth,
     metrics.fully_evaluated = stride == 1;
 
     current_listener->update(metrics);
+    current_listener->redraw();
   }
 }
 
@@ -137,16 +164,27 @@ bool fractals::view::valid() const {
 }
 
 void fractals::view::animate_to(int x, int y,
-                                std::chrono::duration<double> duration) {
+                                std::chrono::duration<double> duration,
+                                bool wait) {
   stop_calculating();
   stop_animating();
 
   previous_calculation_values = current_calculation_values;
+
+  animating = true;
+  rendered_zoom_ratio = 1;
+  animation_start = std::chrono::system_clock::now();
+  animation_duration = duration;
+  calculation_completed = false;
+  wait_for_calculation_to_complete = wait;
+
+  // Start the animation thread
+  stop_animation = false;
+  animation_future = std::async([&]() { animation_thread(); });
 }
 
-void fractals::view::animate_to_center(std::chrono::duration<double> duration) {
-
-}
+void fractals::view::animate_to_center(std::chrono::duration<double> duration,
+                                       bool wait) {}
 
 void fractals::view::zoom(int x, int y, double r) {
   std::cout << "Zoom\n";
@@ -220,13 +258,13 @@ void interpolate_values(const view_pixmap &src, view_pixmap &dest, double dx,
 }
 } // namespace fractals
 
-void fractals::interpolate_values(const view_pixmap &src, view_pixmap &dest, double dx,
-                          double dy, double r) {
+void fractals::interpolate_values(const view_pixmap &src, view_pixmap &dest,
+                                  double dx, double dy, double r) {
   interpolate_values(src, dest, dx, dy, r, [&](int e) { return e; });
 }
 
-void fractals::map_values(const view_pixmap &src, view_pixmap &dest,
-                                  double dx, double dy, double r) {
+void fractals::map_values(const view_pixmap &src, view_pixmap &dest, double dx,
+                          double dy, double r) {
   bool zoom_eq = r == 1.0;
   bool zoom_out = r > 1.0;
 
