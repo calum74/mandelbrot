@@ -53,10 +53,4 @@ void map_pixmap(const pixmap<T> &src, pixmap<T> &dest, double dx, double dy,
       }
     }
 }
-
-template <typename T> struct error_value {
-  T value;
-  int error;
-};
-
 } // namespace fractals

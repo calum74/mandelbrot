@@ -1,4 +1,6 @@
 #pragma once
+#include "radius.hpp"
+
 #include <cstddef>
 #include <cstdint>
 
@@ -8,7 +10,7 @@ struct calculation_metrics {
   bool last_action_was_a_scroll;
 
   // These metrics are always reported
-  double log_radius; // The natural log of the radius
+  radius log_radius; // The natural log of the radius
   double min_depth;
   double max_depth;
   double p999, p9999;

@@ -9,4 +9,5 @@ add_library(mandelbrot
     shader.cpp
     view.cpp
     view_coords.cpp
-    view_parameters.cpp)
+    view_parameters.cpp
+    view_pixmap.cpp)

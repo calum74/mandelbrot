@@ -1,18 +1,23 @@
 #include "view.hpp"
 #include "calculation_pixmap.hpp"
 #include "fractal_calculation.hpp"
+#include "percentile.hpp"
+#include "view_listener.hpp"
+
 #include <chrono>
 
 using namespace std::literals::chrono_literals;
 
-fractals::view::view() : current_listener{} { calculation_threads = 4; }
+fractals::view::view() : listener{}, animating(false) {
+  calculation_threads = 4;
+}
 
 fractals::view::~view() {
   stop_calculating();
   stop_animating();
 }
 
-void fractals::view::set_listener(listener *l) { current_listener = l; }
+void fractals::view::set_listener(view_listener *l) { listener = l; }
 
 void fractals::view::stop_calculating() {
   if (calculation_future.valid()) {
@@ -39,10 +44,35 @@ struct fractals::view::my_calculation_pixmap
 void fractals::view::start_calculating() {
   if (!valid())
     return;
+  std::cout << "1 - " << current_coords.max_iterations << std::endl;
   stop_calculating();
+  std::cout << "2 - " << current_coords.max_iterations << std::endl;
   calculation_future = std::async([&] {
+    std::cout << "3 - " << current_coords.max_iterations << std::endl;
+    auto start_time = std::chrono::system_clock::now();
+    metrics.log_radius = current_coords.ln_r();
+    listener->calculation_started(metrics.log_radius,
+                                  current_coords.max_iterations);
+
+    calculation =
+        fractal->create(current_coords, width(), height(), stop_calculation);
+
     my_calculation_pixmap pm(*this);
     pm.calculate(calculation_threads, stop_calculation);
+
+    metrics.fully_evaluated = calculation_completed;
+
+    std::chrono::duration<double> duration =
+        std::chrono::system_clock::now() - start_time;
+
+    metrics.seconds_per_point = metrics.points_calculated / duration.count();
+    metrics.render_time_seconds = duration.count();
+    if (calculation_completed) {
+      metrics.discovered_depth = metrics.max_depth;
+      values = current_calculation_values;
+      measure_depths(current_calculation_values, metrics);
+    }
+    listener->calculation_finished(metrics);
   });
 }
 
@@ -67,7 +97,6 @@ void fractals::view::animation_thread() {
 
       double time_ratio = duration.count() / animation_duration.count();
 
-
       if (time_ratio >= 1) {
         time_ratio = 1;
         stop_animation = true;
@@ -77,24 +106,25 @@ void fractals::view::animation_thread() {
 
       // !! Use the mutex rather than atomics
       bool display_previous_image =
-      time_ratio < 1 ||
+          time_ratio < 1 ||
           (wait_for_calculation_to_complete && !calculation_completed);
 
       if (display_previous_image) {
 
-        map_values(
-          previous_calculation_values, values, zoom_x * (1.0 - rendered_zoom_ratio),
-          zoom_y * (1.0 - rendered_zoom_ratio), rendered_zoom_ratio);
-  
+        map_values(previous_calculation_values, values,
+                   zoom_x * (1.0 - rendered_zoom_ratio),
+                   zoom_y * (1.0 - rendered_zoom_ratio), rendered_zoom_ratio);
+
       } else {
         // Animation finished
-        if(calculation_completed) {
+        if (calculation_completed) {
           values = current_calculation_values;
-          current_listener->animation_complete(metrics);  // Maybe start another animation
+          listener->animation_finished(
+              metrics); // Maybe start another animation
         }
         // else: Wait for the calculation to update the image
       }
-      current_listener->redraw();
+      listener->values_changed();
     }
   }
   std::cout << "Finished animating\n";
@@ -103,6 +133,7 @@ void fractals::view::animation_thread() {
 void fractals::view::complete_layer(double min_depth, double max_depth,
                                     std::uint64_t points_calculated,
                                     int stride) {
+  std::cout << "  Layer completed\n";
   std::unique_lock<std::mutex> lock(mutex);
 
   if (stride == 1)
@@ -115,12 +146,11 @@ void fractals::view::complete_layer(double min_depth, double max_depth,
 
     values = current_calculation_values;
     metrics.points_calculated = points_calculated;
+    std::cout << "  " << points_calculated << " points calculated\n";
     metrics.min_depth = min_depth;
     metrics.max_depth = max_depth;
     metrics.fully_evaluated = stride == 1;
-
-    current_listener->update(metrics);
-    current_listener->redraw();
+    listener->values_changed();
   }
 }
 
@@ -151,14 +181,15 @@ void fractals::view::set_fractal(const fractals::fractal &f) {
 void fractals::view::set_coords(const view_coords &vc) {
   stop_animating();
   stop_calculating();
-  current_coords = fractal->initial_coords();
-  calculation =
-      fractal->create(current_coords, current_calculation_values.width(),
-                      current_calculation_values.height(), stop_calculation);
+  current_coords = vc;
+  std::cout << "Calculating depth to " << current_coords.max_iterations
+            << std::endl;
+  invalidate_values(current_calculation_values);
+  start_calculating();
 }
 
 bool fractals::view::valid() const {
-  return fractal && current_listener && calculation_threads > 0 &&
+  return fractal && listener && calculation_threads > 0 &&
          current_calculation_values.width() > 0 &&
          current_calculation_values.height() > 0;
 }
@@ -188,21 +219,32 @@ void fractals::view::animate_to_center(std::chrono::duration<double> duration,
 
 void fractals::view::zoom(int x, int y, double r) {
   std::cout << "Zoom\n";
+
+  if (r == 1.0)
+    return;
+  if (r > 2)
+    r = 2;
+  if (r < 0.5)
+    r = 0.5;
+
   freeze_current_view();
 
-  current_coords.zoom(current_calculation_values.width(),
-                      current_calculation_values.height(), x, y, r);
-  previous_calculation_values = current_calculation_values;
-  interpolate_values(previous_calculation_values, current_calculation_values, x,
-                     y, r);
+  current_coords = current_coords.zoom(r, width(), height(), x, y);
+
+  map_values(values, current_calculation_values, x * (1 - r), y * (1 - r), r);
+  values = current_calculation_values;
+  listener->values_changed();
+  start_calculating();
 }
 
 void fractals::view::scroll(int dx, int dy) {
-  std::cout << "Scroll\n";
+
+  if (dx == 0 && dy == 0)
+    return;
+
   freeze_current_view();
 
-  current_coords.scroll(current_calculation_values.width(),
-                        current_calculation_values.height(), dx, dy);
+  current_coords = current_coords.scroll(width(), height(), dx, dy);
 
   // Scroll the pixels
   // In theory, we can move these within the same buffer
@@ -212,63 +254,97 @@ void fractals::view::scroll(int dx, int dy) {
   map_pixmap(
       previous_calculation_values, current_calculation_values, dx, dy, 1.0,
       [](auto c) { return c; }, missing_value);
+  values = current_calculation_values;
+  listener->values_changed();
+  start_calculating();
 }
 
 void fractals::view::freeze_current_view() {
   // Stop everything and copy whatever we have into the current calculation
   stop_calculating();
   stop_animating();
-  current_calculation_values = values;
 
-  // TODO: Also remap the current coords.
+  if (animating) {
+    std::cout << "Animating??\n";
+    current_calculation_values = values;
+    // TODO: Also remap the current coords.
+  }
 }
 
-namespace fractals {
-template <typename ErrorFn>
-void interpolate_values(const view_pixmap &src, view_pixmap &dest, double dx,
-                        double dy, double r, ErrorFn fn) {
-
-  for (int j = 0; j < dest.height(); ++j)
-    for (int i = 0; i < dest.width(); ++i) {
-      double rx = r * i + dx, ry = r * j + dy;
-      int i2 = rx;
-      int j2 = ry;
-      auto &to_pixel = dest(i, j);
-      if (i2 >= 0 && i2 < dest.width() && j2 >= 0 && j2 < dest.height()) {
-        rx -= i2;
-        ry -= j2;
-        auto &from_pixel_00 = src(i2, j2);
-        auto &from_pixel_10 = src(i2 + 1 < dest.width() ? i2 + 1 : i2, j2);
-        auto &from_pixel_01 = src(i2, j2 + 1 < dest.height() ? j2 + 1 : j2);
-        auto &from_pixel_11 = src(i2 + 1 < dest.width() ? i2 + 1 : i2,
-                                  j2 + 1 < dest.height() ? j2 + 1 : j2);
-
-        auto to_value = from_pixel_00.value * (1 - rx) * (1 - ry) +
-                        from_pixel_10.value * rx * (1 - ry) +
-                        from_pixel_01.value * (1 - rx) * ry +
-                        from_pixel_11.value * rx * ry;
-        auto to_error =
-            std::max(std::max(from_pixel_00.error, from_pixel_10.error),
-                     std::max(from_pixel_01.error, from_pixel_11.error));
-        to_pixel = {to_value, fn(to_error)};
-      } else {
-        to_pixel = missing_value;
-      }
-    }
-}
-} // namespace fractals
-
-void fractals::interpolate_values(const view_pixmap &src, view_pixmap &dest,
-                                  double dx, double dy, double r) {
-  interpolate_values(src, dest, dx, dy, r, [&](int e) { return e; });
+bool fractals::view::get_auto_zoom(int &, int &) {
+  // TODO
+  return false;
 }
 
-void fractals::map_values(const view_pixmap &src, view_pixmap &dest, double dx,
-                          double dy, double r) {
-  bool zoom_eq = r == 1.0;
-  bool zoom_out = r > 1.0;
+void fractals::view::update_iterations(const calculation_metrics &) {
+  // TODO
+}
 
-  interpolate_values(src, dest, dx, dy, r, [&](int e) {
-    return zoom_eq ? e : zoom_out ? 20 : e > 20 ? e : e + 1;
-  });
+void fractals::view::decrease_iterations() {
+  // TODO
+}
+
+void fractals::view::increase_iterations() {
+  // TODO
+}
+
+void fractals::view::stop_current_animation_and_set_as_current() {
+  // TODO
+}
+
+const fractals::view_coords &fractals::view::get_coords() const {
+  return current_coords;
+}
+
+const fractals::calculation_metrics &fractals::view::get_metrics() const {
+  return metrics;
+}
+
+fractals::view_coords fractals::view::initial_coords() const {
+  return fractal->initial_coords();
+}
+
+std::string fractals::view::get_fractal_name() const { return fractal->name(); }
+
+std::string fractals::view::get_fractal_family() const {
+  return fractal->family();
+}
+
+void fractals::view::set_max_iterations(int max) {
+  current_coords.max_iterations = max;
+}
+
+void fractals::measure_depths(view_pixmap &values,
+                              calculation_metrics &metrics) {
+  // Find the depths.
+  std::vector<int> coloured_pixels;
+  coloured_pixels.reserve(values.size());
+  for (int i = 0; i < values.size(); ++i) {
+    if (values[i].error == 0 && values[i].value > 0)
+      coloured_pixels.push_back(i);
+  }
+
+  metrics.non_black_points = coloured_pixels.size();
+
+#if 0
+  std::cout << "Finished calculation\n";
+  std::cout << "  We calculated " << calculated_pixels.points_calculated
+            << " points\n";
+
+  std::cout << "  We have " << coloured_pixels.size() << " coloured pixels\n";
+#endif
+
+  if (coloured_pixels.size() > 100) {
+    // ?? Why are we doing this? Can't we just take the top pixel and be done
+    // with it?
+    auto cmp = [&](int a, int b) { return values[a].value < values[b].value; };
+    auto p999 = *top_percentile(coloured_pixels.begin(), coloured_pixels.end(),
+                                0.999, cmp);
+    auto p9999 = *top_percentile(coloured_pixels.begin(), coloured_pixels.end(),
+                                 0.9999, cmp);
+    metrics.p999 = values[p999].value;
+    metrics.p9999 = values[p9999].value;
+    metrics.p9999_x = p9999 % values.width();
+    metrics.p9999_y = p9999 / values.width();
+  }
 }
