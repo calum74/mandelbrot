@@ -60,14 +60,14 @@ public:
 
   int width() const { return values.width(); }
   int height() const { return values.height(); }
+  bool is_animating() const;
 
 private:
   std::shared_ptr<fractal_calculation> calculation;
   std::shared_ptr<fractal_calculation_factory> fractal;
   view_listener *listener;
 
-  // !! Rename to calculation_coords
-  view_coords current_coords; // What we're currently calculating
+  view_coords calculation_coords; // What we're currently calculating
 
   std::future<void> calculation_future;
   std::future<void> animation_future;

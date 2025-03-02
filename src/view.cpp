@@ -49,16 +49,16 @@ void fractals::view::start_calculating() {
     auto start_time = std::chrono::system_clock::now();
     {
       std::unique_lock<std::mutex> m(mutex);
-      metrics.log_radius = current_coords.ln_r();
+      metrics.log_radius = calculation_coords.ln_r();
       std::cout << "  Starting calculating with ln_r = " << metrics.log_radius
                 << std::endl;
       calculation_completed = false;
       listener->calculation_started(metrics.log_radius,
-                                    current_coords.max_iterations);
+                                    calculation_coords.max_iterations);
     }
 
-    calculation =
-        fractal->create(current_coords, width(), height(), stop_calculation);
+    calculation = fractal->create(calculation_coords, width(), height(),
+                                  stop_calculation);
 
     my_calculation_pixmap pm(*this);
     pm.calculate(calculation_threads, stop_calculation);
@@ -188,7 +188,8 @@ void fractals::view::set_threading(int n) {
 
 void fractals::view::set_fractal(const fractals::fractal &f, bool init_coords,
                                  bool recalculate) {
-  if(!init_coords && f.name() == get_fractal_name()) return;
+  if (!init_coords && f.name() == get_fractal_name())
+    return;
 
   fractal = f.create();
   if (init_coords)
@@ -200,8 +201,7 @@ void fractals::view::set_fractal(const fractals::fractal &f, bool init_coords,
 void fractals::view::set_coords(const view_coords &vc, bool recalculate) {
   stop_animating();
   stop_calculating();
-  std::cout << "Resetting coords with ln_r = " << vc.ln_r() << std::endl;
-  current_coords = vc;
+  calculation_coords = vc;
   invalidate_values(current_calculation_values);
   if (recalculate)
     start_calculating();
@@ -234,7 +234,7 @@ void fractals::view::animate_to(int x, int y,
 
   // Where to calculate
   double r = 0.5;
-  current_coords = current_coords.zoom(r, width(), height(), x, y);
+  calculation_coords = calculation_coords.zoom(r, width(), height(), x, y);
 
   // Seed the current calculation values so that if we abort, we already have
   // some data there already
@@ -263,7 +263,7 @@ void fractals::view::zoom(int x, int y, double r) {
 
   freeze_current_view();
 
-  current_coords = current_coords.zoom(r, width(), height(), x, y);
+  calculation_coords = calculation_coords.zoom(r, width(), height(), x, y);
 
   map_values(values, current_calculation_values, x * (1 - r), y * (1 - r), r);
   values = current_calculation_values;
@@ -278,7 +278,7 @@ void fractals::view::scroll(int dx, int dy) {
 
   freeze_current_view();
 
-  current_coords = current_coords.scroll(width(), height(), dx, dy);
+  calculation_coords = calculation_coords.scroll(width(), height(), dx, dy);
 
   // Scroll the pixels
   // In theory, we can move these within the same buffer
@@ -327,7 +327,7 @@ void fractals::view::stop_current_animation_and_set_as_current() {
 }
 
 const fractals::view_coords &fractals::view::get_coords() const {
-  return current_coords;
+  return calculation_coords;
 }
 
 const fractals::calculation_metrics &fractals::view::get_metrics() const {
@@ -345,7 +345,7 @@ std::string fractals::view::get_fractal_family() const {
 }
 
 void fractals::view::set_max_iterations(int max) {
-  current_coords.max_iterations = max;
+  calculation_coords.max_iterations = max;
 }
 
 void fractals::measure_depths(const view_pixmap &values,
@@ -382,3 +382,5 @@ void fractals::measure_depths(const view_pixmap &values,
     metrics.p9999_y = p9999 / values.width();
   }
 }
+
+bool fractals::view::is_animating() const { return animating; }
