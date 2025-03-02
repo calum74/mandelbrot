@@ -8,6 +8,7 @@ add_library(mandelbrot
     rendering_sequence.cpp
     shader.cpp
     view.cpp
+    view_animation.cpp
     view_coords.cpp
     view_parameters.cpp
     view_pixmap.cpp)
