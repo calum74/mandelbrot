@@ -119,6 +119,6 @@ private:
   void freeze_current_view();
 };
 
-void measure_depths(view_pixmap & values, calculation_metrics &metrics);
+void measure_depths(const view_pixmap & values, calculation_metrics &metrics);
 
 } // namespace fractals

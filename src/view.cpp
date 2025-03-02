@@ -44,11 +44,8 @@ struct fractals::view::my_calculation_pixmap
 void fractals::view::start_calculating() {
   if (!valid())
     return;
-  std::cout << "1 - " << current_coords.max_iterations << std::endl;
   stop_calculating();
-  std::cout << "2 - " << current_coords.max_iterations << std::endl;
   calculation_future = std::async([&] {
-    std::cout << "3 - " << current_coords.max_iterations << std::endl;
     auto start_time = std::chrono::system_clock::now();
     metrics.log_radius = current_coords.ln_r();
     listener->calculation_started(metrics.log_radius,
@@ -65,14 +62,17 @@ void fractals::view::start_calculating() {
     std::chrono::duration<double> duration =
         std::chrono::system_clock::now() - start_time;
 
-    metrics.seconds_per_point = metrics.points_calculated / duration.count();
+    metrics.seconds_per_point = duration.count() / metrics.points_calculated;
     metrics.render_time_seconds = duration.count();
     if (calculation_completed) {
       metrics.discovered_depth = metrics.max_depth;
-      values = current_calculation_values;
+      if(!animating)
+        values = current_calculation_values;
       measure_depths(current_calculation_values, metrics);
     }
     listener->calculation_finished(metrics);
+    std::cout << "  Completed = " << calculation_completed << "\n";
+    std::cout << "\nNew calculation\n";
   });
 }
 
@@ -83,6 +83,7 @@ void fractals::view::stop_animating() {
     animation_future.wait();
     stop_animation = false;
   }
+  animating = false;
 }
 
 void fractals::view::animation_thread() {
@@ -116,11 +117,18 @@ void fractals::view::animation_thread() {
                    zoom_y * (1.0 - rendered_zoom_ratio), rendered_zoom_ratio);
 
       } else {
+        std::cout << "Animation finished\n";
+
         // Animation finished
         if (calculation_completed) {
+          std::cout << "Calculation completed\n";
+
           values = current_calculation_values;
+
           listener->animation_finished(
               metrics); // Maybe start another animation
+        } else {
+          std::cout << "Waiting for calculation\n";
         }
         // else: Wait for the calculation to update the image
       }
@@ -136,8 +144,11 @@ void fractals::view::complete_layer(double min_depth, double max_depth,
   std::cout << "  Layer completed\n";
   std::unique_lock<std::mutex> lock(mutex);
 
-  if (stride == 1)
+  if (stride == 1) {
     calculation_completed = true;
+    std::cout << "  calculation_completed = " << calculation_completed
+              << std::endl;
+  }
 
   if (!animating) {
     // We are rendering directly to the output
@@ -207,11 +218,26 @@ void fractals::view::animate_to(int x, int y,
   animation_start = std::chrono::system_clock::now();
   animation_duration = duration;
   calculation_completed = false;
+  std::cout << "  calculation_completed = " << calculation_completed
+            << std::endl;
   wait_for_calculation_to_complete = wait;
+  zoom_x = x;
+  zoom_y = y;
+
+  // Where to calculate
+  double r = 0.5;
+  current_coords = current_coords.zoom(r, width(), height(), x, y);
+
+  // Seed the current calculation values so that if we abort, we already have
+  // some data there already
+  map_values(values, current_calculation_values, x * (1 - r), y * (1 - r), r);
 
   // Start the animation thread
   stop_animation = false;
   animation_future = std::async([&]() { animation_thread(); });
+
+  // Start the calculation thread
+  start_calculating();
 }
 
 void fractals::view::animate_to_center(std::chrono::duration<double> duration,
@@ -314,7 +340,7 @@ void fractals::view::set_max_iterations(int max) {
   current_coords.max_iterations = max;
 }
 
-void fractals::measure_depths(view_pixmap &values,
+void fractals::measure_depths(const view_pixmap &values,
                               calculation_metrics &metrics) {
   // Find the depths.
   std::vector<int> coloured_pixels;

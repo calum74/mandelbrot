@@ -17,6 +17,7 @@ public:
   T &operator()(int x, int y) { return pixels[x + y * w]; }
   const T &operator()(int x, int y) const { return pixels[x + y * w]; }
   T &operator[](size_type x) { return pixels[x]; }
+  const T &operator[](size_type x) const { return pixels[x]; }
 
   size_type size() const { return pixels.size(); }
 
