@@ -24,9 +24,9 @@ public:
   view_pixmap values;
 
   void set_size(int w, int h);
-  void set_fractal(const fractal &new_fractal);
+  void set_fractal(const fractal &new_fractal, bool init_coords, bool recalculate);
   void set_listener(view_listener *);
-  void set_coords(const view_coords &new_coords);
+  void set_coords(const view_coords &new_coords, bool recalculate);
   void set_threading(int threads); // 0 for hardware
 
   // Performs a smooth zoom x2 to the specified point.

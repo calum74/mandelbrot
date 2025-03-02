@@ -47,9 +47,15 @@ void fractals::view::start_calculating() {
   stop_calculating();
   calculation_future = std::async([&] {
     auto start_time = std::chrono::system_clock::now();
-    metrics.log_radius = current_coords.ln_r();
-    listener->calculation_started(metrics.log_radius,
-                                  current_coords.max_iterations);
+    {
+      std::unique_lock<std::mutex> m(mutex);
+      metrics.log_radius = current_coords.ln_r();
+      std::cout << "  Starting calculating with ln_r = " << metrics.log_radius
+                << std::endl;
+      calculation_completed = false;
+      listener->calculation_started(metrics.log_radius,
+                                    current_coords.max_iterations);
+    }
 
     calculation =
         fractal->create(current_coords, width(), height(), stop_calculation);
@@ -64,15 +70,11 @@ void fractals::view::start_calculating() {
 
     metrics.seconds_per_point = duration.count() / metrics.points_calculated;
     metrics.render_time_seconds = duration.count();
-    if (calculation_completed) {
-      metrics.discovered_depth = metrics.max_depth;
-      if(!animating)
-        values = current_calculation_values;
-      measure_depths(current_calculation_values, metrics);
-    }
+    metrics.discovered_depth = metrics.max_depth;
+    measure_depths(current_calculation_values, metrics);
     listener->calculation_finished(metrics);
     std::cout << "  Completed = " << calculation_completed << "\n";
-    std::cout << "\nNew calculation\n";
+    std::cout << "==== End of calculation\n\n";
   });
 }
 
@@ -184,19 +186,25 @@ void fractals::view::set_threading(int n) {
   calculation_threads = n > 0 ? n : std::thread::hardware_concurrency();
 }
 
-void fractals::view::set_fractal(const fractals::fractal &f) {
+void fractals::view::set_fractal(const fractals::fractal &f, bool init_coords,
+                                 bool recalculate) {
+  if(!init_coords && f.name() == get_fractal_name()) return;
+
   fractal = f.create();
-  set_coords(fractal->initial_coords());
+  if (init_coords)
+    set_coords(fractal->initial_coords(), recalculate);
+  else if (recalculate)
+    start_calculating();
 }
 
-void fractals::view::set_coords(const view_coords &vc) {
+void fractals::view::set_coords(const view_coords &vc, bool recalculate) {
   stop_animating();
   stop_calculating();
+  std::cout << "Resetting coords with ln_r = " << vc.ln_r() << std::endl;
   current_coords = vc;
-  std::cout << "Calculating depth to " << current_coords.max_iterations
-            << std::endl;
   invalidate_values(current_calculation_values);
-  start_calculating();
+  if (recalculate)
+    start_calculating();
 }
 
 bool fractals::view::valid() const {
