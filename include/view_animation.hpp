@@ -15,6 +15,10 @@ public:
   // Starts a single-step zoom at the cursor, or aborts the current animation
   void smooth_zoom_at_cursor(int x, int y);
 
+  void scroll(int dx, int dy);
+
+  void zoom(int x, int y, double ratio);
+
   // Starts animating to the current position.
   void animate_to_current_position();
 
@@ -22,6 +26,37 @@ public:
   void set_quality_mode();
   void set_smooth_mode();
   void set_fast_mode();
+
+  void set_threading(int);
+  void set_fractal(const fractal &, bool, bool);
+  int width() const;
+  int height() const;
+
+  void animate_to(int x, int y, std::chrono::duration<double> duration,
+                  bool wait_for_completion);
+  const view_coords &get_coords() const;
+  void set_coords(const view_coords &, bool recalculate);
+
+  void set_max_iterations(int);
+  void increase_iterations();
+  void decrease_iterations();
+  const view_pixmap &values() const;
+
+  std::string get_fractal_name() const;
+  std::string get_fractal_family() const;
+
+  void set_size(int w, int h);
+
+  view_coords initial_coords() const;
+  const calculation_metrics &get_metrics() const;
+
+  // Deleteme!
+  void animate_to_center(std::chrono::duration<double> duration,
+                         bool wait_for_completion);
+  bool is_animating() const;
+  void stop_current_animation_and_set_as_current();
+  void update_iterations(const calculation_metrics &);
+  void start_calculating();
 
 private:
   fractals::view view;
@@ -36,5 +71,10 @@ private:
     navigate_randomly,
     single_zoom,
   } mode;
+
+  void calculation_started(radius, int max_iterations) override;
+  void values_changed() override;
+  void calculation_finished(const calculation_metrics &) override;
+  void animation_finished(const calculation_metrics &) override;
 };
 } // namespace fractals
