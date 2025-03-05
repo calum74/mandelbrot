@@ -5,6 +5,7 @@ namespace fractals {
 class view_animation : public view_listener {
 public:
   view_animation(view_listener &listener);
+  ~view_animation();
 
   // Starts navigation at cursor, or aborts current animation
   void navigate_at_cursor(int x, int y);
@@ -62,14 +63,21 @@ private:
   fractals::view view;
   view_listener &listener;
 
+  std::future<void> animation_loop_thread;
+  std::mutex mutex;
+  std::condition_variable animation_variable;
+
+  // Protected by mutex
   int mouse_x, mouse_y;
 
+  // Protected by mutex
   enum class animation {
     none,
     navigate_at_cursor,
     navigate_to_point,
     navigate_randomly,
     single_zoom,
+    shutdown
   } mode;
 
   std::chrono::duration<double> zoom_step_duration, navigate_step_duration;
@@ -79,5 +87,7 @@ private:
   void values_changed() override;
   void calculation_finished(const calculation_metrics &) override;
   void animation_finished(const calculation_metrics &) override;
+
+  void animation_loop();
 };
 } // namespace fractals

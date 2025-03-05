@@ -9,6 +9,13 @@ fractals::view_animation::view_animation(fractals::view_listener &listener)
   zoom_step_duration = 250ms;
   navigate_step_duration = 750ms;
   mode = animation::none;
+  animation_loop_thread = std::async([&] { animation_loop(); });
+}
+
+fractals::view_animation::~view_animation() {
+  mode = animation::shutdown;
+  animation_variable.notify_one();
+  animation_loop_thread.wait();
 }
 
 void fractals::view_animation::animate_to(
@@ -118,16 +125,48 @@ void fractals::view_animation::calculation_finished(
 void fractals::view_animation::animation_finished(
     const calculation_metrics &metrics) {
   listener.animation_finished(metrics);
+  animation_variable.notify_one();
 }
 
 void fractals::view_animation::navigate_at_cursor(int x, int y) {
+  std::unique_lock<std::mutex> lock(mutex);
+
   mouse_at(x, y);
 
-  mode = animation::navigate_at_cursor;
-  view.animate_to(x, y, navigate_step_duration, wait_for_completion);
+  if(mode == animation::none)
+  {
+    mode = animation::navigate_at_cursor;
+    view.animate_to(x, y, navigate_step_duration, wait_for_completion);
+  }
+  else
+  {
+    mode = animation::none;
+    view.stop_current_animation_and_set_as_current();
+  }
 }
 
 void fractals::view_animation::mouse_at(int x, int y) {
   mouse_x = x;
   mouse_y = y;
+}
+
+void fractals::view_animation::animation_loop() {
+  std::unique_lock<std::mutex> lock(mutex);
+  while (mode != animation::shutdown) {
+    animation_variable.wait(lock);
+    std::cout << "Animation loop notification received\n";
+    switch (mode) {
+    case animation::navigate_at_cursor:
+      view.animate_to(mouse_x, mouse_y, navigate_step_duration,
+                      wait_for_completion);
+      break;
+    case animation::none:
+    case animation::navigate_to_point:
+    case animation::navigate_randomly:
+    case animation::single_zoom:
+    case animation::shutdown:
+      // TODO
+      break;
+    }
+  }
 }
