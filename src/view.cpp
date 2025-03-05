@@ -4,8 +4,6 @@
 #include "percentile.hpp"
 #include "view_listener.hpp"
 
-#include <chrono>
-
 using namespace std::literals::chrono_literals;
 
 fractals::view::view() : listener{}, animating(false) {

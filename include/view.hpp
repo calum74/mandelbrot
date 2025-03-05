@@ -7,6 +7,7 @@
 #include "view_pixmap.hpp"
 #include <atomic>
 #include <future>
+#include <chrono>
 
 namespace fractals {
 class view_listener;

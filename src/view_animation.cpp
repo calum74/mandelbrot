@@ -1,8 +1,14 @@
 #include "view_animation.hpp"
 
+using namespace std::literals::chrono_literals;
+
 fractals::view_animation::view_animation(fractals::view_listener &listener)
     : listener(listener) {
   view.set_listener(this);
+  wait_for_completion = false;
+  zoom_step_duration = 250ms;
+  navigate_step_duration = 750ms;
+  mode = animation::none;
 }
 
 void fractals::view_animation::animate_to(
@@ -112,4 +118,16 @@ void fractals::view_animation::calculation_finished(
 void fractals::view_animation::animation_finished(
     const calculation_metrics &metrics) {
   listener.animation_finished(metrics);
+}
+
+void fractals::view_animation::navigate_at_cursor(int x, int y) {
+  mouse_at(x, y);
+
+  mode = animation::navigate_at_cursor;
+  view.animate_to(x, y, navigate_step_duration, wait_for_completion);
+}
+
+void fractals::view_animation::mouse_at(int x, int y) {
+  mouse_x = x;
+  mouse_y = y;
 }

@@ -66,11 +66,14 @@ private:
 
   enum class animation {
     none,
-    navigate_at_point,
+    navigate_at_cursor,
     navigate_to_point,
     navigate_randomly,
     single_zoom,
   } mode;
+
+  std::chrono::duration<double> zoom_step_duration, navigate_step_duration;
+  bool wait_for_completion;
 
   void calculation_started(radius, int max_iterations) override;
   void values_changed() override;
