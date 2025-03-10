@@ -124,11 +124,12 @@ void fractals::view::animation_thread() {
 
           values = current_calculation_values;
 
-          listener->animation_finished(
-              metrics); // Maybe start another animation
         } else {
           std::cout << "Waiting for calculation\n";
         }
+        // Except in quality mode
+        listener->animation_finished(
+          metrics); // Maybe start another animation
         // else: Wait for the calculation to update the image
       }
       listener->values_changed();
@@ -325,6 +326,10 @@ void fractals::view::stop_current_animation_and_set_as_current() {
   stop_animating();
 
   // TODO: Update coords and copy.
+
+  calculation_coords = calculation_coords.zoom(2.0 * rendered_zoom_ratio, width(), height(), zoom_x, zoom_y);
+  current_calculation_values = values;
+  start_calculating();
 }
 
 const fractals::view_coords &fractals::view::get_coords() const {
