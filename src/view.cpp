@@ -92,7 +92,6 @@ void fractals::view::animation_thread() {
     auto e = animation_condition.wait_for(lock, 10ms);
 
     if (e == std::cv_status::timeout && !stop_animation) {
-      std::cout << "Animation frame!\n";
       std::chrono::duration<double> duration =
           std::chrono::system_clock::now() - animation_start;
 
@@ -321,7 +320,11 @@ void fractals::view::increase_iterations() {
 }
 
 void fractals::view::stop_current_animation_and_set_as_current() {
-  // TODO
+  std::cout << "Aborting animation\n";
+  stop_calculating();
+  stop_animating();
+
+  // TODO: Update coords and copy.
 }
 
 const fractals::view_coords &fractals::view::get_coords() const {

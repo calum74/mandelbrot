@@ -63,6 +63,7 @@ void fractals::view_animation::increase_iterations() {
 }
 
 void fractals::view_animation::stop_current_animation_and_set_as_current() {
+  mode = animation::none;
   view.stop_current_animation_and_set_as_current();
 }
 
