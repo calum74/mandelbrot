@@ -155,13 +155,13 @@ void fractals::view::complete_layer(double min_depth, double max_depth,
     // listener.
 
     values = current_calculation_values;
-    metrics.points_calculated = points_calculated;
-    std::cout << "  " << points_calculated << " points calculated\n";
-    metrics.min_depth = min_depth;
-    metrics.max_depth = max_depth;
-    metrics.fully_evaluated = stride == 1;
     listener->values_changed();
   }
+
+  metrics.fully_evaluated = stride == 1;
+  metrics.points_calculated = points_calculated;
+  metrics.min_depth = min_depth;
+  metrics.max_depth = max_depth;
 }
 
 constexpr fractals::error_value<double> missing_value{
@@ -232,7 +232,9 @@ void fractals::view::animate_to(int x, int y,
   // Where to calculate
   current_step_ratio = ratio;
   double r = ratio;
-  calculation_coords = lock_center ? calculation_coords.zoom(r) : calculation_coords.zoom(r, width(), height(), x, y);
+  calculation_coords =
+      lock_center ? calculation_coords.zoom(r)
+                  : calculation_coords.zoom(r, width(), height(), x, y);
 
   // Seed the current calculation values so that if we abort, we already have
   // some data there already
@@ -335,8 +337,9 @@ void fractals::view::stop_current_animation_and_set_as_current() {
 
   // TODO: Update coords and copy.
 
-  calculation_coords = calculation_coords.zoom(
-      (1.0/current_step_ratio) * rendered_zoom_ratio, width(), height(), zoom_x, zoom_y);
+  calculation_coords =
+      calculation_coords.zoom((1.0 / current_step_ratio) * rendered_zoom_ratio,
+                              width(), height(), zoom_x, zoom_y);
   current_calculation_values = values;
   start_calculating();
 }

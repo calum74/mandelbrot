@@ -59,6 +59,10 @@ public:
   void update_iterations(const calculation_metrics &);
   void start_calculating();
 
+  // Can just assign to these directly as needed:
+  std::chrono::duration<double> zoom_step_duration, navigate_step_duration, animate_step_duration;
+  bool wait_for_completion;
+
 private:
   fractals::view view;
   view_listener &listener;
@@ -81,9 +85,6 @@ private:
     single_zoom,
     shutdown
   } mode;
-
-  std::chrono::duration<double> zoom_step_duration, navigate_step_duration, animate_step_duration;
-  bool wait_for_completion;
 
   void calculation_started(radius, int max_iterations) override;
   void values_changed() override;
