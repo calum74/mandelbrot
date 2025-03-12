@@ -128,8 +128,7 @@ void fractals::view::animation_thread() {
           std::cout << "Waiting for calculation\n";
         }
         // Except in quality mode
-        listener->animation_finished(
-          metrics); // Maybe start another animation
+        listener->animation_finished(metrics); // Maybe start another animation
         // else: Wait for the calculation to update the image
       }
       listener->values_changed();
@@ -213,7 +212,7 @@ bool fractals::view::valid() const {
 
 void fractals::view::animate_to(int x, int y,
                                 std::chrono::duration<double> duration,
-                                bool wait) {
+                                bool wait, bool lock_center, double ratio) {
   stop_calculating();
   stop_animating();
 
@@ -231,8 +230,8 @@ void fractals::view::animate_to(int x, int y,
   zoom_y = y;
 
   // Where to calculate
-  double r = 0.5;
-  calculation_coords = calculation_coords.zoom(r, width(), height(), x, y);
+  double r = ratio;
+  calculation_coords = lock_center ? calculation_coords.zoom(r) : calculation_coords.zoom(r, width(), height(), x, y);
 
   // Seed the current calculation values so that if we abort, we already have
   // some data there already
@@ -246,8 +245,16 @@ void fractals::view::animate_to(int x, int y,
   start_calculating();
 }
 
+void fractals::view::animate_to(int x, int y,
+                                std::chrono::duration<double> duration,
+                                bool wait) {
+  animate_to(x, y, duration, wait, false, 0.5);
+}
+
 void fractals::view::animate_to_center(std::chrono::duration<double> duration,
-                                       bool wait) {}
+                                       bool wait, double ratio) {
+  animate_to(width() / 2, height() / 2, duration, wait, true, ratio);
+}
 
 void fractals::view::zoom(int x, int y, double r) {
   std::cout << "Zoom\n";
@@ -327,7 +334,8 @@ void fractals::view::stop_current_animation_and_set_as_current() {
 
   // TODO: Update coords and copy.
 
-  calculation_coords = calculation_coords.zoom(2.0 * rendered_zoom_ratio, width(), height(), zoom_x, zoom_y);
+  calculation_coords = calculation_coords.zoom(
+      2.0 * rendered_zoom_ratio, width(), height(), zoom_x, zoom_y);
   current_calculation_values = values;
   start_calculating();
 }

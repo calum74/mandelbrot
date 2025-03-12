@@ -8,6 +8,8 @@ fractals::view_animation::view_animation(fractals::view_listener &listener)
   wait_for_completion = false;
   zoom_step_duration = 250ms;
   navigate_step_duration = 750ms;
+  animate_step_duration = 500ms;
+
   mode = animation::none;
   animation_loop_thread = std::async([&] { animation_loop(); });
 }
@@ -40,7 +42,7 @@ void fractals::view_animation::set_threading(int threading) {
 
 void fractals::view_animation::animate_to_center(
     std::chrono::duration<double> duration, bool wait_for_completion) {
-  view.animate_to_center(duration, wait_for_completion);
+  view.animate_to_center(duration, wait_for_completion, 0.5);
 }
 
 void fractals::view_animation::start_calculating() { view.start_calculating(); }
@@ -121,6 +123,11 @@ void fractals::view_animation::values_changed() { listener.values_changed(); }
 void fractals::view_animation::calculation_finished(
     const calculation_metrics &metrics) {
   listener.calculation_finished(metrics);
+
+  if (mode == animation::start_navigate_to_point) {
+    mode = animation::navigate_to_point;
+    animation_variable.notify_one();
+  }
 }
 
 void fractals::view_animation::animation_finished(
@@ -134,14 +141,11 @@ void fractals::view_animation::navigate_at_cursor(int x, int y) {
 
   mouse_at(x, y);
 
-  if(mode == animation::none)
-  {
+  if (mode == animation::none) {
     std::cout << ":: Starting navigate\n";
     mode = animation::navigate_at_cursor;
     view.animate_to(x, y, navigate_step_duration, wait_for_completion);
-  }
-  else
-  {
+  } else {
     std::cout << ":: Stopping navigate\n";
     mode = animation::none;
     view.stop_current_animation_and_set_as_current();
@@ -163,8 +167,22 @@ void fractals::view_animation::animation_loop() {
       view.animate_to(mouse_x, mouse_y, navigate_step_duration,
                       wait_for_completion);
       break;
+    case animation::start_navigate_to_point:
+      mode = animation::navigate_to_point;
+      // Fall through
+    case animation::navigate_to_point: {
+      auto current_r = view.get_coords().ln_r();
+      auto new_r = current_r - std::log(2);
+      if (new_r > zoom_limit)
+        view.animate_to_center(animate_step_duration, wait_for_completion, 0.5);
+      else {
+        auto r = std::exp(zoom_limit - current_r);
+        std::cout << "Debug r = " << r << std::endl;
+        view.animate_to_center(animate_step_duration, wait_for_completion, r);
+        mode = animation::none;
+      }
+    } break;
     case animation::none:
-    case animation::navigate_to_point:
     case animation::navigate_randomly:
     case animation::single_zoom:
     case animation::shutdown:
@@ -172,4 +190,15 @@ void fractals::view_animation::animation_loop() {
       break;
     }
   }
+}
+
+void fractals::view_animation::animate_to_current_position() {
+  std::unique_lock<std::mutex> lock(mutex);
+  mode = animation::start_navigate_to_point;
+
+  auto c = view.get_coords();
+  zoom_limit = c.ln_r();
+  c.r = 2.0;
+  c.max_iterations = 500;
+  view.set_coords(c, true);
 }

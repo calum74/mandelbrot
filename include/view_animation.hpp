@@ -66,6 +66,7 @@ private:
   std::future<void> animation_loop_thread;
   std::mutex mutex;
   std::condition_variable animation_variable;
+  radius zoom_limit;
 
   // Protected by mutex
   int mouse_x, mouse_y;
@@ -74,13 +75,14 @@ private:
   enum class animation {
     none,
     navigate_at_cursor,
+    start_navigate_to_point,
     navigate_to_point,
     navigate_randomly,
     single_zoom,
     shutdown
   } mode;
 
-  std::chrono::duration<double> zoom_step_duration, navigate_step_duration;
+  std::chrono::duration<double> zoom_step_duration, navigate_step_duration, animate_step_duration;
   bool wait_for_completion;
 
   void calculation_started(radius, int max_iterations) override;

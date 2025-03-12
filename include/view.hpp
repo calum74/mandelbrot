@@ -34,7 +34,7 @@ public:
   void animate_to(int x, int y, std::chrono::duration<double> duration,
                   bool wait_for_completion);
   void animate_to_center(std::chrono::duration<double> duration,
-                         bool wait_for_completion);
+                         bool wait_for_completion, double ratio);
 
   // Performs an instant zoom in or out to the given point
   // Cancels any animations in progress
@@ -118,6 +118,9 @@ private:
   bool valid() const;
 
   void freeze_current_view();
+  void animate_to(int x, int y, std::chrono::duration<double> duration,
+    bool wait_for_completion, bool lock_center, double ratio);
+
 };
 
 void measure_depths(const view_pixmap & values, calculation_metrics &metrics);
