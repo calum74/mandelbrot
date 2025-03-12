@@ -177,7 +177,7 @@ void fractals::view_animation::animation_loop() {
         view.animate_to_center(animate_step_duration, wait_for_completion, 0.5);
       else {
         auto r = std::exp(zoom_limit - current_r);
-        std::cout << "Debug r = " << r << std::endl;
+        // TODO: Adjust animation duration on the last step
         view.animate_to_center(animate_step_duration, wait_for_completion, r);
         mode = animation::none;
       }

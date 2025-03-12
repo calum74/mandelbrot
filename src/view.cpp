@@ -102,7 +102,7 @@ void fractals::view::animation_thread() {
         stop_animation = true;
         animating = false;
       }
-      rendered_zoom_ratio = std::pow(0.5, time_ratio);
+      rendered_zoom_ratio = std::pow(current_step_ratio, time_ratio);
 
       // !! Use the mutex rather than atomics
       bool display_previous_image =
@@ -230,6 +230,7 @@ void fractals::view::animate_to(int x, int y,
   zoom_y = y;
 
   // Where to calculate
+  current_step_ratio = ratio;
   double r = ratio;
   calculation_coords = lock_center ? calculation_coords.zoom(r) : calculation_coords.zoom(r, width(), height(), x, y);
 
@@ -335,7 +336,7 @@ void fractals::view::stop_current_animation_and_set_as_current() {
   // TODO: Update coords and copy.
 
   calculation_coords = calculation_coords.zoom(
-      2.0 * rendered_zoom_ratio, width(), height(), zoom_x, zoom_y);
+      (1.0/current_step_ratio) * rendered_zoom_ratio, width(), height(), zoom_x, zoom_y);
   current_calculation_values = values;
   start_calculating();
 }

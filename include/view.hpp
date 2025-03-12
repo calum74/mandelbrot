@@ -98,6 +98,7 @@ private:
   // 1.0 = just started
   // 0.5 = finished zooming
   double rendered_zoom_ratio;
+  double current_step_ratio; // Normally 0.5 for zoom in, but can be less for partial zooms
 
   std::chrono::time_point<std::chrono::system_clock> animation_start;
   std::chrono::duration<double> animation_duration;
