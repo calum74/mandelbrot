@@ -73,6 +73,11 @@ void fractals::view::start_calculating() {
     listener->calculation_finished(metrics);
     std::cout << "  Completed = " << calculation_completed << "\n";
     std::cout << "==== End of calculation\n\n";
+
+    // If we are in quality animation, we can now kick off the next animation
+    if (wait_for_calculation_to_complete && paused_waiting_for_calculation) {
+      listener->animation_finished(metrics);
+    }
   });
 }
 
@@ -132,6 +137,10 @@ void fractals::view::animation_thread() {
         // else: Wait for the calculation to update the image
       }
       listener->values_changed();
+
+      paused_waiting_for_calculation = time_ratio >= 1 &&
+                                       !calculation_completed &&
+                                       wait_for_calculation_to_complete;
     }
   }
   std::cout << "Finished animating\n";
@@ -140,7 +149,6 @@ void fractals::view::animation_thread() {
 void fractals::view::complete_layer(double min_depth, double max_depth,
                                     std::uint64_t points_calculated,
                                     int stride) {
-  std::cout << "  Layer completed\n";
   std::unique_lock<std::mutex> lock(mutex);
 
   if (stride == 1) {

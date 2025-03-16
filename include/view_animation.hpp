@@ -72,6 +72,8 @@ private:
   std::condition_variable animation_variable;
   radius zoom_limit;
 
+  std::chrono::duration<double> quality_duration;  // The best guess how long it takes to calculate a single frame
+
   // Protected by mutex
   int mouse_x, mouse_y;
 

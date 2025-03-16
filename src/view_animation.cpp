@@ -124,6 +124,8 @@ void fractals::view_animation::calculation_finished(
     const calculation_metrics &metrics) {
   listener.calculation_finished(metrics);
 
+  quality_duration = 1s * metrics.seconds_per_point * width() * height();
+
   if (mode == animation::start_navigate_to_point) {
     mode = animation::navigate_to_point;
     animation_variable.notify_one();
@@ -159,26 +161,39 @@ void fractals::view_animation::mouse_at(int x, int y) {
 
 void fractals::view_animation::animation_loop() {
   std::unique_lock<std::mutex> lock(mutex);
+  constexpr auto max_step_size = 5s;
+
   while (mode != animation::shutdown) {
     animation_variable.wait(lock);
-    std::cout << "Animation loop notification received\n";
+
+    auto make_duration = [&](auto duration) {
+      if (wait_for_completion && duration > 1.1 * quality_duration) {
+        duration = 1.1 * quality_duration;
+        if (duration > max_step_size)
+          duration = max_step_size;
+      }
+      return duration;
+    };
+  
     switch (mode) {
-    case animation::navigate_at_cursor:
-      view.animate_to(mouse_x, mouse_y, navigate_step_duration,
-                      wait_for_completion);
-      break;
+    case animation::navigate_at_cursor: {
+      view.animate_to(mouse_x, mouse_y, make_duration(navigate_step_duration),
+                      false);
+    } break;
     case animation::start_navigate_to_point:
       mode = animation::navigate_to_point;
       // Fall through
     case animation::navigate_to_point: {
+
       auto current_r = view.get_coords().ln_r();
       auto new_r = current_r - std::log(2);
       if (new_r > zoom_limit)
-        view.animate_to_center(animate_step_duration, wait_for_completion, 0.5);
+        view.animate_to_center(make_duration(animate_step_duration), false,
+                               0.5);
       else {
         auto r = std::exp(zoom_limit - current_r);
         // TODO: Adjust animation duration on the last step
-        view.animate_to_center(animate_step_duration, wait_for_completion, r);
+        view.animate_to_center(make_duration(animate_step_duration), false, r);
         mode = animation::none;
       }
     } break;
@@ -201,4 +216,17 @@ void fractals::view_animation::animate_to_current_position() {
   c.r = 2.0;
   c.max_iterations = 500;
   view.set_coords(c, true);
+}
+
+void fractals::view_animation::smooth_zoom_at_cursor(int x, int y)
+{
+  std::unique_lock<std::mutex> lock(mutex);
+
+  mouse_at(x, y);
+
+  if (mode != animation::none) {
+    mode = animation::none;
+    view.stop_current_animation_and_set_as_current();
+  }
+  view.animate_to(x, y, zoom_step_duration, false);
 }
