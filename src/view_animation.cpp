@@ -230,3 +230,8 @@ void fractals::view_animation::smooth_zoom_at_cursor(int x, int y)
   }
   view.animate_to(x, y, zoom_step_duration, false);
 }
+
+void fractals::view_animation::navigate_randomly()
+{
+
+}

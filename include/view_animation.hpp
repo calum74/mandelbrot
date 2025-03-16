@@ -23,6 +23,8 @@ public:
   // Starts animating to the current position.
   void animate_to_current_position();
 
+  void navigate_randomly();
+
   // Sets the mode to use
   void set_quality_mode();
   void set_smooth_mode();
