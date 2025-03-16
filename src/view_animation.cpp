@@ -146,11 +146,9 @@ void fractals::view_animation::navigate_at_cursor(int x, int y) {
   mouse_at(x, y);
 
   if (mode == animation::none) {
-    std::cout << ":: Starting navigate\n";
     mode = animation::navigate_at_cursor;
     view.animate_to(x, y, navigate_step_duration, wait_for_completion);
   } else {
-    std::cout << ":: Stopping navigate\n";
     mode = animation::none;
     view.stop_current_animation_and_set_as_current();
   }

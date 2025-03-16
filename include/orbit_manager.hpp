@@ -84,7 +84,7 @@ public:
             fractals::norm(maxDelta) ||
         (!escaped(primary_series->orbit[primary_series->orbit.size() - 1]) &&
          primary_series->orbit.size() < max_iterations)) {
-      // Unfortunately, recycling the primary orbit isn't always feasible if
+      // Unfortunately, recycling the primary orbit isn't always feasible
       // std::cout << "Info: synchronously recalculating primary orbit\n";
       // Actually calculate the primary orbit extra long to increase probability
       // of reuse

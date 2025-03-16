@@ -48,8 +48,6 @@ void fractals::view::start_calculating() {
     {
       std::unique_lock<std::mutex> m(mutex);
       metrics.log_radius = calculation_coords.ln_r();
-      std::cout << "  Starting calculating with ln_r = " << metrics.log_radius
-                << std::endl;
       calculation_completed = false;
       listener->calculation_started(metrics.log_radius,
                                     calculation_coords.max_iterations);
@@ -71,8 +69,6 @@ void fractals::view::start_calculating() {
     metrics.discovered_depth = metrics.max_depth;
     measure_depths(current_calculation_values, metrics);
     listener->calculation_finished(metrics);
-    std::cout << "  Completed = " << calculation_completed << "\n";
-    std::cout << "==== End of calculation\n\n";
 
     // If we are in quality animation, we can now kick off the next animation
     if (wait_for_calculation_to_complete && paused_waiting_for_calculation) {
@@ -121,16 +117,9 @@ void fractals::view::animation_thread() {
                    zoom_y * (1.0 - rendered_zoom_ratio), rendered_zoom_ratio);
 
       } else {
-        std::cout << "Animation finished\n";
-
         // Animation finished
         if (calculation_completed) {
-          std::cout << "Calculation completed\n";
-
           values = current_calculation_values;
-
-        } else {
-          std::cout << "Waiting for calculation\n";
         }
         // Except in quality mode
         listener->animation_finished(metrics); // Maybe start another animation
@@ -143,7 +132,6 @@ void fractals::view::animation_thread() {
                                        wait_for_calculation_to_complete;
     }
   }
-  std::cout << "Finished animating\n";
 }
 
 void fractals::view::complete_layer(double min_depth, double max_depth,
@@ -153,8 +141,6 @@ void fractals::view::complete_layer(double min_depth, double max_depth,
 
   if (stride == 1) {
     calculation_completed = true;
-    std::cout << "  calculation_completed = " << calculation_completed
-              << std::endl;
   }
 
   if (!animating) {
@@ -231,8 +217,6 @@ void fractals::view::animate_to(int x, int y,
   animation_start = std::chrono::system_clock::now();
   animation_duration = duration;
   calculation_completed = false;
-  std::cout << "  calculation_completed = " << calculation_completed
-            << std::endl;
   wait_for_calculation_to_complete = wait;
   zoom_x = x;
   zoom_y = y;
@@ -268,8 +252,6 @@ void fractals::view::animate_to_center(std::chrono::duration<double> duration,
 }
 
 void fractals::view::zoom(int x, int y, double r) {
-  std::cout << "Zoom\n";
-
   if (r == 1.0)
     return;
   if (r > 2)
@@ -315,7 +297,6 @@ void fractals::view::freeze_current_view() {
   stop_animating();
 
   if (animating) {
-    std::cout << "Animating??\n";
     current_calculation_values = values;
     // TODO: Also remap the current coords.
   }
@@ -339,7 +320,6 @@ void fractals::view::increase_iterations() {
 }
 
 void fractals::view::stop_current_animation_and_set_as_current() {
-  std::cout << "Aborting animation\n";
   stop_calculating();
   stop_animating();
 
@@ -385,14 +365,6 @@ void fractals::measure_depths(const view_pixmap &values,
   }
 
   metrics.non_black_points = coloured_pixels.size();
-
-#if 0
-  std::cout << "Finished calculation\n";
-  std::cout << "  We calculated " << calculated_pixels.points_calculated
-            << " points\n";
-
-  std::cout << "  We have " << coloured_pixels.size() << " coloured pixels\n";
-#endif
 
   if (coloured_pixels.size() > 100) {
     // ?? Why are we doing this? Can't we just take the top pixel and be done
