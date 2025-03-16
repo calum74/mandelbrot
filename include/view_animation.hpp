@@ -76,8 +76,11 @@ private:
 
   std::chrono::duration<double> quality_duration;  // The best guess how long it takes to calculate a single frame
 
+  std::chrono::duration<double> get_animate_step_duration() const;
+
   // Protected by mutex
   int mouse_x, mouse_y;
+  int random_x, random_y;
 
   // Protected by mutex
   enum class animation {
