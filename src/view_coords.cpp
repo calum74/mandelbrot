@@ -2,7 +2,6 @@
 #include "view_parameters.hpp"
 #include "number_cast.hpp"
 #include <iomanip>
-#include <numbers>
 
 fractals::view_coords::view_coords(const value_type &x, const value_type &y,
                                    const value_type &r, int max_iterations)
@@ -26,8 +25,7 @@ void fractals::view_coords::write(view_parameters&vp) const {
   vp.y = sy.str();
 
   std::stringstream sr;
-  sr << std::setprecision(4);
-  fractals::log_radius(sr, ln_r());
+  sr << std::setprecision(4) << radius();
   vp.r = sr.str();
 
   vp.max_iterations = max_iterations;
@@ -132,21 +130,8 @@ int fractals::view_coords::get_precision(int d) const {
   return d + zeros * 0.30103;
 }
 
-void fractals::log_radius(std::ostream &os, double log_base_e) {
-  // Renders a number ln(x) in engineering form
-  auto log_base_10 = log_base_e * std::numbers::log10e;
-
-  double int_part, frac_part = std::pow(10, std::modf(log_base_10, &int_part));
-  while (frac_part < 1) {
-    frac_part *= 10;
-    int_part--;
-  }
-  os << frac_part << "e" << (int)int_part;
-}
-
-double fractals::view_coords::ln_r() const {
-  return fractals::log(
-      fractals::number_cast<fractals::high_exponent_double>(r));
+fractals::radius fractals::view_coords::radius() const {
+  return number_cast<fractals::radius>(r);
 }
 
 fractals::mapped_point
@@ -158,5 +143,5 @@ fractals::view_coords::map_point(int w, int h, const view_coords &p) const {
   auto dr = r.to_double();
   auto point_size = (w > h ? double(h) / (2.0 * dr) : double(w) / (2.0 * dr));
 
-  return {w / 2 + point_size * dx, h / 2 + point_size * dy, ln_r() - p.ln_r()};
+  return {w / 2 + point_size * dx, h / 2 + point_size * dy, radius() / p.radius()};
 }

@@ -47,9 +47,9 @@ void fractals::view::start_calculating() {
     auto start_time = std::chrono::system_clock::now();
     {
       std::unique_lock<std::mutex> m(mutex);
-      metrics.log_radius = calculation_coords.ln_r();
+      metrics.radius = calculation_coords.radius();
       calculation_completed = false;
-      listener->calculation_started(metrics.log_radius,
+      listener->calculation_started(metrics.radius,
                                     calculation_coords.max_iterations);
     }
 

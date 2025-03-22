@@ -1,6 +1,7 @@
 #pragma once
 #include "mandelbrot_fwd.hpp"
 #include "complex_number.hpp"
+#include "radius.hpp"
 
 namespace fractals {
 template <typename To, typename From> struct convert_to;
@@ -108,6 +109,15 @@ struct convert_to<high_exponent_real<D, E, Norm>, high_precision_real<N>> {
     } else {
       return high_exponent_real<D, E, Norm>{x.to_double()};
     }
+  }
+};
+
+template<int N>
+struct convert_to<radius, high_precision_real<N>>
+{
+  static radius get(const high_precision_real<N> &x) {
+    return radius{fractals::log(
+      fractals::number_cast<fractals::high_exponent_double>(x)), radius::from_ln()};    
   }
 };
 

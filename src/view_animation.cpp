@@ -194,15 +194,15 @@ void fractals::view_animation::animation_loop() {
       // Fall through
     case animation::navigate_to_point: {
 
-      auto current_r = view.get_coords().ln_r();
-      auto new_r = current_r - std::log(2);
+      auto current_r = view.get_coords().radius();
+      auto new_r = current_r * radius{0.5};
       if (new_r > zoom_limit)
         view.animate_to_center(get_animate_step_duration(), false,
                                0.5);
       else {
-        auto r = std::exp(zoom_limit - current_r);
+        auto r = zoom_limit / current_r;
         // TODO: Adjust animation duration on the last step
-        view.animate_to_center(get_animate_step_duration(), false, r);
+        view.animate_to_center(get_animate_step_duration(), false, r.to_double());
         mode = animation::none;
       }
     } break;
@@ -226,7 +226,7 @@ void fractals::view_animation::animate_to_current_position() {
   mode = animation::start_navigate_to_point;
 
   auto c = view.get_coords();
-  zoom_limit = c.ln_r();
+  zoom_limit = c.radius();
   c.r = 2.0;
   c.max_iterations = 500;
   view.set_coords(c, true);

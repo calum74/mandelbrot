@@ -5,6 +5,7 @@ add_library(mandelbrot
     gradient_stack.cpp
     mandelbrot.cpp
     mandeldrop.cpp
+    radius.cpp
     rendering_sequence.cpp
     shader.cpp
     view.cpp

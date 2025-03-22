@@ -1,5 +1,6 @@
 #pragma once
 #include "real_number.hpp"
+#include "radius.hpp"
 
 namespace fractals {
 struct view_parameters;
@@ -7,7 +8,8 @@ struct view_parameters;
 struct mapped_point {
   // The coordinates of a point (x,y) within a viewport, together with
   // the log of the distance log(r1/r2).
-  double x, y, log_distance;
+  double x, y;
+  radius distance;
 };
 
 // The coordinates of the current view, specified in high_precision numbers.
@@ -25,7 +27,7 @@ class view_coords {
   void write(view_parameters&) const;
 
   // Gets the natural log of r
-  double ln_r() const;
+  fractals::radius radius() const;
 
   // Scrolls the coordinates by a given number of pixels, returning the
   // resulting coordinates.
@@ -58,8 +60,5 @@ class view_coords {
 
 std::ostream &operator<<(std::ostream &os, const view_coords &coords);
 std::istream &operator>>(std::istream &is, view_coords &coords);
-
-// Helper to output the radius from its log in engineering format
-void log_radius(std::ostream &os, double log_base_e);
 
 } // namespace fractals
