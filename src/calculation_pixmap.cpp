@@ -89,6 +89,13 @@ void fractals::calculation_pixmap::interpolate_region_smooth(int x0, int y0,
   auto c01 = pixels(x0, y1);
   auto c11 = pixels(x1, y1);
 
+  if (std::isnan(c00.value))
+    c00.value = c11.value;
+  if (std::isnan(c01.value))
+    c01.value = c11.value;
+  if (std::isnan(c10.value))
+    c10.value = c11.value;
+
   for (int j = y0; j <= y1; ++j) {
     for (int i = x0; i <= x1; ++i) {
       auto &p = pixels(i, j);
