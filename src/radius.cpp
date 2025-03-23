@@ -1,6 +1,7 @@
 #include "radius.hpp"
 
 #include <numbers>
+#include <cmath>
 
 fractals::radius::radius(double v, from_ln) : ln_r_value(v) {}
 
