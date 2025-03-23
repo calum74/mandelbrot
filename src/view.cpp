@@ -392,6 +392,7 @@ void fractals::measure_depths(const view_pixmap &values,
 bool fractals::view::is_animating() const { return animating; }
 
 bool fractals::view::fully_calculated() const {
-  return !animating ? (calculation_completed || metrics.fully_evaluated)
-                      : displayed_values_are_fully_evaluated;
+  return !animating ? (calculation_completed || metrics.fully_evaluated ||
+                       previous_values_are_fully_evaluated)
+                    : displayed_values_are_fully_evaluated;
 }
