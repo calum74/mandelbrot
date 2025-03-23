@@ -1,6 +1,8 @@
 #pragma once
 #include "rgb.hpp"
+
 #include <vector>
+#include <memory>
 
 namespace fractals {
 
