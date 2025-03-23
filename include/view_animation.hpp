@@ -61,6 +61,9 @@ public:
   void update_iterations(const calculation_metrics &);
   void start_calculating();
 
+  // If the current values (interpolated or not) are a result of a completed calculation
+  bool fully_calculated() const;
+
   // Can just assign to these directly as needed:
   std::chrono::duration<double> zoom_step_duration, navigate_step_duration, animate_step_duration;
   bool wait_for_completion;
@@ -76,7 +79,7 @@ private:
 
   std::chrono::duration<double> quality_duration;  // The best guess how long it takes to calculate a single frame
 
-  std::chrono::duration<double> get_animate_step_duration() const;
+  std::pair<std::chrono::duration<double>, bool> get_step_duration( std::chrono::duration<double> d) const;
 
   // Protected by mutex
   int mouse_x, mouse_y;

@@ -105,22 +105,23 @@ void fractals::view::animation_thread() {
       }
       rendered_zoom_ratio = std::pow(current_step_ratio, time_ratio);
 
-      // !! Use the mutex rather than atomics
-      bool display_previous_image =
+      bool still_animating =
           time_ratio < 1 ||
           (wait_for_calculation_to_complete && !calculation_completed);
 
-      if (display_previous_image) {
-
+      if (still_animating) {
         map_values(previous_calculation_values, values,
                    zoom_x * (1.0 - rendered_zoom_ratio),
                    zoom_y * (1.0 - rendered_zoom_ratio), rendered_zoom_ratio);
-
+        displayed_values_are_fully_evaluated =
+            previous_values_are_fully_evaluated;
       } else {
         // Animation finished
         if (calculation_completed) {
           values = current_calculation_values;
-        }
+          displayed_values_are_fully_evaluated =
+              previous_values_are_fully_evaluated = true;
+        } else
         // Except in quality mode
         listener->animation_finished(metrics); // Maybe start another animation
         // else: Wait for the calculation to update the image
@@ -143,6 +144,11 @@ void fractals::view::complete_layer(double min_depth, double max_depth,
     calculation_completed = true;
   }
 
+  metrics.fully_evaluated = stride == 1;
+  metrics.points_calculated = points_calculated;
+  metrics.min_depth = min_depth;
+  metrics.max_depth = max_depth;
+
   if (!animating) {
     // We are rendering directly to the output
     // Copy the pixels to the output, update the metrics and notify the
@@ -151,11 +157,6 @@ void fractals::view::complete_layer(double min_depth, double max_depth,
     values = current_calculation_values;
     listener->values_changed();
   }
-
-  metrics.fully_evaluated = stride == 1;
-  metrics.points_calculated = points_calculated;
-  metrics.min_depth = min_depth;
-  metrics.max_depth = max_depth;
 }
 
 constexpr fractals::error_value<double> missing_value{
@@ -171,6 +172,8 @@ void fractals::view::set_size(int w, int h) {
   values = view_pixmap(w, h, missing_value);
   previous_calculation_values = view_pixmap(w, h, missing_value);
   current_calculation_values = view_pixmap(w, h, missing_value);
+  displayed_values_are_fully_evaluated = false;
+  previous_values_are_fully_evaluated = false;
 }
 
 void fractals::view::set_threading(int n) {
@@ -193,6 +196,7 @@ void fractals::view::set_coords(const view_coords &vc, bool recalculate) {
   stop_animating();
   stop_calculating();
   calculation_coords = vc;
+  displayed_values_are_fully_evaluated = false;
   invalidate_values(current_calculation_values);
   if (recalculate)
     start_calculating();
@@ -207,6 +211,10 @@ bool fractals::view::valid() const {
 void fractals::view::animate_to(int x, int y,
                                 std::chrono::duration<double> duration,
                                 bool wait, bool lock_center, double ratio) {
+
+  previous_values_are_fully_evaluated =
+      metrics.fully_evaluated || calculation_completed;
+
   stop_calculating();
   stop_animating();
 
@@ -382,3 +390,8 @@ void fractals::measure_depths(const view_pixmap &values,
 }
 
 bool fractals::view::is_animating() const { return animating; }
+
+bool fractals::view::fully_calculated() const {
+  return !animating ? (calculation_completed || metrics.fully_evaluated)
+                      : displayed_values_are_fully_evaluated;
+}

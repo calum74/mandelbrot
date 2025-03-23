@@ -6,7 +6,7 @@ fractals::view_animation::view_animation(fractals::view_listener &listener)
     : listener(listener) {
   view.set_listener(this);
   wait_for_completion = false;
-  zoom_step_duration = 250ms;
+  zoom_step_duration = 100ms;
   navigate_step_duration = 750ms;
   animate_step_duration = 500ms;
 
@@ -159,13 +159,23 @@ void fractals::view_animation::mouse_at(int x, int y) {
   mouse_y = y;
 }
 
-std::chrono::duration<double> fractals::view_animation::get_animate_step_duration() const {
-  if (wait_for_completion && animate_step_duration > 1.1 * quality_duration) {
-    auto duration = 1.1 * quality_duration;
+std::pair<std::chrono::duration<double>, bool>
+fractals::view_animation::get_step_duration(std::chrono::duration<double> duration) const {
+  bool wait = wait_for_completion;
+  if (wait_for_completion) {
+    auto min_duration = duration;
+    duration = 1.1 * quality_duration;
     constexpr auto max_step_size = 5s;
-    return duration > max_step_size ? max_step_size : duration;
+    if (duration > max_step_size) {
+      duration = max_step_size;
+      wait = false;
+    }
+    if (duration < min_duration) {
+      duration = animate_step_duration;
+    }
+    return {duration, wait};
   }
-  return animate_step_duration;
+  return {duration, false};
 }
 
 void fractals::view_animation::animation_loop() {
@@ -175,19 +185,11 @@ void fractals::view_animation::animation_loop() {
   while (mode != animation::shutdown) {
     animation_variable.wait(lock);
 
-    auto make_duration = [&](auto duration) {
-      if (wait_for_completion && duration > 1.1 * quality_duration) {
-        duration = 1.1 * quality_duration;
-        if (duration > max_step_size)
-          duration = max_step_size;
-      }
-      return duration;
-    };
-
     switch (mode) {
     case animation::navigate_at_cursor: {
-      view.animate_to(mouse_x, mouse_y, make_duration(navigate_step_duration),
-                      false);
+      auto [duration, wait] = get_step_duration(navigate_step_duration);
+      view.animate_to(mouse_x, mouse_y, duration,
+                      wait);
     } break;
     case animation::start_navigate_to_point:
       mode = animation::navigate_to_point;
@@ -196,21 +198,22 @@ void fractals::view_animation::animation_loop() {
 
       auto current_r = view.get_coords().radius();
       auto new_r = current_r * radius{0.5};
-      if (new_r > zoom_limit)
-        view.animate_to_center(get_animate_step_duration(), false,
-                               0.5);
-      else {
+      auto [duration, wait] = get_step_duration(animate_step_duration);
+      if (new_r > zoom_limit) {
+        view.animate_to_center(duration, wait, 0.5);
+      } else {
         auto r = zoom_limit / current_r;
         // TODO: Adjust animation duration on the last step
-        view.animate_to_center(get_animate_step_duration(), false, r.to_double());
+        // otherwise the last step can appear to move more slowly.
+        // It's a cute bug that we could just keep.
+        view.animate_to_center(duration, wait, r.to_double());
         mode = animation::none;
       }
     } break;
-    case animation::navigate_randomly:
-    {
-      view.animate_to(random_x, random_y, get_animate_step_duration(),
-                      false);
-                      break;
+    case animation::navigate_randomly: {
+      auto [duration, wait] = get_step_duration(animate_step_duration);
+      view.animate_to(random_x, random_y, duration, wait);
+      break;
     }
     case animation::none:
     case animation::single_zoom:
@@ -252,6 +255,11 @@ void fractals::view_animation::navigate_randomly() {
     view.stop_current_animation_and_set_as_current();
   } else {
     mode = animation::navigate_randomly;
-    view.animate_to(random_x, random_y, get_animate_step_duration(), false);
+    auto [duration, wait] = get_step_duration(animate_step_duration);
+    view.animate_to(random_x, random_y, duration, wait);
   }
+}
+
+bool fractals::view_animation::fully_calculated() const {
+  return view.fully_calculated();
 }

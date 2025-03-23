@@ -62,6 +62,7 @@ public:
   int width() const { return values.width(); }
   int height() const { return values.height(); }
   bool is_animating() const;
+  bool fully_calculated() const;
 
 private:
   std::shared_ptr<fractal_calculation> calculation;
@@ -84,6 +85,8 @@ private:
   // This means that we'll display a zoom of the background image,
   // not the currently calculated image.
   bool animating;  // Protected by mutex
+  bool previous_values_are_fully_evaluated;
+  bool displayed_values_are_fully_evaluated;
 
   // True in quality rendering mode,
   // where we only display the new image once it has completely finished
