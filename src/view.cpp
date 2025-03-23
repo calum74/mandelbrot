@@ -121,7 +121,7 @@ void fractals::view::animation_thread() {
           values = current_calculation_values;
           displayed_values_are_fully_evaluated =
               previous_values_are_fully_evaluated = true;
-        } else
+        }
         // Except in quality mode
         listener->animation_finished(metrics); // Maybe start another animation
         // else: Wait for the calculation to update the image
