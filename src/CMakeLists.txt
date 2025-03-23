@@ -8,6 +8,7 @@ add_library(mandelbrot
     radius.cpp
     rendering_sequence.cpp
     shader.cpp
+    shader_impl.cpp
     view.cpp
     view_animation.cpp
     view_coords.cpp
