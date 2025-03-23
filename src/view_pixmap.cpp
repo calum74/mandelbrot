@@ -1,5 +1,7 @@
 #include "view_pixmap.hpp"
 
+#include <numbers>
+
 constexpr fractals::error_value<double> missing_value{
     std::numeric_limits<double>::quiet_NaN(), 127};
 
