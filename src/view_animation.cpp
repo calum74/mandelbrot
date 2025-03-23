@@ -160,7 +160,8 @@ void fractals::view_animation::mouse_at(int x, int y) {
 }
 
 std::pair<std::chrono::duration<double>, bool>
-fractals::view_animation::get_step_duration(std::chrono::duration<double> duration) const {
+fractals::view_animation::get_step_duration(
+    std::chrono::duration<double> duration) const {
   bool wait = wait_for_completion;
   if (wait_for_completion) {
     auto min_duration = duration;
@@ -188,12 +189,8 @@ void fractals::view_animation::animation_loop() {
     switch (mode) {
     case animation::navigate_at_cursor: {
       auto [duration, wait] = get_step_duration(navigate_step_duration);
-      view.animate_to(mouse_x, mouse_y, duration,
-                      wait);
+      view.animate_to(mouse_x, mouse_y, duration, wait);
     } break;
-    case animation::start_navigate_to_point:
-      mode = animation::navigate_to_point;
-      // Fall through
     case animation::navigate_to_point: {
 
       auto current_r = view.get_coords().radius();
@@ -215,10 +212,10 @@ void fractals::view_animation::animation_loop() {
       view.animate_to(random_x, random_y, duration, wait);
       break;
     }
+    case animation::start_navigate_to_point:
     case animation::none:
     case animation::single_zoom:
     case animation::shutdown:
-      // TODO
       break;
     }
   }
@@ -226,13 +223,13 @@ void fractals::view_animation::animation_loop() {
 
 void fractals::view_animation::animate_to_current_position() {
   std::unique_lock<std::mutex> lock(mutex);
-  mode = animation::start_navigate_to_point;
-
   auto c = view.get_coords();
   zoom_limit = c.radius();
   c.r = 2.0;
   c.max_iterations = 500;
-  view.set_coords(c, true);
+  view.set_coords(c, false);
+  mode = animation::start_navigate_to_point;
+  view.start_calculating();
 }
 
 void fractals::view_animation::smooth_zoom_at_cursor(int x, int y) {

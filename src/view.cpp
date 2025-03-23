@@ -195,7 +195,9 @@ void fractals::view::set_fractal(const fractals::fractal &f, bool init_coords,
 void fractals::view::set_coords(const view_coords &vc, bool recalculate) {
   stop_animating();
   stop_calculating();
+
   calculation_coords = vc;
+  previous_values_are_fully_evaluated = false;
   displayed_values_are_fully_evaluated = false;
   invalidate_values(current_calculation_values);
   if (recalculate)
