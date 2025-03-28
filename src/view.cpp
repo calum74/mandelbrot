@@ -34,7 +34,7 @@ struct fractals::view::my_calculation_pixmap
                                      *v.calculation),
         view(v) {}
 
-  virtual void layer_complete(int stride) {
+  virtual void layer_complete2(int stride) {
     view.complete_layer(min_depth, max_depth, points_calculated, stride);
   }
 };

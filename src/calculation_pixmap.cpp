@@ -34,30 +34,12 @@ void fractals::calculation_pixmap::calculate_point(int x, int y, int stride) {
       max_depth = depth;
   }
 
-  if (stride > 1) {
-    // Interpolate the region
-    if (x > 0 && y > 0) {
+#if 1
+  if (stride > 1 && x > 0 && y > 0) {
       maybe_fill_region(x - stride, y - stride, x, y);
       interpolate_region_smooth(x - stride, y - stride, x, y);
-    }
-
-#if 0 
-    auto d = stride / 2;
-    int x0 = x - d;
-    int x1 = x + d;
-    int y0 = y - d;
-    int y1 = y + d;
-    if (x0 < 0)
-      x0 = 0;
-    if (x1 >= pixels.width())
-      x1 = pixels.width() - 1;
-    if (y0 < 0)
-      y0 = 0;
-    if (y1 >= pixels.height())
-      y1 = pixels.height() - 1;
-    interpolate_region(x, y, x0, y0, x1, y1);
-#endif
   }
+#endif
 }
 
 bool fractals::calculation_pixmap::maybe_fill_region(int x0, int y0, int x1,
@@ -89,12 +71,15 @@ void fractals::calculation_pixmap::interpolate_region_smooth(int x0, int y0,
   auto c01 = pixels(x0, y1);
   auto c11 = pixels(x1, y1);
 
-  if (std::isnan(c00.value))
+  if (std::isnan(c00.value)) {
     c00.value = c11.value;
-  if (std::isnan(c01.value))
+  }
+  if (std::isnan(c01.value)) {
     c01.value = c11.value;
-  if (std::isnan(c10.value))
+  }
+  if (std::isnan(c10.value)) {
     c10.value = c11.value;
+  }
 
   for (int j = y0; j <= y1; ++j) {
     for (int i = x0; i <= x1; ++i) {
@@ -115,6 +100,8 @@ void fractals::calculation_pixmap::interpolate_region_smooth(int x0, int y0,
 
 void fractals::calculation_pixmap::interpolate_region(int cx, int cy, int x0,
                                                       int y0, int x1, int y1) {
+  // This function isn't used
+
   auto &c = pixels(cx, cy);
   assert(x0 >= 0);
   assert(x1 < pixels.width());
@@ -145,4 +132,25 @@ double fractals::fractal_calculation::average_skipped() const { return 0; }
 
 void fractals::fractal_calculation::initialize(const view_coords &c, int x,
                                                int y, std::atomic<bool> &stop) {
+}
+
+void fractals::calculation_pixmap::layer_complete(int stride,
+                                                  std::atomic<bool> &stop) {
+
+#if 1
+  // Problem is that this is single-threaded
+  // We can disable this but it leaves bad blocks in the image
+  if (stride > 1) {
+    rendering_sequence tmp_seq(width, height, stride);
+    int x, y, s;
+    bool c;
+    while (tmp_seq.next(x, y, s, c) && !stop)
+      if (x > 0 && y > 0) {
+        maybe_fill_region(x - stride, y - stride, x, y);
+        interpolate_region_smooth(x - stride, y - stride, x, y);
+      }
+  }
+#endif
+
+  layer_complete2(stride);
 }

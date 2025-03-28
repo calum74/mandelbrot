@@ -160,7 +160,7 @@ void fractals::async_rendering_sequence::calculate(int threads,
         calculate_point(x, y, stride);
         m.lock();
         if (--points_at_stride[stride] == 0) {
-          layer_complete(stride);
+          layer_complete(stride, stop);
         }
       }
       m.unlock();

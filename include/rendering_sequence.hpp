@@ -67,7 +67,7 @@ public:
 
 protected:
   virtual void calculate_point(int x, int y, int w) = 0;
-  virtual void layer_complete(int stride) = 0;
+  virtual void layer_complete(int stride, std::atomic<bool> &stop) = 0;
 
   int width, height, stride;
 };
