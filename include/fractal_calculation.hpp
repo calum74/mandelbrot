@@ -6,6 +6,11 @@
 
 namespace fractals {
 
+struct orbital_point {
+  int x, y;
+  int iteration;
+};
+
 /*
   The calculation of a fractal, where we can compute each (x,y) point
   independently and perhaps in parallel.
@@ -30,6 +35,12 @@ public:
 
   virtual void initialize(const view_coords &c, int x, int y,
                           std::atomic<bool> &stop) = 0;
+
+  // Gets the pixels in an individual orbit.
+  // The output will be sparse because it will only output points
+  // that are within the current view.
+  virtual void get_orbit(int x, int y,
+                         std::vector<orbital_point> &points_out) const;
 };
 
 /*

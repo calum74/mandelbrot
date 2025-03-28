@@ -36,8 +36,8 @@ void fractals::calculation_pixmap::calculate_point(int x, int y, int stride) {
 
 #if 1
   if (stride > 1 && x > 0 && y > 0) {
-      maybe_fill_region(x - stride, y - stride, x, y);
-      interpolate_region_smooth(x - stride, y - stride, x, y);
+    maybe_fill_region(x - stride, y - stride, x, y);
+    interpolate_region_smooth(x - stride, y - stride, x, y);
   }
 #endif
 }
@@ -153,4 +153,9 @@ void fractals::calculation_pixmap::layer_complete(int stride,
 #endif
 
   layer_complete2(stride);
+}
+
+void fractals::fractal_calculation::get_orbit(
+    int x, int y, std::vector<orbital_point> &points_out) const {
+  // Do nothing, but fractals can implement this if they want to
 }
