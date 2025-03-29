@@ -401,5 +401,7 @@ bool fractals::view::fully_calculated() const {
 
 void fractals::view::get_orbit(int x, int y, displayed_orbit & orbit) const
 {
-  // TODO!
+  calculation->get_orbit(x,y,orbit);
+
+  // TODO: Scale each point according to the animation
 }

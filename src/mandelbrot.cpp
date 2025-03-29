@@ -111,6 +111,11 @@ public:
     return z.iteration() + 1-nu;
   }
 
+  void get_orbit(int x, int y, fractals::displayed_orbit & orbit) const override
+  {
+    //
+  }
+
 private:
   // The maxumum number of iterations / bailout value.
   int max_iterations;
