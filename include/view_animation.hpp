@@ -1,7 +1,9 @@
 #include "view.hpp"
 #include "view_listener.hpp"
+#include "fractal_calculation.hpp"
 
 namespace fractals {
+
 class view_animation : public view_listener {
 public:
   view_animation(view_listener &listener);
@@ -53,6 +55,8 @@ public:
   view_coords initial_coords() const;
   const calculation_metrics &get_metrics() const;
 
+  void get_orbit(int x, int y, displayed_orbit &orbit) const;
+
   // Deleteme!
   void animate_to_center(std::chrono::duration<double> duration,
                          bool wait_for_completion);
@@ -61,11 +65,13 @@ public:
   void update_iterations(const calculation_metrics &);
   void start_calculating();
 
-  // If the current values (interpolated or not) are a result of a completed calculation
+  // If the current values (interpolated or not) are a result of a completed
+  // calculation
   bool fully_calculated() const;
 
   // Can just assign to these directly as needed:
-  std::chrono::duration<double> zoom_step_duration, navigate_step_duration, animate_step_duration;
+  std::chrono::duration<double> zoom_step_duration, navigate_step_duration,
+      animate_step_duration;
   bool wait_for_completion;
 
 private:
@@ -77,9 +83,12 @@ private:
   std::condition_variable animation_variable;
   radius zoom_limit;
 
-  std::chrono::duration<double> quality_duration;  // The best guess how long it takes to calculate a single frame
+  std::chrono::duration<double>
+      quality_duration; // The best guess how long it takes to calculate a
+                        // single frame
 
-  std::pair<std::chrono::duration<double>, bool> get_step_duration( std::chrono::duration<double> d) const;
+  std::pair<std::chrono::duration<double>, bool>
+  get_step_duration(std::chrono::duration<double> d) const;
 
   // Protected by mutex
   int mouse_x, mouse_y;

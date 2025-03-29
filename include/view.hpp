@@ -1,6 +1,7 @@
 #pragma once
 #include "calculation_metrics.hpp"
 #include "fractal.hpp"
+#include "fractal_calculation.hpp"
 #include "pixmap.hpp"
 #include "radius.hpp"
 #include "view_coords.hpp"
@@ -49,6 +50,8 @@ public:
 
   const view_coords &get_coords() const;
   const calculation_metrics &get_metrics() const;
+
+  void get_orbit(int x, int y, displayed_orbit & orbit) const;
 
   void increase_iterations();
   void decrease_iterations();

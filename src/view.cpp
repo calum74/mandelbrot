@@ -398,3 +398,8 @@ bool fractals::view::fully_calculated() const {
                        previous_values_are_fully_evaluated)
                     : displayed_values_are_fully_evaluated;
 }
+
+void fractals::view::get_orbit(int x, int y, displayed_orbit & orbit) const
+{
+  // TODO!
+}

@@ -11,6 +11,8 @@ struct orbital_point {
   int iteration;
 };
 
+using displayed_orbit = std::vector<orbital_point>;
+
 /*
   The calculation of a fractal, where we can compute each (x,y) point
   independently and perhaps in parallel.

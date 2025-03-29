@@ -260,3 +260,8 @@ void fractals::view_animation::navigate_randomly() {
 bool fractals::view_animation::fully_calculated() const {
   return view.fully_calculated();
 }
+
+void fractals::view_animation::get_orbit(int x, int y, displayed_orbit & orbit) const
+{
+  view.get_orbit(x, y, orbit);
+}
