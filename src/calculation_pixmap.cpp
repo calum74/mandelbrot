@@ -71,13 +71,13 @@ void fractals::calculation_pixmap::interpolate_region_smooth(int x0, int y0,
   auto c01 = pixels(x0, y1);
   auto c11 = pixels(x1, y1);
 
-  if (std::isnan(c00.value)) {
+  if (c00.error>0) {
     c00.value = c11.value;
   }
-  if (std::isnan(c01.value)) {
+  if (c01.error>0) {
     c01.value = c11.value;
   }
-  if (std::isnan(c10.value)) {
+  if (c10.error>0) {
     c10.value = c11.value;
   }
 
@@ -137,7 +137,7 @@ void fractals::fractal_calculation::initialize(const view_coords &c, int x,
 void fractals::calculation_pixmap::layer_complete(int stride,
                                                   std::atomic<bool> &stop) {
 
-#if 1
+#if 0
   // Problem is that this is single-threaded
   // We can disable this but it leaves bad blocks in the image
   if (stride > 1) {
