@@ -92,7 +92,7 @@ public:
     DeltaType delta = {coords.dx * DeltaReal(x - ref_x),
                        coords.dy * DeltaReal(y - ref_y)};
 
-    auto z = orbits.lookup(delta, max_iterations);
+    auto z = orbits.lookup(delta, max_iterations, true);
 
     points_calculated++;
     skipped_iterations += z.iteration();
@@ -107,13 +107,15 @@ public:
     // This calculation creates a "fractional" iteration
     // used for smoother rendering.
     auto zn = log2(fractals::norm(*z));
-    auto nu = log2(zn)/log2(Calculation::order);
-    return z.iteration() + 1-nu;
+    auto nu = log2(zn) / log2(Calculation::order);
+    return z.iteration() + 1 - nu;
   }
 
-  void get_orbit(int x, int y, fractals::displayed_orbit & orbit) const override
-  {
-    //
+  void get_orbit(int x, int y,
+                 fractals::displayed_orbit &orbit) const override {
+    DeltaType delta = {coords.dx * DeltaReal(x - ref_x),
+                       coords.dy * DeltaReal(y - ref_y)};
+    orbits.lookup(delta, max_iterations, false);
   }
 
 private:

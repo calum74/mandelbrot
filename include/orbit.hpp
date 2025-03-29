@@ -10,8 +10,8 @@
 */
 
 #pragma once
-#include "mandelbrot_fwd.hpp"
 #include "mandelbrot_calculation.hpp"
+#include "mandelbrot_fwd.hpp"
 #include <atomic>
 #include <cassert>
 #include <optional>
@@ -470,7 +470,8 @@ private:
     // therefore glitches
     delta_norm max_delta_norm = 0;
 
-    Entry(value_type z, const std::array<typename normalized<term_type>::type, Terms> &ts)
+    Entry(value_type z,
+          const std::array<typename normalized<term_type>::type, Terms> &ts)
         : z(z), terms(ts) {
       // We'll look at the terms in the series to figure out what the maximum
       // size of delta is for this term before imprecision sets in.
@@ -509,8 +510,14 @@ public:
   // already taken. It's used to optimize the search for the next iteration
   // limit.
   relative_orbit make_relative_orbit(delta_type delta, int limit,
-                                     int &iterations_skipped) const {
-    auto s = find_iterations_to_skip(delta, entries.size(), iterations_skipped);
+                                     int &iterations_skipped,
+                                     bool allow_skip) const {
+
+    auto s = allow_skip ? find_iterations_to_skip(delta, entries.size(),
+                                                  iterations_skipped)
+                        : epsilon_type{};
+    if (!allow_skip)
+      iterations_skipped = 0;
     return {*this, number_cast<epsilon_type>(delta), iterations_skipped,
             iterations_skipped, number_cast<epsilon_type>(s)};
   }

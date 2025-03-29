@@ -124,7 +124,7 @@ public:
     // The function `make_relative_orbit` will skip some iterations,
     // use `z.iteration()` to find out which iteration we are on.
     auto z = reference_orbit.make_relative_orbit(delta, this->max_iterations,
-                                                 skipped);
+                                                 skipped, true);
     iterations_skipped = skipped;
 
     while (norm(*z) <= (1 << 16)) {

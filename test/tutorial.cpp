@@ -110,7 +110,7 @@ int main() {
   // This automatically skips some iterations in the orbit, given by
   // iteration() to give you the actually iteration number.
   auto relative =
-      taylor_series.make_relative_orbit({0.01, 0.01}, 100, iterations);
+      taylor_series.make_relative_orbit({0.01, 0.01}, 100, iterations, true);
   iterations = relative.iteration();
 
   std::cout << "Skipped " << iterations << " iterations\n";
@@ -154,7 +154,7 @@ int main() {
 
   iterations = 0;
   // And then our final orbit
-  auto tertiary = secondary.make_relative_orbit({0.0, 0.01}, 100, iterations);
+  auto tertiary = secondary.make_relative_orbit({0.0, 0.01}, 100, iterations, true);
 
   // We can then skip iterations on tertiary
   std::cout << "Skipped " << iterations << " iterations\n";

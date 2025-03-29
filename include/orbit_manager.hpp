@@ -200,7 +200,7 @@ public:
   // Returns the orbit for the point delta (relative to the center)
   // The orbit has already been fast-forwarded.
   // Threadsafe
-  relative_orbit lookup(DeltaType delta, int max_iterations) const {
+  relative_orbit lookup(DeltaType delta, int max_iterations, bool allow_skip) const {
     // Find the cell corresponding to delta
     int x = 0.5 * lookup_width *
             (1.0 + number_cast<double>(delta.real() / max_delta.real()));
@@ -225,8 +225,9 @@ public:
 
     int skipped = local_reference->iterations_skipped_cache;
     auto result = local_reference->orbit.make_relative_orbit(
-        delta - local_reference->delta, max_iterations, skipped);
-    local_reference->iterations_skipped_cache = skipped;
+        delta - local_reference->delta, max_iterations, skipped, allow_skip);
+    if(allow_skip)
+      local_reference->iterations_skipped_cache = skipped;
     return result;
   }
 

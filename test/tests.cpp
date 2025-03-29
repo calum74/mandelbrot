@@ -249,7 +249,7 @@ int main() {
         taylor_series{reference_orbit, 100, stop};
 
     auto relative =
-        taylor_series.make_relative_orbit({0.01, 0.01}, 100, iterations);
+        taylor_series.make_relative_orbit({0.01, 0.01}, 100, iterations, true);
     iterations = relative.iteration();
 
     // Probably this will change
@@ -277,7 +277,7 @@ int main() {
     std::atomic<bool> stop;
     manager.new_view({0, 0}, {1, 1}, 4, std::complex{0.5, 0.5}, 100, stop);
 
-    auto orbit1 = manager.lookup({0.1, 0.1}, 100);
+    auto orbit1 = manager.lookup({0.1, 0.1}, 100, true);
 
     compare_orbits(
         orbit1,
@@ -285,7 +285,7 @@ int main() {
             std::complex{0.6, 0.6}),
         100);
 
-    auto orbit2 = manager.lookup({0.1, 0.1}, 100);
+    auto orbit2 = manager.lookup({0.1, 0.1}, 100, true);
 
     compare_orbits(
         orbit2,
@@ -293,13 +293,13 @@ int main() {
             std::complex{0.6, 0.6}),
         100);
 
-    auto orbit3 = manager.lookup({-1.0, -1.0}, 100);
+    auto orbit3 = manager.lookup({-1.0, -1.0}, 100, true);
 
     // Let's move the reference orbit
     manager.new_view({-0.1, -0.2}, {1, 1}, 100, std::complex{0.4, 0.3}, 100,
                      stop);
 
-    auto orbit4 = manager.lookup({0.2, 0.3}, 100);
+    auto orbit4 = manager.lookup({0.2, 0.3}, 100, true);
     compare_orbits(
         orbit4,
         mandelbrot::make_basic_orbit<mandelbrot::mandelbrot_calculation<2>>(
@@ -307,7 +307,7 @@ int main() {
         100);
 
     // Compare the new orbits
-    auto orbit5 = manager.lookup({0.2, 0.3}, 100);
+    auto orbit5 = manager.lookup({0.2, 0.3}, 100, true);
     compare_orbits(
         orbit5,
         mandelbrot::make_basic_orbit<mandelbrot::mandelbrot_calculation<2>>(
