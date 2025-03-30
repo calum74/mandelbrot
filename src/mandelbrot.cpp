@@ -111,24 +111,27 @@ public:
     return z.iteration() + 1 - nu;
   }
 
-  void get_orbit(int x, int y,
-                 fractals::displayed_orbit &output, std::atomic<bool> & stop) const override {
+  void get_orbit(int x, int y, fractals::displayed_orbit &output,
+                 std::atomic<bool> &stop) const override {
 
-      
-    mandelbrot::basic_orbit<HighPrecisionType, Calculation> orbit(HighPrecisionType{coords.get_x(x), coords.get_y(y)});
+    mandelbrot::basic_orbit<HighPrecisionType, Calculation> orbit(
+        HighPrecisionType{coords.get_x(x), coords.get_y(y)});
 
     output.clear();
-    for(int iteration = 0; !mandelbrot::escaped(*orbit) && iteration < max_iterations && !stop; ++iteration)
-    {
+    for (int iteration = 0;
+         !mandelbrot::escaped(*orbit) && iteration < max_iterations && !stop;
+         ++iteration) {
       ++orbit;
 
       auto delta = fractals::number_cast<DeltaType>(orbit.distance());
-      auto max_norm = coords.w * coords.h;  // Not correct
+      auto max_norm = coords.w * coords.h; // Not correct
 
-      if(fractals::norm(delta) < max_norm)
-      {
+      if (fractals::norm(delta) < max_norm) {
         auto p = *orbit;
-        output.push_back({coords.to_x(fractals::real_part(p)), coords.to_y(fractals::imag_part(p)), iteration});
+        auto x = coords.to_x(fractals::real_part(p));
+        auto y = coords.to_y(fractals::imag_part(p));
+        if(x>=0 && y>=0)
+          output.push_back({x,y, iteration});
       }
     }
   }
