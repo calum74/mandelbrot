@@ -270,7 +270,13 @@ high_precision_real<N> operator/(const high_precision_real<N> &a, int n) {
 template <int N>
 bool operator<(const high_precision_real<N> &a,
                const high_precision_real<N> &b) {
-  return cmp(a, b) < 0;
+  return detail::cmp(a, b) < 0;
+}
+
+template <int N>
+bool operator>=(const high_precision_real<N> &a,
+                const high_precision_real<N> &b) {
+  return detail::cmp(a, b) >= 0;
 }
 
 template <int N> bool operator>=(const high_precision_real<N> &a, int b) {

@@ -399,9 +399,9 @@ bool fractals::view::fully_calculated() const {
                     : displayed_values_are_fully_evaluated;
 }
 
-void fractals::view::get_orbit(int x, int y, displayed_orbit & orbit) const
+void fractals::view::get_orbit(int x, int y, displayed_orbit & orbit, std::atomic<bool> & stop) const
 {
-  calculation->get_orbit(x,y,orbit);
+  calculation->get_orbit(x,y,orbit, stop);
 
   // TODO: Scale each point according to the animation
 }

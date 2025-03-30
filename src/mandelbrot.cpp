@@ -112,10 +112,25 @@ public:
   }
 
   void get_orbit(int x, int y,
-                 fractals::displayed_orbit &orbit) const override {
-    DeltaType delta = {coords.dx * DeltaReal(x - ref_x),
-                       coords.dy * DeltaReal(y - ref_y)};
-    orbits.lookup(delta, max_iterations, false);
+                 fractals::displayed_orbit &output, std::atomic<bool> & stop) const override {
+
+      
+    mandelbrot::basic_orbit<HighPrecisionType, Calculation> orbit(HighPrecisionType{coords.get_x(x), coords.get_y(y)});
+
+    output.clear();
+    for(int iteration = 0; !mandelbrot::escaped(*orbit) && iteration < max_iterations && !stop; ++iteration)
+    {
+      ++orbit;
+
+      auto delta = fractals::number_cast<DeltaType>(orbit.distance());
+      auto max_norm = coords.w * coords.h;  // Not correct
+
+      if(fractals::norm(delta) < max_norm)
+      {
+        auto p = *orbit;
+        output.push_back({coords.to_x(fractals::real_part(p)), coords.to_y(fractals::imag_part(p)), iteration});
+      }
+    }
   }
 
 private:

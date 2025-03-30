@@ -51,7 +51,7 @@ public:
   const view_coords &get_coords() const;
   const calculation_metrics &get_metrics() const;
 
-  void get_orbit(int x, int y, displayed_orbit & orbit) const;
+  void get_orbit(int x, int y, displayed_orbit & orbit, std::atomic<bool> & stop) const;
 
   void increase_iterations();
   void decrease_iterations();

@@ -121,4 +121,25 @@ struct convert_to<radius, high_precision_real<N>>
   }
 };
 
+template<>
+struct convert_to<int, double>
+{
+  static int get(double d) { return d; }
+};
+
+template<>
+struct convert_to<int, float>
+{
+  static int get(float f) { return f; }
+};
+
+template<typename T, typename E, bool N>
+struct convert_to<int, high_exponent_real<T, E, N>>
+{
+  static int get(const high_exponent_real<T,E,N> &n)
+  {
+    return number_cast<double>(n);
+  }
+};
+
 } // namespace fractals

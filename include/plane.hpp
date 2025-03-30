@@ -33,9 +33,24 @@ template <typename C1, typename C2> class plane {
     dy = h * C2(1.0 / ph);
   }
 
-  C1 get_x(int x) const { return x0 + x * dx; }
-  C1 get_y(int y) const { return y0 + y * dy; }
+  C1 get_x(int x) const { return x0 + number_cast<C1>(x * dx); }
+  C1 get_y(int y) const { return y0 + number_cast<C1>(y * dy); }
 
   point<C1> operator()(int x, int y) const { return {get_x(x), get_y(y)}; }
+
+  // Returns -1 if the point is out of range
+  int to_x(const C1 &c) const
+  {
+    int x = fractals::number_cast<int>(fractals::number_cast<C2>(c - x0)/dx);
+    return x>=0 && x<pw ? x : -1;
+  }
+
+  int to_y(const C1 &c) const
+  {
+    int y = fractals::number_cast<int>(fractals::number_cast<C2>(c - y0)/dy);
+    return y>=0 && y<ph ? y : -1;
+
+  }
+
 };
 } // namespace fractals

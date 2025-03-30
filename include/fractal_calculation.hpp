@@ -43,7 +43,7 @@ public:
   // The output will be sparse because it will only output points
   // that are within the current view.
   virtual void get_orbit(int x, int y,
-                         std::vector<orbital_point> &points_out) const;
+                         std::vector<orbital_point> &points_out, std::atomic<bool> & stop) const;
 };
 
 /*

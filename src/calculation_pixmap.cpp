@@ -156,6 +156,6 @@ void fractals::calculation_pixmap::layer_complete(int stride,
 }
 
 void fractals::fractal_calculation::get_orbit(
-    int x, int y, std::vector<orbital_point> &points_out) const {
+    int x, int y, std::vector<orbital_point> &points_out, std::atomic<bool> & stop) const {
   // Do nothing, but fractals can implement this if they want to
 }

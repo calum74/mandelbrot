@@ -58,6 +58,8 @@ public:
     return *this;
   }
 
+  value_type distance() const { return z-c; }
+
 private:
   value_type c, z;
 };

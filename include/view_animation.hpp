@@ -55,7 +55,7 @@ public:
   view_coords initial_coords() const;
   const calculation_metrics &get_metrics() const;
 
-  void get_orbit(int x, int y, displayed_orbit &orbit) const;
+  void get_orbit(int x, int y, displayed_orbit &orbit, std::atomic<bool> & stop) const;
 
   // Deleteme!
   void animate_to_center(std::chrono::duration<double> duration,

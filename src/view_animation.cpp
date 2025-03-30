@@ -261,7 +261,7 @@ bool fractals::view_animation::fully_calculated() const {
   return view.fully_calculated();
 }
 
-void fractals::view_animation::get_orbit(int x, int y, displayed_orbit & orbit) const
+void fractals::view_animation::get_orbit(int x, int y, displayed_orbit & orbit, std::atomic<bool> & stop) const
 {
-  view.get_orbit(x, y, orbit);
+  view.get_orbit(x, y, orbit, stop);
 }

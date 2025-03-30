@@ -43,23 +43,25 @@ public:
     }
   }
 
-  constexpr high_exponent_real(Double d0 = 0, Exponent e0 = 0) { assign(d0, e0); }
+  constexpr high_exponent_real(Double d0 = 0, Exponent e0 = 0) {
+    assign(d0, e0);
+  }
 
   Double to_double() const { return std::ldexp(d, e); }
   Double mantissa() const { return d; }
   Exponent exponent() const { return e; }
 
-  template<bool N>
+  template <bool N>
   high_exponent_real &operator+=(high_exponent_real<Double, Exponent, N> a) {
     return *this = (*this + a);
   }
 
-  template<bool N>
+  template <bool N>
   high_exponent_real &operator-=(high_exponent_real<Double, Exponent, N> a) {
     return *this = (*this - a);
   }
 
-  template<bool N>
+  template <bool N>
   high_exponent_real &operator*=(high_exponent_real<Double, Exponent, N> a) {
     return *this = (*this * a);
   }
@@ -121,6 +123,12 @@ high_exponent_real<D, E, false> operator*(high_exponent_real<D, E, N> a,
   return {a.mantissa() * b, a.exponent()};
 }
 
+template <typename D, typename E, bool N>
+high_exponent_real<D, E, false> operator*(int a,
+                                          high_exponent_real<D, E, N> b) {
+  return {a * b.mantissa(), b.exponent()};
+}
+
 template <typename D, typename E, bool N1, bool N2>
 high_exponent_real<D, E, false> operator/(high_exponent_real<D, E, N1> a,
                                           high_exponent_real<D, E, N2> b) {
@@ -166,7 +174,7 @@ int cmp(high_exponent_real<D, E, true> a, high_exponent_real<D, E, true> b) {
     return 1;
   return 0;
 }
-}
+} // namespace detail
 
 template <typename D, typename E, bool N1, bool N2>
 bool operator==(high_exponent_real<D, E, N1> a,
@@ -196,7 +204,8 @@ bool operator<=(high_exponent_real<D, E, N1> a,
   return detail::cmp(normalize(a), normalize(b)) <= 0;
 }
 
-template <typename D, typename E, bool N> bool isfinite(high_exponent_real<D, E, N> a) {
+template <typename D, typename E, bool N>
+bool isfinite(high_exponent_real<D, E, N> a) {
   return std::isfinite(a.mantissa());
 }
 
