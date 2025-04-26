@@ -1,6 +1,8 @@
 include_directories(../include)
 
-add_compile_options(/bigobj)
+if(MSVC)
+    add_compile_options(/bigobj)
+endif()
 
 add_library(mandelbrot 
     calculation_pixmap.cpp
