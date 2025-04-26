@@ -16,7 +16,11 @@
 
 #if _WIN32
 #include <intrin.h>
+#if defined _M_ARM64
+#pragma intrinsic(__umulh)
+#else
 #pragma intrinsic(_umul128)
+#endif
 #endif
 
 namespace fractals {
@@ -164,8 +168,13 @@ void raw_mul(const high_precision_real<N> &a, const high_precision_real<N> &b,
     // TODO: Fix bounds of inner loop
     for (int j = a.size() - 1; j >= 0; j--) {
 #if _WIN32
-      std::uint64_t m2;
-      std::uint64_t m1 = _umul128(a[i], b[j], &m2);
+#if defined _M_ARM64
+        std::uint64_t m1 = a[i] * b[i];
+        std::uint64_t m2 = __umulh(a[i], b[i]);
+#else
+        std::uint64_t m2;
+        std::uint64_t m1 = _umul128(a[i], b[j], &m2);
+#endif
 #else
       __uint128_t m = (__uint128_t)a[i] * (__uint128_t)b[j];
       std::uint64_t m1 = m;

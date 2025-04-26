@@ -1,4 +1,7 @@
 include_directories(../include)
+
+add_compile_options(/bigobj)
+
 add_library(mandelbrot 
     calculation_pixmap.cpp
     experiment.cpp 
