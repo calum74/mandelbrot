@@ -1,7 +1,6 @@
 #include "view_coords.hpp"
 #include "view_parameters.hpp"
-#include "number_cast.hpp"
-#include "high_precision_real.hpp"
+#include "numbers/high_precision_real.hpp"
 #include <iomanip>
 #include <sstream>
 

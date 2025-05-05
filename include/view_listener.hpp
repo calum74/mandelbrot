@@ -1,5 +1,5 @@
 #pragma once
-#include "radius.hpp"
+#include "numbers/radius.hpp"
 
 namespace fractals {
 class calculation_metrics;

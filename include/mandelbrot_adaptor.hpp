@@ -1,5 +1,5 @@
 #pragma once
-#include "complex_number.hpp"
+#include "numbers/complex_number.hpp"
 
 namespace mandelbrot {
 // An "adaptor pattern" to transform the mandelbrot patterns

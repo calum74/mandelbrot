@@ -1,6 +1,6 @@
 #pragma once
-#include "real_number.hpp"
-#include "radius.hpp"
+#include "numbers/real_number.hpp"
+#include "numbers/radius.hpp"
 
 namespace fractals {
 struct view_parameters;

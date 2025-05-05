@@ -3,7 +3,7 @@
 #include "fractal.hpp"
 #include "fractal_calculation.hpp"
 #include "pixmap.hpp"
-#include "radius.hpp"
+#include "numbers/radius.hpp"
 #include "view_coords.hpp"
 #include "view_pixmap.hpp"
 #include <atomic>

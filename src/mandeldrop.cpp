@@ -1,4 +1,4 @@
-#include "number_cast.hpp"
+#include "numbers/number_cast.hpp"
 #include "make_fractal.hpp"
 #include "mandelbrot.hpp"
 #include "mandelbrot_adaptor.hpp"

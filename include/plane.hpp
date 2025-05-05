@@ -1,6 +1,6 @@
 #pragma once
 #include "view_coords.hpp"
-#include "number_cast.hpp"
+#include "numbers/number_cast.hpp"
 
 namespace fractals {
 

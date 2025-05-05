@@ -1,5 +1,5 @@
 #pragma once
-#include "number_cast.hpp"
+#include "numbers/number_cast.hpp"
 #include "fractal_calculation.hpp"
 #include "plane.hpp"
 

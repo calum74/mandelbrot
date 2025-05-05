@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "complex_number.hpp"
+#include "numbers/complex_number.hpp"
 #include <array>
 
 namespace mandelbrot {

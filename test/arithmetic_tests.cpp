@@ -1,7 +1,7 @@
-#include "high_exponent_real.hpp"
-#include "high_precision_real.hpp"
-#include "real_number.hpp"
-#include "number_cast.hpp"
+#include "numbers/high_exponent_real.hpp"
+#include "numbers/high_precision_real.hpp"
+#include "numbers/real_number.hpp"
+#include "numbers/number_cast.hpp"
 
 #undef NDEBUG
 #include <cassert>
