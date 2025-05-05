@@ -26,7 +26,7 @@ This orbit is more expensive than a regular perturbation orbit because we
 construct a vector of the entire orbit, but the hope is that we can reuse most
 of the orbit for adjacent orbits.
 */
-template <Complex DeltaType, RandomAccessOrbit Reference> class linear_orbit {
+template <complex DeltaType, RandomAccessOrbit Reference> class linear_orbit {
 public:
   linear_orbit() : reference_orbit() {}
   linear_orbit(const Reference &r) : reference_orbit(&r) {}
@@ -150,7 +150,7 @@ public:
 A bivariate orbit with a fixed step size.
 Experiment in orbit shifting.
 */
-template <Complex DeltaType, Complex TermType, RandomAccessOrbit Reference>
+template <complex DeltaType, complex TermType, RandomAccessOrbit Reference>
 class bilinear_orbit {
 public:
   bilinear_orbit() : reference_orbit() {}

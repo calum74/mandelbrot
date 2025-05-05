@@ -11,8 +11,8 @@
 // Taylor series to skip iterations. The algorithms are implemented in
 // orbit.hpp. The class is templated so that we can configure the data types
 // for higher resolution rendering if required.
-template <mandelbrot::Complex LowPrecisionType, mandelbrot::Complex DeltaType,
-          mandelbrot::Complex TermType, mandelbrot::Complex HighPrecisionType,
+template <numbers::complex LowPrecisionType, numbers::complex DeltaType,
+          numbers::complex TermType, numbers::complex HighPrecisionType,
           mandelbrot::Calculation Calculation, int Terms, int TermPrecision>
 class ExperimentalMandelbrotCalculation
     : public fractals::fractal_calculation {

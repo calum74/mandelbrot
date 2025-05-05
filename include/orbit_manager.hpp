@@ -16,7 +16,7 @@ are computed, so better and better reference orbits are returned.
 A "better" reference orbit is closer to the point being computed, so is likely
 to be able to skip more iterations.
 */
-template <Complex OrbitType, Complex DeltaType, Complex TermType,
+template <complex OrbitType, complex DeltaType, complex TermType,
           unsigned long Terms, int TermPrecision1, int TermPrecision2,
           IteratedOrbit HighPrecisionReferenceOrbit>
 class orbit_manager {

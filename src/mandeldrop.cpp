@@ -47,9 +47,9 @@ private:
 const fractals::fractal &naiveMandeldrop =
     fractals::make_fractal<SimpleMandeldrop>("Mandeldrop (low precision)");
 
-template <typename Adaptor, mandelbrot::Complex LowPrecisionType,
-          mandelbrot::Complex DeltaType, mandelbrot::Complex TermType,
-          mandelbrot::Complex HighPrecisionType,
+template <typename Adaptor, numbers::complex LowPrecisionType,
+          numbers::complex DeltaType, numbers::complex TermType,
+          numbers::complex HighPrecisionType,
           mandelbrot::Calculation Calculation, int Terms, int TermPrecision1,
           int TermPrecision2>
 class PerturbatedMandeldropCalculation : public fractals::fractal_calculation {

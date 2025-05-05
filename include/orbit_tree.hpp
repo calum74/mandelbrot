@@ -8,24 +8,24 @@
 
 namespace mandelbrot {
 
-template <Complex DeltaType> DeltaType topleft(DeltaType radius) {
+template <complex DeltaType> DeltaType topleft(DeltaType radius) {
   return radius * -0.5;
 }
-template <Complex DeltaType> DeltaType topright(DeltaType radius) {
+template <complex DeltaType> DeltaType topright(DeltaType radius) {
   return std::conj(radius) * 0.5;
 }
 
-template <Complex DeltaType> DeltaType bottomleft(DeltaType radius) {
+template <complex DeltaType> DeltaType bottomleft(DeltaType radius) {
   return -topright(radius);
 }
 
-template <Complex DeltaType> DeltaType bottomright(DeltaType radius) {
+template <complex DeltaType> DeltaType bottomright(DeltaType radius) {
   return radius * 0.5;
 }
 
 // A type of perturbation orbit that supports
 // "jump forward N steps"
-template <Complex LowPrecisionType, Complex DeltaType, Complex TermType,
+template <complex LowPrecisionType, complex DeltaType, complex TermType,
           RandomAccessOrbit ReferenceOrbit>
 class orbit_branch {
 public:
@@ -275,7 +275,7 @@ public:
   }
 };
 
-template <typename Branch, Complex DeltaType, typename Fn>
+template <typename Branch, complex DeltaType, typename Fn>
 void compute_tree(int x0, int y0, int x1, int y1,
                   const std::shared_ptr<Branch> &branch,
                   DeltaType branch_radius, int max_iterations,

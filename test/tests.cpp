@@ -17,7 +17,7 @@
 using namespace fractals;
 using namespace mandelbrot;
 
-template <Complex C> void assert_equal(const C &c1, const C &c2) {
+template <complex C> void assert_equal(const C &c1, const C &c2) {
   assert(norm(c1 - c2) < 0.0001);
 }
 

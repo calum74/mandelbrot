@@ -32,13 +32,7 @@ namespace numbers
         imag_part(t);
       };
 
-  template <typename T>
-  concept Complex = requires(T v) {
-    { v.real() } -> std::same_as<typename T::value_type>;
-    { v.imag() } -> std::same_as<typename T::value_type>;
-  };
-
-  template <Complex C>
+  template <complex C>
   C square(const C &c)
   {
     return {real_part(c) * real_part(c) - imag_part(c) * imag_part(c),
@@ -118,9 +112,9 @@ namespace numbers
             a.real() * b.imag() + a.imag() * b.real()};
   }
 
-  // template <Complex C> C step(const C &z, const C &c) { return square(z) + c; }
+  // template <complex C> C step(const C &z, const C &c) { return square(z) + c; }
 
-  template <Complex C>
+  template <complex C>
   auto norm(const C &c)
   {
     auto r = real_part(c);
@@ -128,22 +122,22 @@ namespace numbers
     return r * r + i * i;
   }
 
-  template <int Order, Complex C, bool is_even = (Order % 2 == 0)>
+  template <int Order, complex C, bool is_even = (Order % 2 == 0)>
   struct pow_impl;
 
-  template <Complex C>
+  template <complex C>
   struct pow_impl<2, C, true>
   {
     static C eval(const C &c) { return square(c); }
   };
 
-  template <Complex C>
+  template <complex C>
   struct pow_impl<1, C, false>
   {
     static C eval(const C &c) { return c; }
   };
 
-  template <int Order, Complex C>
+  template <int Order, complex C>
   struct pow_impl<Order, C, true>
   {
     static C eval(const C &c)
@@ -153,25 +147,25 @@ namespace numbers
     }
   };
 
-  template <Complex C>
+  template <complex C>
   struct pow_impl<0, C, true>
   {
     static C eval(const C &c) { return C{1, 0}; }
   };
 
-  template <Complex C>
+  template <complex C>
   struct pow_impl<-1, C, false>
   {
     static C eval(const C &c) { return C{0, 0}; } // Not implemented
   };
 
-  template <int Order, Complex C>
+  template <int Order, complex C>
   struct pow_impl<Order, C, false>
   {
     static C eval(const C &c) { return mul(c, pow_impl<Order - 1, C>::eval(c)); }
   };
 
-  template <int Order, Complex C>
+  template <int Order, complex C>
   C pow(const C &c)
   {
     return pow_impl<Order, C>::eval(c);

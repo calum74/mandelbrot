@@ -22,7 +22,7 @@
 namespace mandelbrot {
 using namespace numbers;
 
-template <Complex C> bool escaped(const C &c) {
+template <complex C> bool escaped(const C &c) {
   return numbers::norm(c) >= typename C::value_type(4);
 }
 
@@ -30,7 +30,7 @@ template <int N> struct mandelbrot_calculation;
 
 namespace detail {
 template <int N, int J> struct calculate_epsilon {
-  template <Complex OrbitType, Complex DeltaType>
+  template <complex OrbitType, complex DeltaType>
   static DeltaType eval(const OrbitType &z, const DeltaType &e) {
     return choose<N, J>() * DeltaType(pow<J>(z)) * pow<N - J>(e) +
            calculate_epsilon<N, J + 1>::eval(z, e);
@@ -38,7 +38,7 @@ template <int N, int J> struct calculate_epsilon {
 };
 
 template <int N> struct calculate_epsilon<N, N> {
-  template <Complex OrbitType, Complex DeltaType>
+  template <complex OrbitType, complex DeltaType>
   static DeltaType eval(const OrbitType &z, const DeltaType &e) {
     return {0, 0};
   }
@@ -48,7 +48,7 @@ template <int N> struct calculate_epsilon<N, N> {
 // (A∂ + B∂^2 + C∂^3 ...)
 // and multiply it with the terms from (A∂ + B∂^2 + C∂^3
 // ...)^(seq_remaining-1)
-template <Complex TermType, unsigned long Terms>
+template <complex TermType, unsigned long Terms>
 void distribute_terms(int delta_pow, int seq_remaining, TermType f,
                       const std::array<TermType, Terms> &previous,
                       std::array<TermType, Terms> &next) {
@@ -70,7 +70,7 @@ inline int fac(int n) {
   return m;
 }
 
-template <Complex TermType, unsigned long Terms, int N>
+template <complex TermType, unsigned long Terms, int N>
 struct calculate_delta_terms {
   static std::array<TermType, Terms>
   calculate(TermType z, const std::array<TermType, Terms> &previous) {
@@ -88,9 +88,9 @@ struct calculate_delta_terms {
 };
 
 // Specialisation of the previous case for N=3 (might be a bit faster?)
-template <typename Complex, int N> struct calculate_delta_terms<Complex, 3, N> {
-  static std::array<Complex, 3>
-  calculate(Complex z, const std::array<Complex, 3> &previous) {
+template <typename complex, int N> struct calculate_delta_terms<complex, 3, N> {
+  static std::array<complex, 3>
+  calculate(complex z, const std::array<complex, 3> &previous) {
     return {
         mandelbrot_calculation<N>::A(z, previous[0]),
         mandelbrot_calculation<N>::B(z, previous[0], previous[1]),
@@ -99,9 +99,9 @@ template <typename Complex, int N> struct calculate_delta_terms<Complex, 3, N> {
 };
 
 // Specialisation of the previous case for N=4 (might be a bit faster?)
-template <typename Complex, int N> struct calculate_delta_terms<Complex, 4, N> {
-  static std::array<Complex, 4>
-  calculate(Complex z, const std::array<Complex, 4> &previous) {
+template <typename complex, int N> struct calculate_delta_terms<complex, 4, N> {
+  static std::array<complex, 4>
+  calculate(complex z, const std::array<complex, 4> &previous) {
     return {
         mandelbrot_calculation<N>::A(z, previous[0]),
         mandelbrot_calculation<N>::B(z, previous[0], previous[1]),
@@ -121,29 +121,29 @@ template <int N> struct mandelbrot_calculation {
   static constexpr int order = N;
 
   // The general form of the calculation z -> z^N + c
-  template <Complex C> static C step(const C &z, const C &c) {
+  template <complex C> static C step(const C &z, const C &c) {
     return pow<N>(z) + c;
   }
 
   // When performing perturbations (for higher precision), here is the general
   // formula for evaluating the epsilon (dz)
-  template <Complex OrbitType, Complex DeltaType>
+  template <complex OrbitType, complex DeltaType>
   static DeltaType step_epsilon(const OrbitType &z, const DeltaType &e,
                                 const DeltaType &d) {
     return d + detail::calculate_epsilon<N, 0>::eval(z, e);
   }
 
-  template <Complex C> static C A(const C &z, const C &A_prev) {
+  template <complex C> static C A(const C &z, const C &A_prev) {
     return choose<N, 1>() * pow<N - 1>(z) * A_prev + C{1, 0};
   }
 
-  template <Complex C>
+  template <complex C>
   static C B(const C &z, const C &A_prev, const C &B_prev) {
     return choose<N, 1>() * pow<N - 1>(z) * B_prev +
            choose<N, 2>() * pow<N - 2>(z) * pow<2>(A_prev);
   }
 
-  template <Complex Cx>
+  template <complex Cx>
   static Cx C(const Cx &z, const Cx &A_prev, const Cx &B_prev,
               const Cx &C_prev) {
     if constexpr (N > 2) {
@@ -156,7 +156,7 @@ template <int N> struct mandelbrot_calculation {
     }
   }
 
-  template <Complex C>
+  template <complex C>
   static C D(const C &z, const C &A_prev, const C &B_prev, const C &C_prev,
              const C &D_prev) {
     if constexpr (N > 3) {
@@ -182,7 +182,7 @@ template <int N> struct mandelbrot_calculation {
   //             ...)^(n-j) )
   //
   // for the next iteration. We equate terms in ∂^n.
-  template <Complex OrbitType, Complex TermType, unsigned long Terms>
+  template <complex OrbitType, complex TermType, unsigned long Terms>
   static std::array<TermType, Terms>
   delta_terms(const OrbitType &z, const std::array<TermType, Terms> &previous) {
     return detail::calculate_delta_terms<TermType, Terms, N>::calculate(

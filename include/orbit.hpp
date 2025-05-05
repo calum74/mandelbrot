@@ -39,10 +39,10 @@ concept Calculation =
   A basic_orbit iterates the escape sequence manually.
   Often this is used as a "reference orbit" for more advanced algorithms.
 
-  Complex - the type of the complex number
+  complex - the type of the complex number
   Calculation - how to calculate the sequence
 */
-template <Complex T, Calculation C> class basic_orbit {
+template <complex T, Calculation C> class basic_orbit {
 public:
   using value_type = T;
   using calculation = C;
@@ -64,7 +64,7 @@ private:
   value_type c, z;
 };
 
-template <Calculation C, Complex T>
+template <Calculation C, complex T>
 basic_orbit<T, C> make_basic_orbit(const T &c) {
   return {c};
 }
@@ -74,11 +74,11 @@ basic_orbit<T, C> make_basic_orbit(const T &c) {
   Generally useful when exposing a high-precision orbit into
   a lower-precision form.
 
-  Complex is a lower-precision complex number (e.g. std::complex<double>)
+  complex is a lower-precision complex number (e.g. std::complex<double>)
   ReferenceOrbit is a high precision orbit (e.g.
   basic_orbit<std::complex<high_precision_real<>>>)
 */
-template <Complex T, IteratedOrbit ReferenceOrbit> class converted_orbit {
+template <complex T, IteratedOrbit ReferenceOrbit> class converted_orbit {
 public:
   converted_orbit() = default;
   converted_orbit(const ReferenceOrbit &r) : reference(r) {}
@@ -102,13 +102,13 @@ private:
   low-precision sequence. Most algorithms don't need the
   high-precision number.
  */
-template <Complex LowPrecisionComplex, Complex HighPrecisionComplex,
+template <complex LowPrecisionComplex, complex HighPrecisionComplex,
           Calculation C>
 using high_precision_orbit =
     converted_orbit<LowPrecisionComplex, basic_orbit<HighPrecisionComplex, C>>;
 
-template <Complex OrbitType, IteratedOrbit ReferenceOrbit,
-          Complex DeltaType = OrbitType>
+template <complex OrbitType, IteratedOrbit ReferenceOrbit,
+          complex DeltaType = OrbitType>
 class naive_relative_orbit {
 public:
   using value_type = OrbitType;
@@ -148,7 +148,7 @@ private:
   epsilon_type epsilon;
 };
 
-template <Complex C, IteratedOrbit Ref> class stored_orbit {
+template <complex C, IteratedOrbit Ref> class stored_orbit {
 public:
   stored_orbit(Ref orbit, int max_iterations, std::atomic<bool> &stop) {
     // Store up to max_iterations or until orbit has escaped
@@ -174,7 +174,7 @@ private:
   std::vector<value_type> values;
 };
 
-template <Complex C, IteratedOrbit Ref>
+template <complex C, IteratedOrbit Ref>
 stored_orbit<C, Ref> make_stored_orbit(const Ref &r, int max_iterations,
                                        std::atomic<bool> &stop) {
   return {r, max_iterations, stop};
@@ -192,7 +192,7 @@ make_naive_relative_orbit(Rel rel, auto delta) {
 
   z = z_0 + A.delta + B.delta^2 + C.delta^3
 */
-template <Complex OrbitType, Complex TermType, IteratedOrbit ReferenceOrbit,
+template <complex OrbitType, complex TermType, IteratedOrbit ReferenceOrbit,
           int Terms>
 class taylor_series_orbit {
 public:
@@ -225,7 +225,7 @@ private:
 // An orbit that's relative to another reference orbit, so can be computed
 // using a low-precision complex number. ReferenceOrbit must be a
 // random-access orbit (supporting [])
-template <Complex C, Complex DeltaType, RandomAccessOrbit ReferenceOrbit>
+template <complex C, complex DeltaType, RandomAccessOrbit ReferenceOrbit>
 class perturbation_orbit {
 public:
   using value_type = C;
@@ -297,13 +297,13 @@ public:
   const ReferenceOrbit *reference = 0;
 };
 
-template <Complex C, Complex DeltaType, RandomAccessOrbit ReferenceOrbit>
+template <complex C, complex DeltaType, RandomAccessOrbit ReferenceOrbit>
 perturbation_orbit<C, DeltaType, ReferenceOrbit>
 make_perturbation_orbit(const ReferenceOrbit &ref, DeltaType delta) {
   return {ref, delta};
 }
 
-template <int Precision1 = 10, int Precision2 = 100, Complex TermType,
+template <int Precision1 = 10, int Precision2 = 100, complex TermType,
           unsigned long Terms>
 typename TermType::value_type
 maximum_delta_norm(const std::array<TermType, Terms> &terms) {
@@ -330,7 +330,7 @@ maximum_delta_norm(const std::array<TermType, Terms> &terms) {
   return max_delta_norm;
 }
 
-template <Complex DeltaType, Complex TermType, unsigned long Terms>
+template <complex DeltaType, complex TermType, unsigned long Terms>
 DeltaType evaluate_epsilon(DeltaType delta,
                            const std::array<TermType, Terms> &terms) {
   TermType d = number_cast<TermType>(delta);
@@ -348,7 +348,7 @@ DeltaType evaluate_epsilon(DeltaType delta,
   series terms for each iteration. This allows for an efficient
   (random-access) test.
 
-  Complex is a lower-precision representation, e.g.
+  complex is a lower-precision representation, e.g.
   `std::complex<double>`
 
   HighExponentComplex is used for the Taylor series terms, whose exponents can
@@ -356,7 +356,7 @@ DeltaType evaluate_epsilon(DeltaType delta,
 
   ReferenceOrbit is the high-precision orbit.
 */
-template <Complex OrbitType, Complex DeltaType, Complex TermType,
+template <complex OrbitType, complex DeltaType, complex TermType,
           IteratedOrbit ReferenceOrbit, int Terms, int TermPrecision1,
           int TermPrecision2>
 class stored_taylor_series_orbit {
@@ -543,7 +543,7 @@ Taylor series will run out of iterations even for low precisions.
 `ReferenceOrbit` is a high precision reference orbit, that is iterated
 precisely once.
 */
-template <Complex OrbitType, Complex DeltaType, Complex TermType,
+template <complex OrbitType, complex DeltaType, complex TermType,
           IteratedOrbit ReferenceOrbit, int Terms, int TermPrecision1,
           int TermPrecision2>
 class taylor_series_cluster {
