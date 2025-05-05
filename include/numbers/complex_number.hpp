@@ -4,23 +4,18 @@
 
 #pragma once
 
-#include "real_number.hpp"  // ???
-#include "high_exponent_real.hpp"  // !! No
-
-#include "number_traits.hpp"
-#include "number_cast.hpp"
-
+#include "real_number.hpp"
 
 #include <complex>
 
 namespace numbers
 {
-  template<typename T>
+  template <typename T>
   T real_part(const std::complex<T> &c) { return c.real(); }
 
-  template<typename T>
+  template <typename T>
   T imag_part(const std::complex<T> &c) { return c.imag(); }
-  
+
   template <real R>
   struct number_traits<std::complex<R>>
   {
@@ -30,29 +25,18 @@ namespace numbers
     static constexpr bool is_real = false;
   };
 
-  template<typename T>
-  concept complex = // number<T> and not real<T> and
-  requires(T t)
-  {
-      real_part(t);
-      imag_part(t);
-  };
-}
-
-namespace numbers
-{
+  template <typename T>
+  concept complex = number<T> and not real<T> and
+      requires(T t) {
+        real_part(t);
+        imag_part(t);
+      };
 
   template <typename T>
   concept Complex = requires(T v) {
     { v.real() } -> std::same_as<typename T::value_type>;
     { v.imag() } -> std::same_as<typename T::value_type>;
   };
-
-  //template <typename T>
-  //T real_part(const std::complex<T> &c) { return c.real(); }
-
-  //template <typename T>
-  //T imag_part(const std::complex<T> &c) { return c.imag(); }
 
   template <Complex C>
   C square(const C &c)
@@ -266,6 +250,5 @@ namespace numbers
   using complex_number =
       std::complex<typename make_real<Digits, MinExp, MaxExp>::type>;
 } // namespace fractals
-
 
 static_assert(numbers::complex<std::complex<double>>);
