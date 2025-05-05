@@ -9,7 +9,7 @@ class view_listener {
 public:
   virtual ~view_listener() = default;
   // A new calculation has started
-  virtual void calculation_started(radius r, int max_iterations) = 0;
+  virtual void calculation_started(numbers::radius r, int max_iterations) = 0;
 
   // The contents of `values` has changed, so it can be redrawn
   // Triggered by animation or by calculation.

@@ -9,13 +9,13 @@ struct mapped_point {
   // The coordinates of a point (x,y) within a viewport, together with
   // the log of the distance log(r1/r2).
   double x, y;
-  radius distance;
+  numbers::radius distance;
 };
 
 // The coordinates of the current view, specified in high_precision numbers.
 class view_coords {
   public:
-  using value_type = real_number<4096, 0, 0>; // 4096 with no exponent
+  using value_type = numbers::real_number<4096, 0, 0>; // 4096 with no exponent
   value_type x, y, r;
   int max_iterations;
 
@@ -27,7 +27,7 @@ class view_coords {
   void write(view_parameters&) const;
 
   // Gets the natural log of r
-  fractals::radius radius() const;
+  numbers::radius radius() const;
 
   // Scrolls the coordinates by a given number of pixels, returning the
   // resulting coordinates.

@@ -62,7 +62,7 @@ int main() {
   // Instead, we have implemented a very basic data-type for high-precision
   // arithmetic, where the template parameter specifies the number of 64-bit
   // integers used to store the number.
-  using R = fractals::high_precision_real<640>;
+  using R = numbers::high_precision_real<640>;
 
   // You can convert high_precision_real to and from strings using iostreams
   std::stringstream ss{"1.234567890123456789012345"};

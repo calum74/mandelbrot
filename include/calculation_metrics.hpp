@@ -10,7 +10,7 @@ struct calculation_metrics {
   bool last_action_was_a_scroll;
 
   // These metrics are always reported
-  fractals::radius radius;
+  numbers::radius radius;
   double min_depth;
   double max_depth;
   double p999, p9999;

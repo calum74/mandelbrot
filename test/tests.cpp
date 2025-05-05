@@ -207,9 +207,9 @@ int main() {
   }
 
   {
-    using R1 = fractals::high_exponent_real<double, int>;
+    using R1 = numbers::high_exponent_real<double, int>;
     using R2 = double;
-    using R3 = fractals::high_precision_real<3>;
+    using R3 = numbers::high_precision_real<3>;
 
     mandelbrot::basic_orbit<std::complex<R1>,
                             mandelbrot::mandelbrot_calculation<2>>
@@ -268,8 +268,8 @@ int main() {
 
     mandelbrot::orbit_manager<
         std::complex<double>,
-        std::complex<fractals::high_exponent_double>,
-        std::complex<fractals::high_exponent_double>, 4, 20, 100,
+        std::complex<numbers::high_exponent_double>,
+        std::complex<numbers::high_exponent_double>, 4, 20, 100,
         mandelbrot::basic_orbit<std::complex<double>,
                                 mandelbrot::mandelbrot_calculation<2>>>
         manager;

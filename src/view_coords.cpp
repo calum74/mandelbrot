@@ -1,7 +1,9 @@
 #include "view_coords.hpp"
 #include "view_parameters.hpp"
 #include "number_cast.hpp"
+#include "high_precision_real.hpp"
 #include <iomanip>
+#include <sstream>
 
 fractals::view_coords::view_coords(const value_type &x, const value_type &y,
                                    const value_type &r, int max_iterations)
@@ -126,12 +128,12 @@ std::istream &fractals::operator>>(std::istream &is, view_coords &coords) {
 }
 
 int fractals::view_coords::get_precision(int d) const {
-  int zeros = fractals::count_fractional_zeros(r);
+  int zeros = numbers::count_fractional_zeros(r);
   return d + zeros * 0.30103;
 }
 
-fractals::radius fractals::view_coords::radius() const {
-  return number_cast<fractals::radius>(r);
+numbers::radius fractals::view_coords::radius() const {
+  return numbers::number_cast<numbers::radius>(r);
 }
 
 fractals::mapped_point

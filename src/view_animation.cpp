@@ -113,7 +113,7 @@ int fractals::view_animation::width() const { return view.width(); }
 
 int fractals::view_animation::height() const { return view.height(); }
 
-void fractals::view_animation::calculation_started(radius r,
+void fractals::view_animation::calculation_started(numbers::radius r,
                                                    int max_iterations) {
   listener.calculation_started(r, max_iterations);
 }
@@ -194,7 +194,7 @@ void fractals::view_animation::animation_loop() {
     case animation::navigate_to_point: {
 
       auto current_r = view.get_coords().radius();
-      auto new_r = current_r * radius{0.5};
+      auto new_r = current_r * numbers::radius{0.5};
       auto [duration, wait] = get_step_duration(animate_step_duration);
       if (new_r > zoom_limit) {
         view.animate_to_center(duration, wait, 0.5);

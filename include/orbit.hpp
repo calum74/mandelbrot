@@ -197,7 +197,7 @@ template <Complex OrbitType, Complex TermType, IteratedOrbit ReferenceOrbit,
 class taylor_series_orbit {
 public:
   using value_type = OrbitType;
-  using term_type = typename fractals::normalized<TermType>::type;
+  using term_type = typename numbers::normalized<TermType>::type;
   using calculation = typename ReferenceOrbit::calculation;
 
   std::array<term_type, Terms> terms;
@@ -268,13 +268,13 @@ public:
   perturbation_orbit &operator++() {
 
     epsilon = calculation::step_epsilon((*reference)[j], epsilon, delta);
-    epsilon = fractals::normalize(epsilon);
+    epsilon = numbers::normalize(epsilon);
     j++;
 
     assert(j >= 0 && j < reference->size());
     auto z = **this;
     if (j == (*reference).size() - 1 || escaped((*reference)[j]) ||
-        fractals::norm(z) < fractals::norm(number_cast<value_type>(epsilon))) {
+        numbers::norm(z) < numbers::norm(number_cast<value_type>(epsilon))) {
       // We have exceeded the bounds of the current orbit
       // We need to reset the current orbit.
       // Thanks to
@@ -312,16 +312,16 @@ maximum_delta_norm(const std::array<TermType, Terms> &terms) {
   term_norm max_delta_norm = 0;
   term_norm p1(Precision1);
   term_norm p2(Precision2);
-  term_norm prev_norm = fractals::norm(terms[0]);
+  term_norm prev_norm = numbers::norm(terms[0]);
 
   for (int i = 1; i < Terms - 1; i++) {
-    auto n = fractals::norm(terms[i]);
+    auto n = numbers::norm(terms[i]);
     auto nr = prev_norm / (p1 * n);
     prev_norm = n;
     if (i == 1 || max_delta_norm > nr)
       max_delta_norm = nr;
   }
-  auto n = fractals::norm(terms[Terms - 1]);
+  auto n = numbers::norm(terms[Terms - 1]);
   auto nr = prev_norm / (p2 * n);
 
   if (max_delta_norm > nr)
@@ -401,7 +401,7 @@ private:
     // Step 1: Establish the max and min
     epsilon_type epsilon = {};
     int window_size = 4;
-    auto nd = fractals::norm(delta);
+    auto nd = numbers::norm(delta);
 
     int skipped = iterations_skipped;
 

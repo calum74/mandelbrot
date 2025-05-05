@@ -88,13 +88,13 @@ public:
     coords = {c, w, h};
     ref_x = (w / 2);
     ref_y = (h / 2);
-    c0 = {fractals::number_cast<SmallReal>(coords.x0) + fractals::number_cast<SmallReal>(coords.dx * ref_x),
-      fractals::number_cast<SmallReal>(coords.y0) + fractals::number_cast<SmallReal>(coords.dy * ref_y)};
+    c0 = {numbers::number_cast<SmallReal>(coords.x0) + numbers::number_cast<SmallReal>(coords.dx * ref_x),
+      numbers::number_cast<SmallReal>(coords.y0) + numbers::number_cast<SmallReal>(coords.dy * ref_y)};
     reference_orbit = {
         mandelbrot::make_basic_orbit<Calculation>(Adaptor::map(
-            HighPrecisionType{coords.x0 + fractals::number_cast<HighPrecisionReal>(
+            HighPrecisionType{coords.x0 + numbers::number_cast<HighPrecisionReal>(
                                               coords.dx * ref_x),
-                              coords.y0 + fractals::number_cast<HighPrecisionReal>(
+                              coords.y0 + numbers::number_cast<HighPrecisionReal>(
                                               coords.dy * ref_y)})),
         max_iterations, stop};
   }
@@ -104,7 +104,7 @@ public:
   // The call to `valid_precision` checks the size of the radius relative to
   // the size of a BigReal to make sure we have sufficient accuracy.
   static bool valid_for(const view_coords &c) {
-    return c.r <= 3 && fractals::valid_precision_for_inverse(number_cast<HighPrecisionReal>(c.r));
+    return c.r <= 3 && numbers::valid_precision_for_inverse(number_cast<HighPrecisionReal>(c.r));
   }
 
   // The initial coordinates to view the Mandelbrot set.
@@ -167,8 +167,8 @@ template <int N, int P, int Terms = 4, int TP1 = 20, int TP2 = 100,
           typename DeltaType = std::complex<double>>
 using MD = PerturbatedMandeldropCalculation<
     mandelbrot::mandeldrop_adaptor, std::complex<double>, DeltaType,
-    std::complex<fractals::high_exponent_double>,
-    std::complex<fractals::high_precision_real<P>>,
+    std::complex<numbers::high_exponent_double>,
+    std::complex<numbers::high_precision_real<P>>,
     mandelbrot::mandelbrot_calculation<2>, Terms, TP1, TP2>;
 
 const fractals::fractal &x =
@@ -178,9 +178,9 @@ const fractals::fractal &x =
 template <int Precision> struct mandeldrop_generator {
   using type = PerturbatedMandeldropCalculation<
       mandelbrot::mandeldrop_adaptor, std::complex<double>,
-      fractals::complex_number<0,-Precision,0>,
-      std::complex<fractals::high_exponent_double>,
-      fractals::complex_number<Precision, 0, 0>,
+      numbers::complex_number<0,-Precision,0>,
+      std::complex<numbers::high_exponent_double>,
+      numbers::complex_number<Precision, 0, 0>,
       mandelbrot::mandelbrot_calculation<2>, 4, 20, 100>;
 };
 

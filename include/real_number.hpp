@@ -15,7 +15,7 @@
    platform. E.g. long double is not available on ARM64.
 */
 
-namespace fractals {
+namespace numbers {
 template <int Digits, int MinExp, int MaxExp> struct make_real;
 
 template <int Digits, int MinExp, int MaxExp>

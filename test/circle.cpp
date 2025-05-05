@@ -32,4 +32,4 @@ public:
 
 const fractals::fractal &circle_fractal =
     fractals::make_fractal<Circle<double>,
-                           Circle<fractals::high_precision_real<6>>>("Circle");
+                           Circle<numbers::high_precision_real<6>>>("Circle");

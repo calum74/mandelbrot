@@ -1,6 +1,7 @@
 /*
   This file contains unfinished experiments.
 */
+
 #include "complex_number.hpp"
 #include "orbit.hpp"
 
@@ -82,7 +83,7 @@ public:
       // Zhuoran's device
       if (jZ >= reference_orbit->size() - 1 ||
           escaped((*reference_orbit)[jZ]) ||
-          fractals::norm(z) < fractals::norm(dz)) {
+          numbers::norm(z) < numbers::norm(dz)) {
         dz = z;
         jZ = 0;
       }
@@ -130,7 +131,7 @@ std::optional<TermType> eval_terms(const jump_terms<TermType> &terms,
       terms.A * e_nij * e_nij + terms.B * d_ij * d_ij + terms.C * e_nij * d_ij;
   auto e = std::numeric_limits<typename TermType::value_type>::epsilon();
 
-  if (fractals::norm(y) > e * e* fractals::norm(x))
+  if (numbers::norm(y) > e * e* numbers::norm(x))
     return std::nullopt;
 
   return x+y;

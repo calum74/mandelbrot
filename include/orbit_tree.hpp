@@ -174,7 +174,7 @@ public:
     DeltaType epsilon = 0;
     int j = 0;
 
-    extend_series(j, epsilon, fractals::norm(radius), max_iterations, stop);
+    extend_series(j, epsilon, numbers::norm(radius), max_iterations, stop);
   }
 
   using delta_size = typename DeltaType::value_type;
@@ -216,14 +216,14 @@ public:
                 delta_from_reference;
       j++;
 
-      auto norm_z = fractals::norm(local_z);
+      auto norm_z = numbers::norm(local_z);
 
       if (norm_z == 0)
         norm_z = 1;
 
       // Zhuoran's device
       if (j >= reference_orbit.size() - 1 || escaped(reference_orbit[j]) ||
-          norm_z < fractals::norm(epsilon)) {
+          norm_z < numbers::norm(epsilon)) {
         epsilon = z;
         j = 0;
       }
@@ -237,7 +237,7 @@ public:
              entries.size() + base_iteration < max_iterations &&
              norm(A) < max_norm_A && norm(B) < max_norm_B);
 
-    max_epsilon = std::sqrt(norm_delta) * std::sqrt(fractals::norm(B));
+    max_epsilon = std::sqrt(norm_delta) * std::sqrt(numbers::norm(B));
 
     if (!parent || !parent->parent) {
       std::cout << "||∂|| = " << norm_delta;
@@ -270,7 +270,7 @@ public:
     // parent branch
     int j = parent->entries[parent->size()].j;
 
-    extend_series(j, epsilon, fractals::norm(delta_from_parent), max_iterations,
+    extend_series(j, epsilon, numbers::norm(delta_from_parent), max_iterations,
                   stop);
   }
 };

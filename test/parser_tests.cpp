@@ -21,7 +21,7 @@ auto test1 = "Location:\n"
              "Iterations: 80000\n";
 
 int main() {
-  using H512 = fractals::real_number<512, 0, 0>;
+  using H512 = numbers::real_number<512, 0, 0>;
 
   // Numerical exponents on high_precision_real
   {

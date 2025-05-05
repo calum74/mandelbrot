@@ -9,7 +9,7 @@
 #include <random>
 #include <sstream>
 
-template <int N> using hp = fractals::high_precision_real<N>;
+template <int N> using hp = numbers::high_precision_real<N>;
 
 template <int N>
 void assert_eq(const hp<N> &a, const hp<N> &b,
@@ -100,7 +100,7 @@ template <int N> void test(int iterations) {
 }
 
 void random_bits() {
-  using namespace fractals;
+  using namespace numbers;
   // High precision
   using H2 = hp<64>;
 
@@ -207,7 +207,7 @@ void random_bits() {
 
   // Inverse regression test case
   {
-    fractals::high_precision_real<3*64> n;
+    numbers::high_precision_real<3*64> n;
     n[0] = 3;
     n[1] = 1895646463175238861ull;
     n[2] = 18205977988746887042ull;
@@ -217,7 +217,7 @@ void random_bits() {
     auto j1 = n * i;
     auto j2 = i * n;
     assert(j1 == j2);
-    fractals::high_precision_real<3*64> one{1};
+    numbers::high_precision_real<3*64> one{1};
     std::cout << std::setprecision(80) << "j1 = " << j1 << std::endl;
     assert_eq(j1, one, 0xffff);
   }
@@ -252,20 +252,20 @@ template <typename T1, typename T2> void test_comparison(T1 a, T2 b) {
 }
 
 void test_conversion(double x) {
-  using R = fractals::high_exponent_real<double, int>;
-  using HP = fractals::high_precision_real<5*64>;
+  using R = numbers::high_exponent_real<double, int>;
+  using HP = numbers::high_precision_real<5*64>;
 
   auto a = R(x);
-  auto b = fractals::number_cast<HP>(a);
-  auto c = fractals::number_cast<R>(b);
-  auto d = fractals::number_cast<HP>(c);
+  auto b = numbers::number_cast<HP>(a);
+  auto c = numbers::number_cast<R>(b);
+  auto d = numbers::number_cast<HP>(c);
   std::cout << x << std::endl;
   std::cout << a << "=" << b << "=" << c << std::endl;
 
   // assert(a == c);
   assert(b == d);
-  auto e = fractals::number_cast<double>(a);
-  auto f = fractals::number_cast<double>(b);
+  auto e = numbers::number_cast<double>(a);
+  auto f = numbers::number_cast<double>(b);
   assert(e == x);
   std::cout << "f=" << f << std::endl;
   std::cout << "x=" << x << std::endl;
@@ -273,8 +273,8 @@ void test_conversion(double x) {
 }
 
 void high_exponent_real_tests() {
-  using R = fractals::high_exponent_real<double, int>;
-  using HP3 = fractals::high_precision_real<3>;
+  using R = numbers::high_exponent_real<double, int>;
+  using HP3 = numbers::high_precision_real<3>;
 
   R r1, r2;
 
@@ -290,8 +290,8 @@ void high_exponent_real_tests() {
 
   // Conversion
 
-  auto c = fractals::number_cast<HP3>(R{2.5});
-  std::cout << fractals::number_cast<R>(fractals::number_cast<HP3>(R{2.5})).to_double()
+  auto c = numbers::number_cast<HP3>(R{2.5});
+  std::cout << numbers::number_cast<R>(numbers::number_cast<HP3>(R{2.5})).to_double()
             << std::endl;
   r2 = 2.5;
   assert(r2 == R(2.5));
@@ -315,26 +315,26 @@ void high_exponent_real_tests() {
   test_conversion(0.00000000000000000003941);
 
   {
-    using HP20 = fractals::high_precision_real<20>;
+    using HP20 = numbers::high_precision_real<20>;
     HP20 h1 = 1;
     // Bug is here
     h1 = h1 >> (9 * 64); // 1288); //  * 64);
-    auto h2 = fractals::number_cast<R>(h1);
+    auto h2 = numbers::number_cast<R>(h1);
     std::cout << h1 << std::endl << h2;
   }
 }
 
 void real_number_tests() {
-  using T1 = fractals::real_number<10, -10, 10>;
+  using T1 = numbers::real_number<10, -10, 10>;
   using T1 = float;
 
-  using T2 = fractals::real_number<1000, 0, 0>;
-  using T2 = fractals::real_number<1000, 0, 0>;
+  using T2 = numbers::real_number<1000, 0, 0>;
+  using T2 = numbers::real_number<1000, 0, 0>;
 
-  using T3 = fractals::real_number<40, -300, 300>;
+  using T3 = numbers::real_number<40, -300, 300>;
   using T3 = double;
 
-  using T4 = fractals::real_number<50, -1000, 1000>;
+  using T4 = numbers::real_number<50, -1000, 1000>;
 }
 
 int main() {
@@ -353,6 +353,6 @@ int main() {
   high_exponent_real_tests();
 
   {
-    using T = fractals::real_number<0,-128,0>;
+    using T = numbers::real_number<0,-128,0>;
   }
 }

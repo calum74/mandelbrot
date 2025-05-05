@@ -20,10 +20,10 @@
 #include <array>
 
 namespace mandelbrot {
-using namespace fractals;
+using namespace numbers;
 
 template <Complex C> bool escaped(const C &c) {
-  return fractals::norm(c) >= typename C::value_type(4);
+  return numbers::norm(c) >= typename C::value_type(4);
 }
 
 template <int N> struct mandelbrot_calculation;

@@ -80,8 +80,8 @@ public:
     // - has escaped, or
     // - has not escaped, and is sufficiently long
     if (!primary_series ||
-        fractals::norm(primary_series->delta - delta) >
-            fractals::norm(maxDelta) ||
+        numbers::norm(primary_series->delta - delta) >
+            numbers::norm(maxDelta) ||
         (!escaped(primary_series->orbit[primary_series->orbit.size() - 1]) &&
          primary_series->orbit.size() < max_iterations)) {
       // Unfortunately, recycling the primary orbit isn't always feasible
@@ -170,7 +170,7 @@ private:
     if (lookup_width == 0 || lookup_height == 0)
       return;
 
-    rendering_sequence rs(lookup_width, lookup_height, 16);
+    fractals::rendering_sequence rs(lookup_width, lookup_height, 16);
     int x, y, stride;
     bool stride_changed;
     while (!stop && rs.next(x, y, stride, stride_changed)) {

@@ -32,7 +32,7 @@ public:
     auto new_center = HighPrecisionType{number_cast<HighPrecisionReal>(c.x),
                                         number_cast<HighPrecisionReal>(c.y)};
 
-    auto delta = fractals::number_cast<DeltaType>(new_center - center);
+    auto delta = numbers::number_cast<DeltaType>(new_center - center);
 
     center = new_center;
 
@@ -46,10 +46,10 @@ public:
       return;
 
     reference_orbit_type init(HighPrecisionType{
-        coords.x0 + fractals::number_cast<HighPrecisionReal>(coords.dx) *
-                        fractals::number_cast<HighPrecisionReal>(ref_x),
-        coords.y0 + fractals::number_cast<HighPrecisionReal>(coords.dy) *
-                        fractals::number_cast<HighPrecisionReal>(ref_y)});
+        coords.x0 + numbers::number_cast<HighPrecisionReal>(coords.dx) *
+                        numbers::number_cast<HighPrecisionReal>(ref_x),
+        coords.y0 + numbers::number_cast<HighPrecisionReal>(coords.dy) *
+                        numbers::number_cast<HighPrecisionReal>(ref_y)});
 
     orbits.new_view(
         delta, DeltaType{DeltaReal(0.5) * coords.w, DeltaReal(0.5) * coords.h},
@@ -62,7 +62,7 @@ public:
   // the size of a BigReal to make sure we have sufficient accuracy.
   static bool valid_for(const view_coords &c) {
     return c.r <= 2 &&
-           fractals::valid_precision(number_cast<HighPrecisionReal>(c.r));
+           numbers::valid_precision(number_cast<HighPrecisionReal>(c.r));
   }
 
   // The initial coordinates to view the Mandelbrot set.
@@ -96,7 +96,7 @@ public:
 
     points_calculated++;
     skipped_iterations += z.iteration();
-    while (fractals::norm(*z) <= SmallReal(1 << 16)) {
+    while (numbers::norm(*z) <= SmallReal(1 << 16)) {
       if (z.iteration() >= this->max_iterations)
         return 0;
       ++z;
@@ -106,7 +106,7 @@ public:
 
     // This calculation creates a "fractional" iteration
     // used for smoother rendering.
-    auto zn = log2(fractals::norm(*z));
+    auto zn = log2(numbers::norm(*z));
     auto nu = log2(zn) / log2(Calculation::order);
     return z.iteration() + 1 - nu;
   }
@@ -123,13 +123,13 @@ public:
          ++iteration) {
       ++orbit;
 
-      auto delta = fractals::number_cast<DeltaType>(orbit.distance());
+      auto delta = numbers::number_cast<DeltaType>(orbit.distance());
       auto max_norm = coords.w * coords.h; // Not correct
 
-      if (fractals::norm(delta) < max_norm) {
+      if (numbers::norm(delta) < max_norm) {
         auto p = *orbit;
-        auto x = coords.to_x(fractals::real_part(p));
-        auto y = coords.to_y(fractals::imag_part(p));
+        auto x = coords.to_x(numbers::real_part(p));
+        auto y = coords.to_y(numbers::imag_part(p));
         if(x>=0 && y>=0)
           output.push_back({x,y, iteration});
       }
@@ -162,10 +162,10 @@ template <int Power> struct mandelbrot_generator {
     // The different numerical types we need.
     // Uses the helper type `fractals::complex_number` to specify a complex
     // number of the desired precision.
-    using low_precision_type = fractals::complex_number<48, 0, 0>;
-    using delta_type = fractals::complex_number<0, -2 * Precision, 0>;
-    using term_type = fractals::complex_number<0, -1000000, 1000000>;
-    using high_precision_type = fractals::complex_number<Precision, 0, 0>;
+    using low_precision_type = numbers::complex_number<48, 0, 0>;
+    using delta_type = numbers::complex_number<0, -2 * Precision, 0>;
+    using term_type = numbers::complex_number<0, -1000000, 1000000>;
+    using high_precision_type = numbers::complex_number<Precision, 0, 0>;
 
     // The equations we need
     using calculation_type = mandelbrot::mandelbrot_calculation<Power>;
